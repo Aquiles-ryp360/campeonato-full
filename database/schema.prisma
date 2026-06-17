@@ -1,0 +1,471 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  SUPER_ADMIN
+  ADMIN
+  DELEGATE
+  REFEREE
+  VIEWER
+}
+
+enum ChampionshipType {
+  ALL_VS_ALL
+  ALL_VS_ALL_RETURN
+  KNOCKOUT
+  DOUBLE_ELIMINATION
+  GROUP_STAGE
+  LEAGUE_PLAYOFFS
+  CUSTOM
+}
+
+enum MatchStatus {
+  SCHEDULED
+  IN_PROGRESS
+  FINISHED
+  SUSPENDED
+  POSTPONED
+  CANCELLED
+}
+
+enum PlayerStatus {
+  ACTIVE
+  SUSPENDED
+  INJURED
+  DISQUALIFIED
+}
+
+enum CardType {
+  YELLOW
+  RED
+  SECOND_YELLOW
+}
+
+enum CardStatus {
+  ACTIVE
+  EXPIRED
+  REVOKED
+}
+
+enum DocumentType {
+  DNI
+  CE
+  PASSPORT
+}
+
+enum FixtureGenerationStatus {
+  PENDING
+  GENERATED
+  MODIFIED
+  CONFLICT
+}
+
+// ============================================
+// USERS & AUTH
+// ============================================
+
+model User {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  password  String
+  firstName String   @map("first_name")
+  lastName  String   @map("last_name")
+  role      UserRole @default(ADMIN)
+  isActive  Boolean  @default(true) @map("is_active")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  delegates   Delegate[]
+  referees    Referee[]
+  refreshTokens RefreshToken[]
+
+  @@map("users")
+}
+
+model RefreshToken {
+  id        String   @id @default(uuid())
+  token     String   @unique
+  userId    String   @map("user_id")
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expiresAt DateTime @map("expires_at")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@map("refresh_tokens")
+}
+
+// ============================================
+// CHAMPIONSHIPS
+// ============================================
+
+model Campeonato {
+  id              String            @id @default(uuid())
+  name            String
+  description     String?
+  type            ChampionshipType  @default(ALL_VS_ALL)
+  sport           String            @default("Fútbol")
+  logo            String?
+  startDate       DateTime          @map("start_date")
+  endDate         DateTime          @map("end_date")
+  registrationEnd DateTime          @map("registration_end")
+  minTeams        Int               @default(4) @map("min_teams")
+  maxTeams        Int               @default(16) @map("max_teams")
+  pointsPerWin    Int               @default(3) @map("points_per_win")
+  pointsPerDraw   Int               @default(1) @map("points_per_draw")
+  pointsPerLoss   Int               @default(0) @map("points_per_loss")
+  tiebreakerRules String?           @map("tiebreaker_rules")
+  regulations     String?
+  status          Boolean           @default(true)
+  createdBy       String            @map("created_by")
+  createdAt       DateTime          @default(now()) @map("created_at")
+  updatedAt       DateTime          @updatedAt @map("updated_at")
+
+  categories  Categoria[]
+  seasons     Temporada[]
+  teams       Equipo[]
+  referees    Referee[]
+  fields      Cancha[]
+  fixtures    Fixture[]
+  matches     Partido[]
+  cards       Carnet[]
+  standings   StandingsEntry[]
+  sanctions   Sancion[]
+
+  @@map("campeonatos")
+}
+
+model Categoria {
+  id             String       @id @default(uuid())
+  name           String
+  description    String?
+  minAge         Int?         @map("min_age")
+  maxAge         Int?         @map("max_age")
+  gender         String?      @default("MIXTO")
+  campeonatoId   String       @map("campeonato_id")
+  campeonato     Campeonato   @relation(fields: [campeonatoId], references: [id], onDelete: Cascade)
+  createdAt      DateTime     @default(now()) @map("created_at")
+  updatedAt      DateTime     @updatedAt @map("updated_at")
+
+  teams Equipo[]
+
+  @@map("categorias")
+}
+
+model Temporada {
+  id           String       @id @default(uuid())
+  name         String
+  year         Int
+  startDate    DateTime     @map("start_date")
+  endDate      DateTime     @map("end_date")
+  isCurrent    Boolean      @default(false) @map("is_current")
+  campeonatoId String       @map("campeonato_id")
+  campeonato   Campeonato   @relation(fields: [campeonatoId], references: [id], onDelete: Cascade)
+  createdAt    DateTime     @default(now()) @map("created_at")
+  updatedAt    DateTime     @updatedAt @map("updated_at")
+
+  teams Equipo[]
+
+  @@map("temporadas")
+}
+
+// ============================================
+// TEAMS
+// ============================================
+
+model Equipo {
+  id             String    @id @default(uuid())
+  name           String
+  shortName      String?   @map("short_name")
+  shield         String?
+  primaryColor   String?   @map("primary_color")
+  secondaryColor String?   @map("secondary_color")
+  campeonatoId   String    @map("campeonato_id")
+  campeonato     Campeonato @relation(fields: [campeonatoId], references: [id], onDelete: Cascade)
+  categoriaId    String?   @map("categoria_id")
+  categoria      Categoria? @relation(fields: [categoriaId], references: [id])
+  temporadaId    String?   @map("temporada_id")
+  temporada      Temporada? @relation(fields: [temporadaId], references: [id])
+  isActive       Boolean   @default(true) @map("is_active")
+  createdAt      DateTime  @default(now()) @map("created_at")
+  updatedAt      DateTime  @updatedAt @map("updated_at")
+
+  players    Jugador[]
+  delegates  Delegate[]
+  homeMatches Partido[]  @relation("HomeTeam")
+  awayMatches Partido[]  @relation("AwayTeam")
+  standings  StandingsEntry[]
+
+  @@unique([name, campeonatoId])
+  @@map("equipos")
+}
+
+// ============================================
+// DELEGATES
+// ============================================
+
+model Delegate {
+  id            String       @id @default(uuid())
+  firstName     String       @map("first_name")
+  lastName      String       @map("last_name")
+  documentType  DocumentType @default(DNI) @map("document_type")
+  documentNumber String      @unique @map("document_number")
+  photo         String?
+  phone         String
+  email         String
+  equipoId      String       @map("equipo_id")
+  equipo        Equipo       @relation(fields: [equipoId], references: [id], onDelete: Cascade)
+  userId        String?      @map("user_id")
+  user          User?        @relation(fields: [userId], references: [id])
+  isActive      Boolean      @default(true) @map("is_active")
+  createdAt     DateTime     @default(now()) @map("created_at")
+  updatedAt     DateTime     @updatedAt @map("updated_at")
+
+  cards Carnet[]
+
+  @@map("delegados")
+}
+
+// ============================================
+// PLAYERS
+// ============================================
+
+model Jugador {
+  id             String       @id @default(uuid())
+  firstName      String       @map("first_name")
+  lastName       String       @map("last_name")
+  documentType   DocumentType @default(DNI) @map("document_type")
+  documentNumber String       @map("document_number")
+  birthDate      DateTime     @map("birth_date")
+  photo          String?
+  jerseyNumber   Int          @map("jersey_number")
+  position       String
+  status         PlayerStatus @default(ACTIVE)
+  equipoId       String       @map("equipo_id")
+  equipo         Equipo       @relation(fields: [equipoId], references: [id], onDelete: Cascade)
+  isActive       Boolean      @default(true) @map("is_active")
+  createdAt      DateTime     @default(now()) @map("created_at")
+  updatedAt      DateTime     @updatedAt @map("updated_at")
+
+  cards      Carnet[]
+  yellowCards Tarjeta[]   @relation("YellowCards")
+  redCards   Tarjeta[]   @relation("RedCards")
+  sanctions  Sancion[]
+
+  @@unique([documentNumber, equipoId])
+  @@map("jugadores")
+}
+
+// ============================================
+// REFEREES
+// ============================================
+
+model Referee {
+  id        String   @id @default(uuid())
+  firstName String   @map("first_name")
+  lastName  String   @map("last_name")
+  phone     String
+  email     String
+  userId    String?  @map("user_id")
+  user      User?    @relation(fields: [userId], references: [id])
+  isActive  Boolean  @default(true) @map("is_active")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  campeonatoId String     @map("campeonato_id")
+  campeonato   Campeonato @relation(fields: [campeonatoId], references: [id], onDelete: Cascade)
+  matches      Partido[]
+
+  @@map("arbitros")
+}
+
+// ============================================
+// FIELDS
+// ============================================
+
+model Cancha {
+  id          String      @id @default(uuid())
+  name        String
+  location    String?
+  latitude    Float?
+  longitude   Float?
+  capacity    Int?
+  isAvailable Boolean     @default(true) @map("is_available")
+  schedule    Json?       @default("{}")
+  campeonatoId String     @map("campeonato_id")
+  campeonato  Campeonato  @relation(fields: [campeonatoId], references: [id], onDelete: Cascade)
+  createdAt   DateTime    @default(now()) @map("created_at")
+  updatedAt   DateTime    @updatedAt @map("updated_at")
+
+  matches Partido[]
+
+  @@unique([name, campeonatoId])
+  @@map("canchas")
+}
+
+// ============================================
+// FIXTURE
+// ============================================
+
+model Fixture {
+  id             String                    @id @default(uuid())
+  name           String
+  round          Int
+  campeonatoId   String                    @map("campeonato_id")
+  campeonato     Campeonato                @relation(fields: [campeonatoId], references: [id], onDelete: Cascade)
+  status         FixtureGenerationStatus   @default(PENDING)
+  metadata       Json?
+  createdAt      DateTime                  @default(now()) @map("created_at")
+  updatedAt      DateTime                  @updatedAt @map("updated_at")
+
+  matches Partido[]
+
+  @@map("fixtures")
+}
+
+// ============================================
+// MATCHES
+// ============================================
+
+model Partido {
+  id             String      @id @default(uuid())
+  fixtureId      String      @map("fixture_id")
+  fixture        Fixture     @relation(fields: [fixtureId], references: [id], onDelete: Cascade)
+  round          Int
+  homeTeamId     String      @map("home_team_id")
+  homeTeam       Equipo      @relation("HomeTeam", fields: [homeTeamId], references: [id])
+  awayTeamId     String      @map("away_team_id")
+  awayTeam       Equipo      @relation("AwayTeam", fields: [awayTeamId], references: [id])
+  canchaId       String?     @map("cancha_id")
+  cancha         Cancha?     @relation(fields: [canchaId], references: [id])
+  refereeId      String?     @map("referee_id")
+  referee        Referee?    @relation(fields: [refereeId], references: [id])
+  scheduledDate  DateTime?   @map("scheduled_date")
+  scheduledTime  String?     @map("scheduled_time")
+  homeScore      Int?        @map("home_score")
+  awayScore      Int?        @map("away_score")
+  status         MatchStatus @default(SCHEDULED)
+  observations   String?
+  metadata       Json?
+  createdAt      DateTime    @default(now()) @map("created_at")
+  updatedAt      DateTime    @updatedAt @map("updated_at")
+
+  yellowCards Tarjeta[] @relation("MatchYellowCards")
+  redCards   Tarjeta[] @relation("MatchRedCards")
+
+  @@unique([fixtureId, round, homeTeamId, awayTeamId])
+  @@map("partidos")
+}
+
+// ============================================
+// CARDS & SANCTIONS
+// ============================================
+
+model Tarjeta {
+  id        String    @id @default(uuid())
+  type      CardType
+  playerId  String    @map("player_id")
+  player    Jugador   @relation("YellowCards", fields: [playerId], references: [id])
+  matchId   String    @map("match_id")
+  match     Partido   @relation("MatchYellowCards", fields: [matchId], references: [id])
+  minute    Int?
+  reason    String?
+  createdAt DateTime  @default(now()) @map("created_at")
+
+  @@map("tarjetas")
+}
+
+model Sancion {
+  id          String      @id @default(uuid())
+  playerId    String      @map("player_id")
+  player      Jugador     @relation(fields: [playerId], references: [id], onDelete: Cascade)
+  campeonatoId String     @map("campeonato_id")
+  campeonato  Campeonato  @relation(fields: [campeonatoId], references: [id], onDelete: Cascade)
+  matchId     String?     @map("match_id")
+  reason      String
+  sanctionType String     @map("sanction_type")
+  startDate   DateTime    @map("start_date")
+  endDate     DateTime?   @map("end_date")
+  isActive    Boolean     @default(true) @map("is_active")
+  createdAt   DateTime    @default(now()) @map("created_at")
+  updatedAt   DateTime    @updatedAt @map("updated_at")
+
+  @@map("sanciones")
+}
+
+// ============================================
+// STANDINGS
+// ============================================
+
+model StandingsEntry {
+  id          String @id @default(uuid())
+  campeonatoId String @map("campeonato_id")
+  campeonato  Campeonato @relation(fields: [campeonatoId], references: [id], onDelete: Cascade)
+  equipoId    String @map("equipo_id")
+  equipo      Equipo  @relation(fields: [equipoId], references: [id])
+  played      Int    @default(0)
+  won         Int    @default(0)
+  drawn       Int    @default(0)
+  lost        Int    @default(0)
+  goalsFor    Int    @default(0) @map("goals_for")
+  goalsAgainst Int   @default(0) @map("goals_against")
+  goalDiff    Int    @default(0) @map("goal_difference")
+  points      Int    @default(0)
+  fairPlay    Int    @default(0) @map("fair_play")
+  position    Int?
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  @@unique([campeonatoId, equipoId])
+  @@map("tabla_posiciones")
+}
+
+// ============================================
+// DIGITAL CARDS
+// ============================================
+
+model Carnet {
+  id            String     @id @default(uuid())
+  code          String     @unique
+  playerId      String?    @map("player_id")
+  player        Jugador?   @relation(fields: [playerId], references: [id], onDelete: Cascade)
+  delegateId    String?    @map("delegate_id")
+  delegate      Delegate?  @relation(fields: [delegateId], references: [id], onDelete: Cascade)
+  type          String     @default("PLAYER")
+  campeonatoId  String     @map("campeonato_id")
+  campeonato    Campeonato @relation(fields: [campeonatoId], references: [id], onDelete: Cascade)
+  qrCode        String?    @map("qr_code")
+  barCode       String?    @map("bar_code")
+  issueDate     DateTime   @default(now()) @map("issue_date")
+  expiryDate    DateTime?  @map("expiry_date")
+  status        CardStatus @default(ACTIVE)
+  pdfUrl        String?    @map("pdf_url")
+  metadata      Json?
+  createdAt     DateTime   @default(now()) @map("created_at")
+  updatedAt     DateTime   @updatedAt @map("updated_at")
+
+  @@map("carnets")
+}
+
+// ============================================
+// AUDIT LOG
+// ============================================
+
+model AuditLog {
+  id        String   @id @default(uuid())
+  action    String
+  entity    String
+  entityId  String   @map("entity_id")
+  userId    String?  @map("user_id")
+  oldValue  Json?    @map("old_value")
+  newValue  Json?    @map("new_value")
+  ipAddress String?  @map("ip_address")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@index([entity, entityId])
+  @@index([userId])
+  @@map("audit_logs")
+}
