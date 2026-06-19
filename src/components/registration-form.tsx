@@ -10,6 +10,7 @@ import {
   rememberGeneratedDelegateCredentials,
   type DelegateCredentials
 } from "@/lib/auth";
+import { saveLocalRegistration } from "@/lib/local-registrations";
 import type { PlayerRole, TournamentEvent } from "@/lib/types";
 import { formatDateTime, formatMoney, playerRoleLabel, sportLabel } from "@/lib/utils";
 import { Badge, Button, Card, Field, SectionHeader, inputClass } from "./ui";
@@ -117,6 +118,29 @@ export function RegistrationForm() {
 
     const delegateCredentials = generateDelegateCredentials(teamName, registrationCode);
     rememberGeneratedDelegateCredentials(delegateCredentials);
+    const generatedAt = new Date().toISOString();
+    saveLocalRegistration({
+      id: `local-registration-${Date.now()}`,
+      createdAt: generatedAt,
+      eventId,
+      teamName,
+      delegateName,
+      delegatePhone,
+      delegateEmail,
+      paymentMethod,
+      registrationCode,
+      delegateCredentials,
+      players: completedPlayers.map((player, index) => ({
+        id: `local-player-${Date.now()}-${index}`,
+        firstName: player.firstName,
+        lastName: player.lastName,
+        dni: player.dni,
+        studentCode: player.studentCode,
+        enrollmentFile: player.enrollmentFile,
+        semester: player.semester,
+        lineupRole: player.lineupRole
+      }))
+    });
 
     const receipt: RegistrationReceipt = {
       event,
@@ -128,7 +152,7 @@ export function RegistrationForm() {
       registrationCode,
       delegateCredentials,
       players: completedPlayers,
-      generatedAt: new Date().toISOString()
+      generatedAt
     };
 
     setLastReceipt(receipt);

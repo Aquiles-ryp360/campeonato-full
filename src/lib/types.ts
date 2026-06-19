@@ -41,6 +41,7 @@ export interface Team {
   name: string;
   delegateName: string;
   delegatePhone: string;
+  delegateEmail: string;
   paymentMethod: PaymentMethod;
   registrationCode: string;
   paymentStatus: PaymentStatus;
@@ -128,6 +129,7 @@ export interface RegistrationDraft {
   teamName: string;
   delegateName: string;
   delegatePhone: string;
+  delegateEmail: string;
   paymentMethod: PaymentMethod;
   registrationCode: string;
 }

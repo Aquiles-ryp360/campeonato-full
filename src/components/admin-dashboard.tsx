@@ -1,23 +1,82 @@
 "use client";
 
-import { CheckCircle2, CircleDollarSign, Settings2, Trophy, UsersRound } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import {
+  CheckCircle2,
+  CircleDollarSign,
+  Copy,
+  Mail,
+  Settings2,
+  Trophy,
+  UsersRound
+} from "lucide-react";
 import { toast } from "sonner";
-import { events, matches, registrationCodes, teams } from "@/lib/mock-data";
+import { generateDelegateCredentials, type DelegateCredentials } from "@/lib/auth";
+import {
+  getLocalRegistrations,
+  type StoredRegistration,
+  type StoredRegistrationPlayer
+} from "@/lib/local-registrations";
+import { events, matches, players, registrationCodes, teams } from "@/lib/mock-data";
+import type { PaymentMethod, Player, TeamStatus } from "@/lib/types";
 import {
   eventStatusLabel,
   formatDateTime,
   formatLabel,
   formatMoney,
   getTeamName,
+  playerRoleLabel,
   sportLabel,
   teamStatusLabel
 } from "@/lib/utils";
 import { Badge, Button, Card, Metric, SectionHeader } from "./ui";
 
+type DelegateAdminRow = {
+  id: string;
+  source: "base" | "local";
+  teamName: string;
+  delegateName: string;
+  delegatePhone: string;
+  delegateEmail: string;
+  eventName: string;
+  eventDescription: string;
+  paymentMethod: PaymentMethod;
+  registrationCode: string;
+  teamStatus: TeamStatus | "local";
+  statusLabel: string;
+  playerCount: number;
+  starterCount: number;
+  substituteCount: number;
+  registeredAt?: string;
+  credentials: DelegateCredentials;
+};
+
+const delegatePanelUrl = "https://campeonato-full.vercel.app/delegado";
+
 export function AdminDashboard() {
+  const [localRegistrations, setLocalRegistrations] = useState<StoredRegistration[]>([]);
   const availableCodes = registrationCodes.filter((code) => code.status === "available");
   const activeEvents = events.filter((event) => event.status !== "finished");
   const finishedMatches = matches.filter((match) => match.status === "finished");
+  const delegateRows = useMemo(
+    () => createDelegateRows(localRegistrations),
+    [localRegistrations]
+  );
+
+  useEffect(() => {
+    function syncLocalRegistrations() {
+      setLocalRegistrations(getLocalRegistrations());
+    }
+
+    syncLocalRegistrations();
+    window.addEventListener("storage", syncLocalRegistrations);
+    window.addEventListener("focus", syncLocalRegistrations);
+
+    return () => {
+      window.removeEventListener("storage", syncLocalRegistrations);
+      window.removeEventListener("focus", syncLocalRegistrations);
+    };
+  }, []);
 
   return (
     <div className="space-y-6 pb-20 md:pb-0">
@@ -39,6 +98,106 @@ export function AdminDashboard() {
         <Metric label="Codigos disponibles" value={`${availableCodes.length}`} icon={CircleDollarSign} tone="amber" />
         <Metric label="Resultados publicados" value={`${finishedMatches.length}`} icon={CheckCircle2} tone="green" />
       </section>
+
+      <Card className="overflow-hidden">
+        <div className="border-b border-ink/10 p-5">
+          <SectionHeader
+            title="Delegados y accesos"
+            description="Lista administrativa de delegados, equipos, contacto, credenciales y cantidad de jugadores."
+            action={<Badge tone="blue">{delegateRows.length} delegados</Badge>}
+          />
+        </div>
+        <div className="overflow-x-auto">
+          <table className="w-full min-w-[1100px] text-sm">
+            <thead className="bg-mist text-left text-xs uppercase text-ink/55">
+              <tr>
+                <th className="px-5 py-3">Delegado</th>
+                <th className="px-3 py-3">Equipo</th>
+                <th className="px-3 py-3">Campeonato</th>
+                <th className="px-3 py-3">Plantilla</th>
+                <th className="px-3 py-3">Pago</th>
+                <th className="px-3 py-3">Acceso</th>
+                <th className="px-5 py-3">Acciones</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-ink/8">
+              {delegateRows.map((row) => (
+                <tr key={row.id}>
+                  <td className="px-5 py-4 align-top">
+                    <p className="font-semibold text-ink">{row.delegateName}</p>
+                    <p className="mt-1 text-xs text-ink/60">{row.delegatePhone}</p>
+                    <p className="text-xs text-ink/60">{row.delegateEmail}</p>
+                  </td>
+                  <td className="px-3 py-4 align-top">
+                    <div className="flex flex-col items-start gap-2">
+                      <p className="font-semibold text-ink">{row.teamName}</p>
+                      <Badge
+                        tone={
+                          row.source === "local"
+                            ? "blue"
+                            : row.teamStatus === "approved"
+                              ? "green"
+                              : "amber"
+                        }
+                      >
+                        {row.statusLabel}
+                      </Badge>
+                    </div>
+                  </td>
+                  <td className="px-3 py-4 align-top">
+                    <p className="font-medium text-ink">{row.eventName}</p>
+                    <p className="mt-1 text-xs text-ink/55">{row.eventDescription}</p>
+                    {row.registeredAt ? (
+                      <p className="mt-1 text-xs text-ink/55">
+                        Alta: {formatDateTime(row.registeredAt)}
+                      </p>
+                    ) : null}
+                  </td>
+                  <td className="px-3 py-4 align-top">
+                    <p className="font-semibold text-ink">{row.playerCount} jugadores</p>
+                    <p className="mt-1 text-xs text-ink/60">
+                      {row.starterCount} {playerRoleLabel("starter").toLowerCase()} ·{" "}
+                      {row.substituteCount} {playerRoleLabel("substitute").toLowerCase()}
+                    </p>
+                  </td>
+                  <td className="px-3 py-4 align-top">
+                    <p className="font-semibold uppercase text-ink">{row.paymentMethod}</p>
+                    <p className="mt-1 text-xs text-ink/60">{row.registrationCode}</p>
+                  </td>
+                  <td className="px-3 py-4 align-top">
+                    <p className="font-mono text-xs font-semibold text-ink">
+                      {row.credentials.username}
+                    </p>
+                    <p className="mt-1 font-mono text-xs text-ink/65">
+                      {row.credentials.password}
+                    </p>
+                  </td>
+                  <td className="px-5 py-4 align-top">
+                    <div className="flex flex-wrap gap-2">
+                      <Button
+                        variant="secondary"
+                        className="min-h-9 px-3"
+                        onClick={() => void copyDelegateAccess(row)}
+                      >
+                        <Copy className="h-4 w-4" />
+                        Copiar
+                      </Button>
+                      <Button
+                        href={createDelegateAccessEmailHref(row)}
+                        variant="secondary"
+                        className="min-h-9 px-3"
+                      >
+                        <Mail className="h-4 w-4" />
+                        Correo
+                      </Button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </Card>
 
       <section className="grid gap-6 lg:grid-cols-[1fr_0.95fr]">
         <Card className="overflow-hidden">
@@ -184,4 +343,109 @@ export function AdminDashboard() {
       </Card>
     </div>
   );
+}
+
+function createDelegateRows(localRegistrations: StoredRegistration[]): DelegateAdminRow[] {
+  const baseRows: DelegateAdminRow[] = teams.map((team) => {
+    const event = events.find((current) => current.id === team.eventId);
+    const teamPlayers = players.filter((player) => player.teamId === team.id);
+
+    return {
+      id: team.id,
+      source: "base",
+      teamName: team.name,
+      delegateName: team.delegateName,
+      delegatePhone: team.delegatePhone,
+      delegateEmail: team.delegateEmail,
+      eventName: event?.name ?? "Evento sin asignar",
+      eventDescription: event ? `${sportLabel(event.sport)} · ${event.category}` : "Sin evento",
+      paymentMethod: team.paymentMethod,
+      registrationCode: team.registrationCode,
+      teamStatus: team.status,
+      statusLabel: teamStatusLabel(team.status),
+      playerCount: teamPlayers.length,
+      starterCount: countPlayersByRole(teamPlayers, "starter"),
+      substituteCount: countPlayersByRole(teamPlayers, "substitute"),
+      credentials: generateDelegateCredentials(team.name, team.registrationCode)
+    };
+  });
+
+  const localRows: DelegateAdminRow[] = localRegistrations.map((registration) => {
+    const event = events.find((current) => current.id === registration.eventId);
+
+    return {
+      id: registration.id,
+      source: "local",
+      teamName: registration.teamName,
+      delegateName: registration.delegateName,
+      delegatePhone: registration.delegatePhone,
+      delegateEmail: registration.delegateEmail,
+      eventName: event?.name ?? "Evento sin asignar",
+      eventDescription: event ? `${sportLabel(event.sport)} · ${event.category}` : "Sin evento",
+      paymentMethod: registration.paymentMethod,
+      registrationCode: registration.registrationCode,
+      teamStatus: "local",
+      statusLabel: "Registrado local",
+      playerCount: registration.players.length,
+      starterCount: countPlayersByRole(registration.players, "starter"),
+      substituteCount: countPlayersByRole(registration.players, "substitute"),
+      registeredAt: registration.createdAt,
+      credentials: registration.delegateCredentials
+    };
+  });
+
+  return [...localRows, ...baseRows];
+}
+
+function countPlayersByRole(
+  teamPlayers: Array<Player | StoredRegistrationPlayer>,
+  role: "starter" | "substitute"
+) {
+  return teamPlayers.filter((player) => player.lineupRole === role).length;
+}
+
+async function copyDelegateAccess(row: DelegateAdminRow) {
+  const accessText = createDelegateAccessText(row);
+
+  if (!navigator.clipboard) {
+    toast.info("Copia manualmente el usuario y contrasena del delegado.");
+    return;
+  }
+
+  try {
+    await navigator.clipboard.writeText(accessText);
+    toast.success(`Acceso de ${row.teamName} copiado.`);
+  } catch {
+    toast.error("No se pudo copiar el acceso automaticamente.");
+  }
+}
+
+function createDelegateAccessText(row: DelegateAdminRow) {
+  return [
+    `Equipo: ${row.teamName}`,
+    `Delegado: ${row.delegateName}`,
+    `Usuario: ${row.credentials.username}`,
+    `Contrasena: ${row.credentials.password}`,
+    `Panel: ${delegatePanelUrl}`
+  ].join("\n");
+}
+
+function createDelegateAccessEmailHref(row: DelegateAdminRow) {
+  const subject = `Acceso delegado - ${row.teamName}`;
+  const body = [
+    `Hola ${row.delegateName},`,
+    "",
+    "Estos son tus accesos al panel de delegado del campeonato interno de Mecanica Electrica organizado por octavo semestre:",
+    "",
+    `Equipo: ${row.teamName}`,
+    `Usuario: ${row.credentials.username}`,
+    `Contrasena: ${row.credentials.password}`,
+    `Panel: ${delegatePanelUrl}`,
+    "",
+    "Guarda estos datos para revisar tu plantilla, horarios y observaciones."
+  ].join("\n");
+
+  return `mailto:${encodeURIComponent(row.delegateEmail)}?subject=${encodeURIComponent(
+    subject
+  )}&body=${encodeURIComponent(body)}`;
 }
