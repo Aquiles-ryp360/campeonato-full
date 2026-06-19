@@ -11,7 +11,6 @@ import {
   UsersRound
 } from "lucide-react";
 import { toast } from "sonner";
-import { generateDelegateCredentials, type DelegateCredentials } from "@/lib/auth";
 import {
   getLocalRegistrations,
   type StoredRegistration,
@@ -48,7 +47,10 @@ type DelegateAdminRow = {
   starterCount: number;
   substituteCount: number;
   registeredAt?: string;
-  credentials: DelegateCredentials;
+  access: {
+    username: string;
+    passwordLabel: string;
+  };
 };
 
 const delegatePanelUrl = "https://campeonato-full.vercel.app/delegado";
@@ -166,10 +168,10 @@ export function AdminDashboard() {
                   </td>
                   <td className="px-3 py-4 align-top">
                     <p className="font-mono text-xs font-semibold text-ink">
-                      {row.credentials.username}
+                      {row.access.username}
                     </p>
                     <p className="mt-1 font-mono text-xs text-ink/65">
-                      {row.credentials.password}
+                      {row.access.passwordLabel}
                     </p>
                   </td>
                   <td className="px-5 py-4 align-top">
@@ -366,7 +368,10 @@ function createDelegateRows(localRegistrations: StoredRegistration[]): DelegateA
       playerCount: teamPlayers.length,
       starterCount: countPlayersByRole(teamPlayers, "starter"),
       substituteCount: countPlayersByRole(teamPlayers, "substitute"),
-      credentials: generateDelegateCredentials(team.name, team.registrationCode)
+      access: {
+        username: team.delegateEmail,
+        passwordLabel: "Enviada por correo"
+      }
     };
   });
 
@@ -390,7 +395,10 @@ function createDelegateRows(localRegistrations: StoredRegistration[]): DelegateA
       starterCount: countPlayersByRole(registration.players, "starter"),
       substituteCount: countPlayersByRole(registration.players, "substitute"),
       registeredAt: registration.createdAt,
-      credentials: registration.delegateCredentials
+      access: {
+        username: registration.delegateCredentials.username,
+        passwordLabel: registration.delegateCredentials.password
+      }
     };
   });
 
@@ -424,8 +432,8 @@ function createDelegateAccessText(row: DelegateAdminRow) {
   return [
     `Equipo: ${row.teamName}`,
     `Delegado: ${row.delegateName}`,
-    `Usuario: ${row.credentials.username}`,
-    `Contrasena: ${row.credentials.password}`,
+    `Usuario: ${row.access.username}`,
+    `Contrasena: ${row.access.passwordLabel}`,
     `Panel: ${delegatePanelUrl}`
   ].join("\n");
 }
@@ -438,8 +446,8 @@ function createDelegateAccessEmailHref(row: DelegateAdminRow) {
     "Estos son tus accesos al panel de delegado del campeonato interno de Mecanica Electrica organizado por octavo semestre:",
     "",
     `Equipo: ${row.teamName}`,
-    `Usuario: ${row.credentials.username}`,
-    `Contrasena: ${row.credentials.password}`,
+    `Usuario: ${row.access.username}`,
+    `Contrasena: ${row.access.passwordLabel}`,
     `Panel: ${delegatePanelUrl}`,
     "",
     "Guarda estos datos para revisar tu plantilla, horarios y observaciones."

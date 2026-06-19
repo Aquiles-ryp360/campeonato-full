@@ -36,7 +36,8 @@ export function Button({
   variant = "primary",
   className,
   type = "button",
-  onClick
+  onClick,
+  disabled = false
 }: {
   children: React.ReactNode;
   href?: string;
@@ -44,6 +45,7 @@ export function Button({
   className?: string;
   type?: "button" | "submit";
   onClick?: () => void;
+  disabled?: boolean;
 }) {
   const variants = {
     primary: "bg-ink text-white hover:bg-ink/90",
@@ -53,6 +55,7 @@ export function Button({
   const classes = cn(
     "inline-flex min-h-10 items-center justify-center gap-2 rounded-md px-4 py-2 text-sm font-semibold transition",
     "focus:outline-none focus:ring-2 focus:ring-field focus:ring-offset-2",
+    "disabled:pointer-events-none disabled:opacity-60",
     variants[variant],
     className
   );
@@ -66,7 +69,7 @@ export function Button({
   }
 
   return (
-    <button type={type} className={classes} onClick={onClick}>
+    <button type={type} className={classes} onClick={onClick} disabled={disabled}>
       {children}
     </button>
   );

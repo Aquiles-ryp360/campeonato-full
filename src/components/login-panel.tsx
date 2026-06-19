@@ -5,30 +5,101 @@ import { useRouter } from "next/navigation";
 import { KeyRound, LogIn, ShieldCheck, UserRoundCheck } from "lucide-react";
 import { toast } from "sonner";
 import {
+  createSession,
   demoAdminCredentials,
   demoDelegateCredentials,
   loginWithCredentials,
   storeSession
 } from "@/lib/auth";
+import { createSupabaseBrowserClient, hasSupabaseEnv } from "@/lib/supabase";
 import { Badge, Button, Card, Field, SectionHeader, inputClass } from "./ui";
 
 export function LoginPanel() {
   const router = useRouter();
+  const supabaseConfigured = hasSupabaseEnv();
   const [nextPath, setNextPath] = useState("/");
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     setNextPath(params.get("next") || "/");
   }, []);
 
-  function submitLogin(event: React.FormEvent<HTMLFormElement>) {
+  async function submitLogin(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    setIsSubmitting(true);
+
+    if (supabaseConfigured) {
+      try {
+        const supabase = createSupabaseBrowserClient();
+        const email = username.trim().toLowerCase();
+        const { data, error } = await supabase.auth.signInWithPassword({
+          email,
+          password
+        });
+
+        if (error || !data.user) {
+          toast.error("Correo o contrasena incorrectos.");
+          return;
+        }
+
+        const { data: profile, error: profileError } = await supabase
+          .from("profiles")
+          .select("role, full_name")
+          .eq("id", data.user.id)
+          .maybeSingle();
+
+        if (profileError || !profile) {
+          await supabase.auth.signOut();
+          toast.error("Tu usuario no tiene perfil asignado.");
+          return;
+        }
+
+        if (profile.role !== "admin" && profile.role !== "delegate") {
+          await supabase.auth.signOut();
+          toast.error("Tu usuario no tiene permisos para este sistema.");
+          return;
+        }
+
+        const session = createSession(
+          profile.role,
+          email,
+          profile.full_name ?? data.user.email ?? "Usuario"
+        );
+
+        storeSession(session);
+        toast.success(`Sesion iniciada como ${session.role === "admin" ? "admin" : "delegado"}.`);
+
+        if (session.role === "admin") {
+          router.push(
+            nextPath.startsWith("/admin") ||
+              nextPath.startsWith("/delegado") ||
+              nextPath === "/equipo"
+              ? nextPath
+              : "/admin"
+          );
+          return;
+        }
+
+        router.push(
+          nextPath.startsWith("/delegado") || nextPath === "/equipo" ? nextPath : "/delegado"
+        );
+        return;
+      } catch {
+        toast.error("No se pudo iniciar sesion con Supabase.");
+        return;
+      } finally {
+        setIsSubmitting(false);
+      }
+    }
+
     const session = loginWithCredentials(username, password);
 
     if (!session) {
       toast.error("Usuario o contrasena incorrectos.");
+      setIsSubmitting(false);
       return;
     }
 
@@ -41,28 +112,31 @@ export function LoginPanel() {
           ? nextPath
           : "/admin"
       );
+      setIsSubmitting(false);
       return;
     }
 
     router.push(nextPath.startsWith("/delegado") || nextPath === "/equipo" ? nextPath : "/delegado");
+    setIsSubmitting(false);
   }
 
   return (
     <div className="grid gap-6 lg:grid-cols-[0.9fr_1.1fr]">
       <Card className="p-5">
         <SectionHeader
-          eyebrow="Acceso demo"
+          eyebrow="Acceso"
           title="Iniciar sesion"
-          description="Este login es temporal para probar roles. Luego lo cambiaremos por Supabase Auth con usuarios reales."
+          description="Ingresa con el correo y la contrasena temporal enviada al delegado o con un usuario admin creado en Supabase."
         />
 
         <form className="mt-5 space-y-4" onSubmit={submitLogin}>
-          <Field label="Usuario">
+          <Field label="Correo">
             <input
               className={inputClass}
               value={username}
               onChange={(event) => setUsername(event.target.value)}
-              placeholder="admin o delegado"
+              placeholder={supabaseConfigured ? "delegado@correo.com" : "admin o delegado"}
+              type={supabaseConfigured ? "email" : "text"}
               autoComplete="username"
             />
           </Field>
@@ -78,9 +152,9 @@ export function LoginPanel() {
             />
           </Field>
 
-          <Button type="submit" className="w-full">
+          <Button type="submit" className="w-full" disabled={isSubmitting}>
             <LogIn className="h-4 w-4" />
-            Entrar
+            {isSubmitting ? "Entrando..." : "Entrar"}
           </Button>
         </form>
       </Card>
@@ -97,13 +171,14 @@ export function LoginPanel() {
                 <Badge tone="green">Control total</Badge>
               </div>
               <p className="mt-2 text-sm text-ink/65">
-                Usuario: <strong>{demoAdminCredentials.username}</strong>
+                Usuario demo: <strong>{demoAdminCredentials.username}</strong>
               </p>
               <p className="mt-1 text-sm text-ink/65">
                 Contrasena: <strong>{demoAdminCredentials.password}</strong>
               </p>
               <p className="mt-3 text-sm leading-6 text-ink/62">
-                Puede entrar a admin, eventos, audio IA, vista publica y panel de delegado.
+                El demo solo funciona si las variables publicas de Supabase no estan configuradas.
+                En produccion usa un usuario admin real de Supabase.
               </p>
             </div>
           </div>
@@ -126,8 +201,8 @@ export function LoginPanel() {
                 Contrasena demo: <strong>{demoDelegateCredentials.password}</strong>
               </p>
               <p className="mt-3 text-sm leading-6 text-ink/62">
-                Ademas, cuando un equipo termina su inscripcion, el PDF genera usuario y
-                contrasena propios para el delegado.
+                Cuando un equipo termina su inscripcion, el servidor crea el usuario con su correo
+                y envia la contrasena temporal automaticamente.
               </p>
             </div>
           </div>

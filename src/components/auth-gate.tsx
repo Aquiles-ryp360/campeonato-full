@@ -6,6 +6,7 @@ import { useEffect, useState } from "react";
 import { LayoutDashboard, LockKeyhole, LogIn, LogOut, ShieldCheck } from "lucide-react";
 import type { AuthRole, AuthSession } from "@/lib/auth";
 import { canAccess, clearStoredSession, getStoredSession } from "@/lib/auth";
+import { createSupabaseBrowserClient, hasSupabaseEnv } from "@/lib/supabase";
 import { Button, Card } from "./ui";
 
 export function AuthGate({
@@ -44,7 +45,7 @@ export function AuthGate({
               <p className="text-xl font-bold text-ink">Acceso restringido</p>
               <p className="mt-1 max-w-2xl text-sm leading-6 text-ink/65">
                 Inicia sesion como {role === "admin" ? "administrador" : "delegado"} para
-                ver este panel. Por ahora es un login demo guardado en este navegador.
+                ver este panel.
               </p>
             </div>
           </div>
@@ -106,7 +107,11 @@ export function SessionActions() {
       </Link>
       <button
         type="button"
-        onClick={() => {
+        onClick={async () => {
+          if (hasSupabaseEnv()) {
+            await createSupabaseBrowserClient().auth.signOut();
+          }
+
           clearStoredSession();
           setSession(null);
           window.location.href = "/";

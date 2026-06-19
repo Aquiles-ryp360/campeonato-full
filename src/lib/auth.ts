@@ -13,7 +13,6 @@ export interface DelegateCredentials {
 }
 
 const sessionKey = "campeonato.session";
-const delegateCredentialsKey = "campeonato.delegate.credentials";
 
 export const demoAdminCredentials = {
   username: "admin",
@@ -79,58 +78,5 @@ export function loginWithCredentials(usernameInput: string, passwordInput: strin
     return createSession("delegate", username, "Delegado demo");
   }
 
-  const generatedCredential = getGeneratedDelegateCredentials().find(
-    (credential) => credential.username === username && credential.password === password
-  );
-
-  if (generatedCredential) {
-    return createSession("delegate", username, "Delegado inscrito");
-  }
-
   return null;
-}
-
-export function generateDelegateCredentials(teamName: string, registrationCode: string) {
-  const teamSlug = slugifyCredential(teamName) || "equipo";
-  const codeSlug = slugifyCredential(registrationCode).toUpperCase() || "CODIGO";
-
-  return {
-    username: `del-${teamSlug.slice(0, 18)}`,
-    password: `${codeSlug.slice(0, 18)}`
-  };
-}
-
-export function rememberGeneratedDelegateCredentials(credentials: DelegateCredentials) {
-  if (typeof window === "undefined") return;
-
-  const existing = getGeneratedDelegateCredentials();
-  const next = [
-    ...existing.filter((credential) => credential.username !== credentials.username),
-    credentials
-  ];
-
-  window.localStorage.setItem(delegateCredentialsKey, JSON.stringify(next));
-}
-
-function getGeneratedDelegateCredentials() {
-  if (typeof window === "undefined") return [];
-
-  const rawCredentials = window.localStorage.getItem(delegateCredentialsKey);
-  if (!rawCredentials) return [];
-
-  try {
-    return JSON.parse(rawCredentials) as DelegateCredentials[];
-  } catch {
-    window.localStorage.removeItem(delegateCredentialsKey);
-    return [];
-  }
-}
-
-function slugifyCredential(value: string) {
-  return value
-    .toLowerCase()
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "");
 }

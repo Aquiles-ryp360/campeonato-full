@@ -1,16 +1,11 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { Download, FileText, Mail, Plus, Smartphone, Trash2, UserPlus } from "lucide-react";
+import { Download, FileText, Plus, Smartphone, Trash2, UserPlus } from "lucide-react";
 import type { jsPDF as JsPDFDocument } from "jspdf";
 import { toast } from "sonner";
 import { events } from "@/lib/mock-data";
-import {
-  generateDelegateCredentials,
-  rememberGeneratedDelegateCredentials,
-  type DelegateCredentials
-} from "@/lib/auth";
-import { saveLocalRegistration } from "@/lib/local-registrations";
+import type { DelegateCredentials } from "@/lib/auth";
 import type { PlayerRole, TournamentEvent } from "@/lib/types";
 import { formatDateTime, formatMoney, playerRoleLabel, sportLabel } from "@/lib/utils";
 import { Badge, Button, Card, Field, SectionHeader, inputClass } from "./ui";
@@ -53,6 +48,18 @@ interface RegistrationReceipt {
   generatedAt: string;
 }
 
+type RegisterDelegateResponse =
+  | {
+      ok: true;
+      teamId: string;
+      emailSent: boolean;
+      delegateCredentials: DelegateCredentials;
+    }
+  | {
+      ok: false;
+      error: string;
+    };
+
 export function RegistrationForm() {
   const openEvents = events.filter((event) => event.status === "registration" || event.status === "draft");
   const [eventId, setEventId] = useState(openEvents[0]?.id ?? events[0]?.id ?? "");
@@ -63,6 +70,7 @@ export function RegistrationForm() {
   const [paymentMethod, setPaymentMethod] = useState<"yape" | "plin">("yape");
   const [registrationCode, setRegistrationCode] = useState("");
   const [lastReceipt, setLastReceipt] = useState<RegistrationReceipt | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [players, setPlayers] = useState<PlayerFormRow[]>([
     { ...emptyPlayer },
     { ...emptyPlayer },
@@ -116,52 +124,67 @@ export function RegistrationForm() {
       return;
     }
 
-    const delegateCredentials = generateDelegateCredentials(teamName, registrationCode);
-    rememberGeneratedDelegateCredentials(delegateCredentials);
-    const generatedAt = new Date().toISOString();
-    saveLocalRegistration({
-      id: `local-registration-${Date.now()}`,
-      createdAt: generatedAt,
-      eventId,
-      teamName,
-      delegateName,
-      delegatePhone,
-      delegateEmail,
-      paymentMethod,
-      registrationCode,
-      delegateCredentials,
-      players: completedPlayers.map((player, index) => ({
-        id: `local-player-${Date.now()}-${index}`,
-        firstName: player.firstName,
-        lastName: player.lastName,
-        dni: player.dni,
-        studentCode: player.studentCode,
-        enrollmentFile: player.enrollmentFile,
-        semester: player.semester,
-        lineupRole: player.lineupRole
-      }))
-    });
-
-    const receipt: RegistrationReceipt = {
-      event,
-      teamName,
-      delegateName,
-      delegatePhone,
-      delegateEmail,
-      paymentMethod,
-      registrationCode,
-      delegateCredentials,
-      players: completedPlayers,
-      generatedAt
-    };
-
-    setLastReceipt(receipt);
-
+    setIsSubmitting(true);
     try {
-      await generateRegistrationReceiptPdf(receipt);
-      toast.success("Inscripcion registrada. Se descargo la constancia PDF.");
+      const response = await fetch("/api/register-delegate", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          eventId,
+          teamName,
+          delegateName,
+          delegatePhone,
+          delegateEmail,
+          paymentMethod,
+          registrationCode,
+          players: completedPlayers
+        })
+      });
+      const payload = (await response.json().catch(() => null)) as RegisterDelegateResponse | null;
+
+      if (!response.ok || !payload) {
+        toast.error(
+          payload && !payload.ok ? payload.error : "No se pudo completar la inscripcion."
+        );
+        return;
+      }
+
+      if (!payload.ok) {
+        toast.error(payload.error);
+        return;
+      }
+
+      const generatedAt = new Date().toISOString();
+      const receipt: RegistrationReceipt = {
+        event,
+        teamName,
+        delegateName,
+        delegatePhone,
+        delegateEmail,
+        paymentMethod,
+        registrationCode,
+        delegateCredentials: payload.delegateCredentials,
+        players: completedPlayers,
+        generatedAt
+      };
+
+      setLastReceipt(receipt);
+      try {
+        await generateRegistrationReceiptPdf(receipt);
+        toast.success(
+          payload.emailSent
+            ? "Inscripcion registrada. Correo enviado y constancia PDF descargada."
+            : "Inscripcion registrada. Se descargo la constancia PDF."
+        );
+      } catch {
+        toast.error("La inscripcion quedo registrada, pero no se pudo descargar el PDF.");
+      }
     } catch {
-      toast.error("La inscripcion quedo lista, pero no se pudo descargar el PDF.");
+      toast.error("No se pudo completar la inscripcion. Intentalo otra vez.");
+    } finally {
+      setIsSubmitting(false);
     }
   }
 
@@ -422,22 +445,14 @@ export function RegistrationForm() {
               <Download className="h-4 w-4" />
               Descargar PDF
             </Button>
-            <Button
-              href={createCredentialsEmailHref(lastReceipt)}
-              variant="secondary"
-              className="w-full sm:w-auto"
-            >
-              <Mail className="h-4 w-4" />
-              Enviar por correo
-            </Button>
           </div>
         </Card>
       ) : null}
 
       <div className="flex justify-end">
-        <Button type="submit" className="w-full sm:w-auto">
+        <Button type="submit" className="w-full sm:w-auto" disabled={isSubmitting}>
           <UserPlus className="h-4 w-4" />
-          Enviar inscripcion
+          {isSubmitting ? "Registrando..." : "Enviar inscripcion"}
         </Button>
       </div>
     </form>
@@ -610,24 +625,4 @@ function slugify(value: string) {
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/^-+|-+$/g, "")
     .slice(0, 40);
-}
-
-function createCredentialsEmailHref(receipt: RegistrationReceipt) {
-  const subject = `Acceso delegado - ${receipt.teamName}`;
-  const body = [
-    `Hola ${receipt.delegateName},`,
-    "",
-    "Estos son tus accesos al panel de delegado del campeonato interno de Mecanica Electrica organizado por octavo semestre:",
-    "",
-    `Equipo: ${receipt.teamName}`,
-    `Usuario: ${receipt.delegateCredentials.username}`,
-    `Contrasena: ${receipt.delegateCredentials.password}`,
-    "Panel: https://campeonato-full.vercel.app/delegado",
-    "",
-    "Guarda estos datos para revisar tu plantilla, horarios y observaciones."
-  ].join("\n");
-
-  return `mailto:${encodeURIComponent(receipt.delegateEmail)}?subject=${encodeURIComponent(
-    subject
-  )}&body=${encodeURIComponent(body)}`;
 }
