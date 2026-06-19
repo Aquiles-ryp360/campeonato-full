@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { Download, FileText, Plus, Smartphone, Trash2, UserPlus } from "lucide-react";
+import { Download, FileText, Mail, Plus, Smartphone, Trash2, UserPlus } from "lucide-react";
 import type { jsPDF as JsPDFDocument } from "jspdf";
 import { toast } from "sonner";
 import { events } from "@/lib/mock-data";
@@ -44,6 +44,7 @@ interface RegistrationReceipt {
   teamName: string;
   delegateName: string;
   delegatePhone: string;
+  delegateEmail: string;
   paymentMethod: "yape" | "plin";
   registrationCode: string;
   delegateCredentials: DelegateCredentials;
@@ -57,6 +58,7 @@ export function RegistrationForm() {
   const [teamName, setTeamName] = useState("");
   const [delegateName, setDelegateName] = useState("");
   const [delegatePhone, setDelegatePhone] = useState("");
+  const [delegateEmail, setDelegateEmail] = useState("");
   const [paymentMethod, setPaymentMethod] = useState<"yape" | "plin">("yape");
   const [registrationCode, setRegistrationCode] = useState("");
   const [lastReceipt, setLastReceipt] = useState<RegistrationReceipt | null>(null);
@@ -98,8 +100,8 @@ export function RegistrationForm() {
       (player) => player.firstName && player.lastName && player.dni && player.studentCode
     );
 
-    if (!teamName || !delegateName || !delegatePhone || !registrationCode) {
-      toast.error("Completa equipo, delegado y codigo unico de inscripcion.");
+    if (!teamName || !delegateName || !delegatePhone || !delegateEmail || !registrationCode) {
+      toast.error("Completa equipo, delegado, correo y codigo unico de inscripcion.");
       return;
     }
 
@@ -121,6 +123,7 @@ export function RegistrationForm() {
       teamName,
       delegateName,
       delegatePhone,
+      delegateEmail,
       paymentMethod,
       registrationCode,
       delegateCredentials,
@@ -184,6 +187,15 @@ export function RegistrationForm() {
                 value={delegatePhone}
                 onChange={(changeEvent) => setDelegatePhone(changeEvent.target.value)}
                 placeholder="999 999 999"
+              />
+            </Field>
+            <Field label="Correo del delegado">
+              <input
+                className={inputClass}
+                value={delegateEmail}
+                onChange={(changeEvent) => setDelegateEmail(changeEvent.target.value)}
+                placeholder="delegado@correo.com"
+                type="email"
               />
             </Field>
             <Field label="Codigo unico">
@@ -386,6 +398,14 @@ export function RegistrationForm() {
               <Download className="h-4 w-4" />
               Descargar PDF
             </Button>
+            <Button
+              href={createCredentialsEmailHref(lastReceipt)}
+              variant="secondary"
+              className="w-full sm:w-auto"
+            >
+              <Mail className="h-4 w-4" />
+              Enviar por correo
+            </Button>
           </div>
         </Card>
       ) : null}
@@ -440,7 +460,8 @@ async function generateRegistrationReceiptPdf(receipt: RegistrationReceipt) {
   drawInfoBox(doc, leftX, boxY, boxWidth, "Equipo", [
     ["Nombre", receipt.teamName],
     ["Delegado", receipt.delegateName],
-    ["Celular", receipt.delegatePhone]
+    ["Celular", receipt.delegatePhone],
+    ["Correo", receipt.delegateEmail]
   ]);
 
   drawInfoBox(doc, rightX, boxY, boxWidth, "Inscripcion", [
@@ -449,13 +470,13 @@ async function generateRegistrationReceiptPdf(receipt: RegistrationReceipt) {
     ["Cierre", formatDateTime(receipt.event.registrationOpenUntil)]
   ]);
 
-  drawInfoBox(doc, margin, 94, contentWidth, "Acceso del delegado", [
+  drawInfoBox(doc, margin, 102, contentWidth, "Acceso del delegado", [
     ["Usuario", receipt.delegateCredentials.username],
     ["Contrasena", receipt.delegateCredentials.password],
     ["Panel", "/delegado"]
   ]);
 
-  const tableY = 128;
+  const tableY = 136;
   doc.setFont("helvetica", "bold");
   doc.setFontSize(11);
   doc.text("Plantilla registrada", margin, tableY);
@@ -495,7 +516,7 @@ async function generateRegistrationReceiptPdf(receipt: RegistrationReceipt) {
     doc.text(truncateText(doc, player.enrollmentFile || "-", columns[6].width), columns[6].x, rowY);
   });
 
-  const footerY = 250;
+  const footerY = 266;
   doc.setDrawColor(205, 213, 209);
   doc.line(margin, footerY, margin + 72, footerY);
   doc.line(pageWidth - margin - 72, footerY, pageWidth - margin, footerY);
@@ -509,7 +530,7 @@ async function generateRegistrationReceiptPdf(receipt: RegistrationReceipt) {
   doc.text(
     "Esta constancia resume la inscripcion registrada por el delegado. La validacion final queda a cargo de administracion.",
     margin,
-    278,
+    285,
     { maxWidth: contentWidth }
   );
 
@@ -526,9 +547,10 @@ function drawInfoBox(
   title: string,
   rows: Array<[string, string]>
 ) {
+  const boxHeight = 16 + rows.length * 5;
   doc.setDrawColor(221, 228, 224);
   doc.setFillColor(248, 250, 249);
-  doc.roundedRect(x, y, width, 30, 2, 2, "FD");
+  doc.roundedRect(x, y, width, boxHeight, 2, 2, "FD");
   doc.setFont("helvetica", "bold");
   doc.setFontSize(9);
   doc.setTextColor(47, 111, 78);
@@ -564,4 +586,24 @@ function slugify(value: string) {
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/^-+|-+$/g, "")
     .slice(0, 40);
+}
+
+function createCredentialsEmailHref(receipt: RegistrationReceipt) {
+  const subject = `Acceso delegado - ${receipt.teamName}`;
+  const body = [
+    `Hola ${receipt.delegateName},`,
+    "",
+    "Estos son tus accesos al panel de delegado del campeonato interno de Mecanica Electrica organizado por octavo semestre:",
+    "",
+    `Equipo: ${receipt.teamName}`,
+    `Usuario: ${receipt.delegateCredentials.username}`,
+    `Contrasena: ${receipt.delegateCredentials.password}`,
+    "Panel: https://campeonato-full.vercel.app/delegado",
+    "",
+    "Guarda estos datos para revisar tu plantilla, horarios y observaciones."
+  ].join("\n");
+
+  return `mailto:${encodeURIComponent(receipt.delegateEmail)}?subject=${encodeURIComponent(
+    subject
+  )}&body=${encodeURIComponent(body)}`;
 }

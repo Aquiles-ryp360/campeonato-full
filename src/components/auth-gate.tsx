@@ -1,8 +1,9 @@
 "use client";
 
+import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
-import { LockKeyhole, LogOut, ShieldCheck } from "lucide-react";
+import { LayoutDashboard, LockKeyhole, LogIn, LogOut, ShieldCheck } from "lucide-react";
 import type { AuthRole, AuthSession } from "@/lib/auth";
 import { canAccess, clearStoredSession, getStoredSession } from "@/lib/auth";
 import { Button, Card } from "./ui";
@@ -63,24 +64,91 @@ export function SessionActions() {
   const [session, setSession] = useState<AuthSession | null>(null);
 
   useEffect(() => {
-    setSession(getStoredSession());
+    function syncSession() {
+      setSession(getStoredSession());
+    }
+
+    syncSession();
+    window.addEventListener("storage", syncSession);
+    window.addEventListener("focus", syncSession);
+
+    return () => {
+      window.removeEventListener("storage", syncSession);
+      window.removeEventListener("focus", syncSession);
+    };
   }, []);
 
-  if (!session) return null;
+  if (!session) {
+    return (
+      <Link
+        href="/login"
+        className="inline-flex min-h-10 items-center justify-center gap-2 rounded-md bg-ink px-4 py-2 text-sm font-semibold text-white transition hover:bg-ink/90"
+      >
+        <LogIn className="h-4 w-4" />
+        Login
+      </Link>
+    );
+  }
+
+  const panelHref = session.role === "admin" ? "/admin" : "/delegado";
+  const panelLabel = session.role === "admin" ? "Admin" : "Mi equipo";
+  const PanelIcon = session.role === "admin" ? LayoutDashboard : ShieldCheck;
 
   return (
-    <button
-      type="button"
-      onClick={() => {
-        clearStoredSession();
-        setSession(null);
-        window.location.href = "/";
-      }}
-      className="inline-flex min-h-10 items-center justify-center gap-2 rounded-md bg-mist px-4 py-2 text-sm font-semibold text-ink transition hover:bg-white"
-      title={`${session.displayName} (${session.role})`}
+    <>
+      <Link
+        href={panelHref}
+        className="inline-flex min-h-10 items-center justify-center gap-2 rounded-md bg-field px-4 py-2 text-sm font-semibold text-white transition hover:bg-field/90"
+        title={`${session.displayName} (${session.role})`}
+      >
+        <PanelIcon className="h-4 w-4" />
+        {panelLabel}
+      </Link>
+      <button
+        type="button"
+        onClick={() => {
+          clearStoredSession();
+          setSession(null);
+          window.location.href = "/";
+        }}
+        className="inline-flex min-h-10 items-center justify-center gap-2 rounded-md bg-mist px-4 py-2 text-sm font-semibold text-ink transition hover:bg-white"
+      >
+        <LogOut className="h-4 w-4" />
+        Salir
+      </button>
+    </>
+  );
+}
+
+export function MobileSessionAction() {
+  const [session, setSession] = useState<AuthSession | null>(null);
+
+  useEffect(() => {
+    function syncSession() {
+      setSession(getStoredSession());
+    }
+
+    syncSession();
+    window.addEventListener("storage", syncSession);
+    window.addEventListener("focus", syncSession);
+
+    return () => {
+      window.removeEventListener("storage", syncSession);
+      window.removeEventListener("focus", syncSession);
+    };
+  }, []);
+
+  const href = session ? (session.role === "admin" ? "/admin" : "/delegado") : "/login";
+  const label = session ? (session.role === "admin" ? "Admin" : "Equipo") : "Login";
+  const Icon = session ? (session.role === "admin" ? LayoutDashboard : ShieldCheck) : LogIn;
+
+  return (
+    <Link
+      href={href}
+      className="flex flex-col items-center gap-1 px-2 py-2 text-[11px] font-semibold text-ink/70"
     >
-      <LogOut className="h-4 w-4" />
-      Salir
-    </button>
+      <Icon className="h-4 w-4" />
+      {label}
+    </Link>
   );
 }

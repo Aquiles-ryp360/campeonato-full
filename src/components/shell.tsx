@@ -4,13 +4,12 @@ import {
   AudioLines,
   ClipboardList,
   LayoutDashboard,
-  LogIn,
   ShieldCheck,
   Trophy,
   UserPlus,
   UsersRound
 } from "lucide-react";
-import { AuthGate, SessionActions } from "./auth-gate";
+import { AuthGate, MobileSessionAction, SessionActions } from "./auth-gate";
 
 type ShellNavItem = {
   href: string;
@@ -21,8 +20,7 @@ type ShellNavItem = {
 const publicNav: ShellNavItem[] = [
   { href: "/", label: "Fixture", icon: Trophy },
   { href: "/registro", label: "Inscripciones", icon: UserPlus },
-  { href: "/equipos", label: "Equipos", icon: UsersRound },
-  { href: "/login", label: "Login", icon: LogIn }
+  { href: "/equipos", label: "Equipos", icon: UsersRound }
 ];
 
 const adminNav: ShellNavItem[] = [
@@ -79,15 +77,24 @@ function Header({
   );
 }
 
-function MobileNav({ nav }: { nav: ShellNavItem[] }) {
+function MobileNav({
+  nav,
+  showSessionAction
+}: {
+  nav: ShellNavItem[];
+  showSessionAction: boolean;
+}) {
+  const visibleNav = showSessionAction ? nav.slice(0, 4) : nav.slice(0, 5);
+  const columnCount = Math.min(5, visibleNav.length + (showSessionAction ? 1 : 0));
+
   return (
     <nav className="fixed inset-x-0 bottom-0 z-40 border-t border-ink/10 bg-white md:hidden">
       <div
         className={`grid ${
-          nav.length >= 5 ? "grid-cols-5" : nav.length === 4 ? "grid-cols-4" : "grid-cols-3"
+          columnCount >= 5 ? "grid-cols-5" : columnCount === 4 ? "grid-cols-4" : "grid-cols-3"
         }`}
       >
-        {nav.slice(0, 5).map((item) => {
+        {visibleNav.map((item) => {
           const Icon = item.icon;
           return (
             <Link
@@ -100,6 +107,7 @@ function MobileNav({ nav }: { nav: ShellNavItem[] }) {
             </Link>
           );
         })}
+        {showSessionAction ? <MobileSessionAction /> : null}
       </div>
     </nav>
   );
@@ -108,24 +116,30 @@ function MobileNav({ nav }: { nav: ShellNavItem[] }) {
 function ShellFrame({
   children,
   nav,
-  eyebrow
+  eyebrow,
+  showMobileSessionAction = false
 }: {
   children: ReactNode;
   nav: ShellNavItem[];
   eyebrow: string;
+  showMobileSessionAction?: boolean;
 }) {
   return (
     <div className="min-h-screen">
       <Header nav={nav} eyebrow={eyebrow} />
       <main className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:py-8">{children}</main>
-      <MobileNav nav={nav} />
+      <MobileNav nav={nav} showSessionAction={showMobileSessionAction} />
     </div>
   );
 }
 
 export function PublicShell({ children }: { children: ReactNode }) {
   return (
-    <ShellFrame nav={publicNav} eyebrow="Fixture, inscripciones y equipos">
+    <ShellFrame
+      nav={publicNav}
+      eyebrow="Fixture, inscripciones y equipos"
+      showMobileSessionAction
+    >
       {children}
     </ShellFrame>
   );
