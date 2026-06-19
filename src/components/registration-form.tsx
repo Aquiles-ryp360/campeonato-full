@@ -1,11 +1,12 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { Plus, Smartphone, Trash2, UserPlus } from "lucide-react";
+import { Download, FileText, Plus, Smartphone, Trash2, UserPlus } from "lucide-react";
+import type { jsPDF as JsPDFDocument } from "jspdf";
 import { toast } from "sonner";
 import { events } from "@/lib/mock-data";
-import type { PlayerRole } from "@/lib/types";
-import { formatDateTime, formatMoney, sportLabel } from "@/lib/utils";
+import type { PlayerRole, TournamentEvent } from "@/lib/types";
+import { formatDateTime, formatMoney, playerRoleLabel, sportLabel } from "@/lib/utils";
 import { Badge, Button, Card, Field, SectionHeader, inputClass } from "./ui";
 
 interface PlayerFormRow {
@@ -33,6 +34,17 @@ const playerRoleOptions: Array<{ value: PlayerRole; label: string }> = [
   { value: "substitute", label: "Suplente" }
 ];
 
+interface RegistrationReceipt {
+  event: TournamentEvent;
+  teamName: string;
+  delegateName: string;
+  delegatePhone: string;
+  paymentMethod: "yape" | "plin";
+  registrationCode: string;
+  players: PlayerFormRow[];
+  generatedAt: string;
+}
+
 export function RegistrationForm() {
   const openEvents = events.filter((event) => event.status === "registration" || event.status === "draft");
   const [eventId, setEventId] = useState(openEvents[0]?.id ?? events[0]?.id ?? "");
@@ -41,6 +53,7 @@ export function RegistrationForm() {
   const [delegatePhone, setDelegatePhone] = useState("");
   const [paymentMethod, setPaymentMethod] = useState<"yape" | "plin">("yape");
   const [registrationCode, setRegistrationCode] = useState("");
+  const [lastReceipt, setLastReceipt] = useState<RegistrationReceipt | null>(null);
   const [players, setPlayers] = useState<PlayerFormRow[]>([
     { ...emptyPlayer },
     { ...emptyPlayer },
@@ -64,7 +77,16 @@ export function RegistrationForm() {
     setPlayers((current) => current.filter((_, playerIndex) => playerIndex !== index));
   }
 
-  function submitRegistration(eventSubmit: React.FormEvent<HTMLFormElement>) {
+  function addPlayer() {
+    if (players.length >= event.maxPlayers) {
+      toast.error(`Este campeonato permite maximo ${event.maxPlayers} jugadores.`);
+      return;
+    }
+
+    setPlayers((current) => [...current, { ...emptyPlayer }]);
+  }
+
+  async function submitRegistration(eventSubmit: React.FormEvent<HTMLFormElement>) {
     eventSubmit.preventDefault();
     const completedPlayers = players.filter(
       (player) => player.firstName && player.lastName && player.dni && player.studentCode
@@ -80,7 +102,30 @@ export function RegistrationForm() {
       return;
     }
 
-    toast.success("Inscripcion registrada. El codigo queda marcado como usado.");
+    if (completedPlayers.length > event.maxPlayers) {
+      toast.error(`Este campeonato permite maximo ${event.maxPlayers} jugadores.`);
+      return;
+    }
+
+    const receipt: RegistrationReceipt = {
+      event,
+      teamName,
+      delegateName,
+      delegatePhone,
+      paymentMethod,
+      registrationCode,
+      players: completedPlayers,
+      generatedAt: new Date().toISOString()
+    };
+
+    setLastReceipt(receipt);
+
+    try {
+      await generateRegistrationReceiptPdf(receipt);
+      toast.success("Inscripcion registrada. Se descargo la constancia PDF.");
+    } catch {
+      toast.error("La inscripcion quedo lista, pero no se pudo descargar el PDF.");
+    }
   }
 
   return (
@@ -194,7 +239,7 @@ export function RegistrationForm() {
             <Button
               type="button"
               variant="secondary"
-              onClick={() => setPlayers((current) => [...current, { ...emptyPlayer }])}
+              onClick={addPlayer}
             >
               <Plus className="h-4 w-4" />
               Agregar jugador
@@ -294,6 +339,37 @@ export function RegistrationForm() {
         </div>
       </Card>
 
+      {lastReceipt ? (
+        <Card className="p-5">
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex items-start gap-3">
+              <div className="grid h-11 w-11 shrink-0 place-items-center rounded-md bg-field/10 text-field">
+                <FileText className="h-5 w-5" />
+              </div>
+              <div>
+                <p className="font-bold text-ink">Constancia generada</p>
+                <p className="mt-1 text-sm text-ink/60">
+                  PDF A4 con datos del equipo, delegado, codigo y plantilla.
+                </p>
+              </div>
+            </div>
+            <Button
+              type="button"
+              variant="secondary"
+              onClick={() =>
+                void generateRegistrationReceiptPdf(lastReceipt).catch(() =>
+                  toast.error("No se pudo descargar la constancia PDF.")
+                )
+              }
+              className="w-full sm:w-auto"
+            >
+              <Download className="h-4 w-4" />
+              Descargar PDF
+            </Button>
+          </div>
+        </Card>
+      ) : null}
+
       <div className="flex justify-end">
         <Button type="submit" className="w-full sm:w-auto">
           <UserPlus className="h-4 w-4" />
@@ -302,4 +378,164 @@ export function RegistrationForm() {
       </div>
     </form>
   );
+}
+
+async function generateRegistrationReceiptPdf(receipt: RegistrationReceipt) {
+  const { jsPDF } = await import("jspdf");
+  const doc = new jsPDF({ unit: "mm", format: "a4", orientation: "portrait" });
+  const pageWidth = doc.internal.pageSize.getWidth();
+  const margin = 14;
+  const contentWidth = pageWidth - margin * 2;
+  const generatedDate = formatDateTime(receipt.generatedAt);
+
+  doc.setFillColor(23, 33, 31);
+  doc.rect(0, 0, pageWidth, 33, "F");
+  doc.setTextColor(255, 255, 255);
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(16);
+  doc.text("Constancia de inscripcion deportiva", margin, 15);
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(9);
+  doc.text("Campeonato Carreras", margin, 22);
+  doc.text(`Generado: ${generatedDate}`, margin, 27);
+
+  doc.setTextColor(23, 33, 31);
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(12);
+  doc.text(receipt.event.name, margin, 45);
+
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(9);
+  doc.text(
+    `${sportLabel(receipt.event.sport)} · ${receipt.event.category} · ${formatMoney(receipt.event.registrationFee)}`,
+    margin,
+    51
+  );
+
+  const leftX = margin;
+  const rightX = margin + contentWidth / 2 + 4;
+  const boxY = 60;
+  const boxWidth = contentWidth / 2 - 3;
+
+  drawInfoBox(doc, leftX, boxY, boxWidth, "Equipo", [
+    ["Nombre", receipt.teamName],
+    ["Delegado", receipt.delegateName],
+    ["Celular", receipt.delegatePhone]
+  ]);
+
+  drawInfoBox(doc, rightX, boxY, boxWidth, "Inscripcion", [
+    ["Codigo", receipt.registrationCode],
+    ["Pago", receipt.paymentMethod.toUpperCase()],
+    ["Cierre", formatDateTime(receipt.event.registrationOpenUntil)]
+  ]);
+
+  const tableY = 100;
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(11);
+  doc.text("Plantilla registrada", margin, tableY);
+
+  const columns = [
+    { label: "#", x: margin, width: 8 },
+    { label: "Jugador", x: margin + 9, width: 52 },
+    { label: "DNI", x: margin + 62, width: 24 },
+    { label: "Codigo", x: margin + 87, width: 28 },
+    { label: "Rol", x: margin + 116, width: 22 },
+    { label: "Ciclo", x: margin + 139, width: 22 },
+    { label: "Ficha", x: margin + 162, width: 20 }
+  ];
+
+  let rowY = tableY + 8;
+  doc.setFillColor(238, 243, 240);
+  doc.rect(margin, rowY - 5, contentWidth, 8, "F");
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(8);
+  columns.forEach((column) => doc.text(column.label, column.x, rowY));
+
+  doc.setFont("helvetica", "normal");
+  receipt.players.forEach((player, index) => {
+    rowY += 9;
+    if (index % 2 === 0) {
+      doc.setFillColor(248, 250, 249);
+      doc.rect(margin, rowY - 5.5, contentWidth, 8.5, "F");
+    }
+
+    const fullName = `${player.firstName} ${player.lastName}`.trim();
+    doc.text(String(index + 1), columns[0].x, rowY);
+    doc.text(truncateText(doc, fullName, columns[1].width), columns[1].x, rowY);
+    doc.text(truncateText(doc, player.dni, columns[2].width), columns[2].x, rowY);
+    doc.text(truncateText(doc, player.studentCode, columns[3].width), columns[3].x, rowY);
+    doc.text(playerRoleLabel(player.lineupRole), columns[4].x, rowY);
+    doc.text(truncateText(doc, player.semester || "-", columns[5].width), columns[5].x, rowY);
+    doc.text(truncateText(doc, player.enrollmentFile || "-", columns[6].width), columns[6].x, rowY);
+  });
+
+  const footerY = 250;
+  doc.setDrawColor(205, 213, 209);
+  doc.line(margin, footerY, margin + 72, footerY);
+  doc.line(pageWidth - margin - 72, footerY, pageWidth - margin, footerY);
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(9);
+  doc.text("Firma del delegado", margin + 19, footerY + 6);
+  doc.text("Validacion del organizador", pageWidth - margin - 61, footerY + 6);
+
+  doc.setFontSize(8);
+  doc.setTextColor(95, 108, 103);
+  doc.text(
+    "Esta constancia resume la inscripcion registrada por el delegado. La validacion final queda a cargo de administracion.",
+    margin,
+    278,
+    { maxWidth: contentWidth }
+  );
+
+  const teamSlug = slugify(receipt.teamName) || "equipo";
+  const codeSlug = slugify(receipt.registrationCode) || "codigo";
+  doc.save(`constancia-${teamSlug}-${codeSlug}.pdf`);
+}
+
+function drawInfoBox(
+  doc: JsPDFDocument,
+  x: number,
+  y: number,
+  width: number,
+  title: string,
+  rows: Array<[string, string]>
+) {
+  doc.setDrawColor(221, 228, 224);
+  doc.setFillColor(248, 250, 249);
+  doc.roundedRect(x, y, width, 30, 2, 2, "FD");
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(9);
+  doc.setTextColor(47, 111, 78);
+  doc.text(title, x + 4, y + 7);
+
+  doc.setFont("helvetica", "normal");
+  doc.setTextColor(23, 33, 31);
+  rows.forEach(([label, value], index) => {
+    const rowY = y + 14 + index * 5;
+    doc.setFont("helvetica", "bold");
+    doc.text(`${label}:`, x + 4, rowY);
+    doc.setFont("helvetica", "normal");
+    doc.text(truncateText(doc, value, width - 30), x + 25, rowY);
+  });
+}
+
+function truncateText(doc: JsPDFDocument, value: string, maxWidth: number) {
+  if (doc.getTextWidth(value) <= maxWidth) return value;
+
+  let output = value;
+  while (output.length > 1 && doc.getTextWidth(`${output}...`) > maxWidth) {
+    output = output.slice(0, -1);
+  }
+
+  return `${output}...`;
+}
+
+function slugify(value: string) {
+  return value
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .slice(0, 40);
 }
