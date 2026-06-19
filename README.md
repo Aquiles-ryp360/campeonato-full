@@ -1,86 +1,42 @@
-# Campeonato - Plataforma de Gestión de Campeonatos de Fútbol
+# Campeonato Carreras
 
-Sistema integral para la administración de campeonatos de fútbol, desde la inscripción hasta la finalización del torneo.
+V0 nueva para gestionar campeonatos de carrera con Next.js, Supabase y despliegue en Vercel.
 
-## 🚀 Características
+La plantilla anterior se guardo en `referencia-1/`.
 
-- **Gestión de Campeonatos**: Creación, edición, categorías, temporadas, reglamentos
-- **Gestión de Equipos**: Registro, escudos, colores, historial
-- **Gestión de Jugadores**: Datos personales, fotografía, posición, estado
-- **Carnet Digital**: Generación automática con QR, PDF descargable
-- **Fixture Inteligente**: 7 tipos de torneo con generación automática
-- **Gestión de Canchas**: Horarios, disponibilidad, capacidad
-- **Tabla de Posiciones**: Cálculo automático con todos los indicadores
-- **Sanciones**: Control disciplinario automatizado
-- **Reportes**: PDF, Excel, estadísticas
+## Stack
 
-## 🛠️ Stack Tecnológico
+- Next.js App Router
+- Supabase Auth, Postgres, Storage y RLS
+- Tailwind CSS
+- Vercel
 
-| Capa | Tecnología |
-|------|-----------|
-| Frontend | Next.js 14, TypeScript, TailwindCSS |
-| Backend | NestJS, TypeScript |
-| Base de Datos | PostgreSQL |
-| ORM | Prisma |
-| Autenticación | JWT |
-| Contenedores | Docker |
-| CI/CD | GitHub Actions |
-
-## 📋 Prerrequisitos
-
-- Node.js >= 18.x
-- Docker y Docker Compose
-- PostgreSQL 15+
-- npm o yarn
-
-## 🔧 Instalación
+## Arranque local
 
 ```bash
-# Clonar el repositorio
-git clone https://github.com/gaelrenzo/Campeonato.git
-cd Campeonato
-
-# Configurar variables de entorno
-cp .env.example .env
-
-# Iniciar con Docker
-docker-compose up -d
-
-# O instalación manual
-cd backend && npm install
-cd ../frontend && npm install
-cd ../database && npx prisma migrate dev
+npm install
+npm run dev
 ```
 
-## 🏗️ Estructura del Proyecto
+Sin variables de Supabase, la app usa datos mock para poder revisar la experiencia.
 
-```
-Campeonato/
-├── frontend/          # Aplicación Next.js
-├── backend/           # API NestJS
-├── database/          # Esquema Prisma y migraciones
-├── docs/              # Documentación
-│   ├── architecture/  # Diagramas de arquitectura
-│   ├── api/           # Documentación de API
-│   ├── roadmap/       # Roadmap y MVP
-│   ├── mockups/       # Diseños de pantalla
-│   └── use-cases/     # Casos de uso
-├── scripts/           # Scripts de utilidad
-└── .github/           # CI/CD y templates
+## Variables
+
+Copia `.env.example` a `.env.local` y completa:
+
+```bash
+NEXT_PUBLIC_SUPABASE_URL=
+NEXT_PUBLIC_SUPABASE_ANON_KEY=
+SUPABASE_SERVICE_ROLE_KEY=
 ```
 
-## 📚 Documentación
+## Base de datos
 
-- [Arquitectura del Sistema](docs/architecture/README.md)
-- [API REST](docs/api/README.md)
-- [Roadmap y MVP](docs/roadmap/README.md)
-- [Casos de Uso](docs/use-cases/README.md)
-- [Diagrama de Base de Datos](database/README.md)
+La migracion inicial esta en `supabase/migrations/001_initial_schema.sql`.
 
-## 🤝 Contribución
+## Flujos base
 
-Ver [CONTRIBUTING.md](CONTRIBUTING.md) para guía de contribución.
-
-## 📄 Licencia
-
-MIT
+- Publico: fixture, tabla y resultados.
+- Equipo: inscripcion con pago Yape/Plin, jugadores y estado.
+- Admin: crear eventos, configurar formato, aprobar/observar inscripciones, cargar resultados.
+- IA: audio de resultado, transcripcion, JSON revisable y boton para publicar.
