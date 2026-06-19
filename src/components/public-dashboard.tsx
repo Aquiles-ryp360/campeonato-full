@@ -290,8 +290,18 @@ function KnockoutBracket({
   const bracket = buildBracket(eventTeams, eventMatches);
 
   return (
-    <div className="overflow-x-auto bg-[#aa1d4b] p-4 text-white sm:p-5">
-      <div className="min-w-[1120px] rounded-lg border border-white/12 bg-[#c02657] p-4 shadow-inner">
+    <div className="bg-[#aa1d4b] text-white">
+      <MobileKnockoutBracket
+        bracket={bracket}
+        eventTeams={eventTeams}
+        selectedMatchId={selectedMatchId}
+        selectedTeamId={selectedTeamId}
+        onSelectMatch={onSelectMatch}
+        onSelectTeam={onSelectTeam}
+      />
+
+      <div className="hidden overflow-x-auto p-4 sm:p-5 lg:block">
+        <div className="min-w-[1120px] rounded-lg border border-white/12 bg-[#c02657] p-4 shadow-inner">
         <div className="mb-4 grid grid-cols-[150px_150px_150px_1fr_150px_150px_150px] items-center gap-4 text-center text-[11px] font-black uppercase tracking-wide text-white/84">
           <BracketStageLabel>Octavos</BracketStageLabel>
           <BracketStageLabel>Cuartos</BracketStageLabel>
@@ -420,7 +430,134 @@ function KnockoutBracket({
           </BracketColumn>
         </div>
       </div>
+      </div>
     </div>
+  );
+}
+
+function MobileKnockoutBracket({
+  bracket,
+  eventTeams,
+  selectedMatchId,
+  selectedTeamId,
+  onSelectMatch,
+  onSelectTeam
+}: {
+  bracket: ReturnType<typeof buildBracket>;
+  eventTeams: Team[];
+  selectedMatchId?: string;
+  selectedTeamId?: string;
+  onSelectMatch: (match: Match) => void;
+  onSelectTeam: (team: Team) => void;
+}) {
+  return (
+    <div className="space-y-4 p-3 sm:p-4 lg:hidden">
+      <MobileBracketStage title="Octavos" count={8}>
+        {[...bracket.leftOctavos, ...bracket.rightOctavos].map((slot) => (
+          <BracketMatchCard
+            key={slot.id}
+            slot={slot}
+            teams={eventTeams}
+            selectedMatchId={selectedMatchId}
+            selectedTeamId={selectedTeamId}
+            onSelectMatch={onSelectMatch}
+            onSelectTeam={onSelectTeam}
+          />
+        ))}
+      </MobileBracketStage>
+
+      <MobileBracketStage title="Cuartos" count={4}>
+        {[...bracket.leftCuartos, ...bracket.rightCuartos].map((slot) => (
+          <BracketMatchCard
+            key={slot.id}
+            slot={slot}
+            teams={eventTeams}
+            selectedMatchId={selectedMatchId}
+            selectedTeamId={selectedTeamId}
+            onSelectMatch={onSelectMatch}
+            onSelectTeam={onSelectTeam}
+          />
+        ))}
+      </MobileBracketStage>
+
+      <MobileBracketStage title="Semifinales" count={2}>
+        {[bracket.leftSemi, bracket.rightSemi].map((slot) => (
+          <BracketMatchCard
+            key={slot.id}
+            slot={slot}
+            teams={eventTeams}
+            selectedMatchId={selectedMatchId}
+            selectedTeamId={selectedTeamId}
+            onSelectMatch={onSelectMatch}
+            onSelectTeam={onSelectTeam}
+          />
+        ))}
+      </MobileBracketStage>
+
+      <div className="grid gap-4 sm:grid-cols-2">
+        <div className="rounded-lg border border-white/14 bg-white/8 p-3">
+          <div className="mb-3 flex items-center justify-between gap-3">
+            <div className="flex items-center gap-2">
+              <span className="grid h-9 w-9 place-items-center rounded-full bg-amber-300 text-[#7c1236]">
+                <Trophy className="h-5 w-5" />
+              </span>
+              <span className="text-xs font-black uppercase tracking-wide">Final</span>
+            </div>
+          </div>
+          <BracketMatchCard
+            slot={bracket.final}
+            teams={eventTeams}
+            selectedMatchId={selectedMatchId}
+            selectedTeamId={selectedTeamId}
+            emphasis="final"
+            onSelectMatch={onSelectMatch}
+            onSelectTeam={onSelectTeam}
+          />
+        </div>
+
+        <div className="rounded-lg border border-white/14 bg-white/8 p-3">
+          <div className="mb-3 flex items-center justify-between gap-3">
+            <div className="flex items-center gap-2">
+              <span className="grid h-9 w-9 place-items-center rounded-full bg-[#17211f] text-amber-200">
+                <Medal className="h-5 w-5" />
+              </span>
+              <span className="text-xs font-black uppercase tracking-wide">Tercer lugar</span>
+            </div>
+          </div>
+          <BracketMatchCard
+            slot={bracket.thirdPlace}
+            teams={eventTeams}
+            selectedMatchId={selectedMatchId}
+            selectedTeamId={selectedTeamId}
+            emphasis="third"
+            onSelectMatch={onSelectMatch}
+            onSelectTeam={onSelectTeam}
+          />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function MobileBracketStage({
+  title,
+  count,
+  children
+}: {
+  title: string;
+  count: number;
+  children: React.ReactNode;
+}) {
+  return (
+    <section className="rounded-lg border border-white/14 bg-white/8 p-3">
+      <div className="mb-3 flex items-center justify-between gap-3">
+        <h3 className="text-xs font-black uppercase tracking-wide">{title}</h3>
+        <span className="rounded bg-white/12 px-2 py-1 text-[10px] font-bold text-white/78">
+          {count} cruces
+        </span>
+      </div>
+      <div className="grid gap-3 sm:grid-cols-2">{children}</div>
+    </section>
   );
 }
 
