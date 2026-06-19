@@ -65,7 +65,7 @@ export async function POST(request: Request) {
   const parsed = registrationSchema.safeParse(body);
 
   if (!parsed.success) {
-    return jsonError(parsed.error.errors[0]?.message ?? "Datos de inscripcion invalidos.", 400);
+    return jsonError(formatValidationError(parsed.error), 400);
   }
 
   let supabase: ReturnType<typeof createSupabaseAdminClient>;
@@ -350,6 +350,20 @@ async function cleanupRegistration(
 
 function jsonError(error: string, status: number) {
   return NextResponse.json({ ok: false, error }, { status });
+}
+
+function formatValidationError(error: z.ZodError) {
+  const issue = error.errors[0];
+
+  if (!issue) {
+    return "Datos de inscripcion invalidos.";
+  }
+
+  if (issue.code === "invalid_type" && issue.received === "undefined") {
+    return "Faltan datos obligatorios de la inscripcion.";
+  }
+
+  return issue.message;
 }
 
 function isUuid(value: string) {
