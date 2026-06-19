@@ -5,6 +5,11 @@ import { Download, FileText, Plus, Smartphone, Trash2, UserPlus } from "lucide-r
 import type { jsPDF as JsPDFDocument } from "jspdf";
 import { toast } from "sonner";
 import { events } from "@/lib/mock-data";
+import {
+  generateDelegateCredentials,
+  rememberGeneratedDelegateCredentials,
+  type DelegateCredentials
+} from "@/lib/auth";
 import type { PlayerRole, TournamentEvent } from "@/lib/types";
 import { formatDateTime, formatMoney, playerRoleLabel, sportLabel } from "@/lib/utils";
 import { Badge, Button, Card, Field, SectionHeader, inputClass } from "./ui";
@@ -41,6 +46,7 @@ interface RegistrationReceipt {
   delegatePhone: string;
   paymentMethod: "yape" | "plin";
   registrationCode: string;
+  delegateCredentials: DelegateCredentials;
   players: PlayerFormRow[];
   generatedAt: string;
 }
@@ -107,6 +113,9 @@ export function RegistrationForm() {
       return;
     }
 
+    const delegateCredentials = generateDelegateCredentials(teamName, registrationCode);
+    rememberGeneratedDelegateCredentials(delegateCredentials);
+
     const receipt: RegistrationReceipt = {
       event,
       teamName,
@@ -114,6 +123,7 @@ export function RegistrationForm() {
       delegatePhone,
       paymentMethod,
       registrationCode,
+      delegateCredentials,
       players: completedPlayers,
       generatedAt: new Date().toISOString()
     };
@@ -351,6 +361,16 @@ export function RegistrationForm() {
                 <p className="mt-1 text-sm text-ink/60">
                   PDF A4 con datos del equipo, delegado, codigo y plantilla.
                 </p>
+                <div className="mt-3 grid gap-2 text-sm text-ink/70 sm:grid-cols-2">
+                  <p>
+                    Usuario delegado:{" "}
+                    <strong className="text-ink">{lastReceipt.delegateCredentials.username}</strong>
+                  </p>
+                  <p>
+                    Contrasena:{" "}
+                    <strong className="text-ink">{lastReceipt.delegateCredentials.password}</strong>
+                  </p>
+                </div>
               </div>
             </div>
             <Button
@@ -429,7 +449,13 @@ async function generateRegistrationReceiptPdf(receipt: RegistrationReceipt) {
     ["Cierre", formatDateTime(receipt.event.registrationOpenUntil)]
   ]);
 
-  const tableY = 100;
+  drawInfoBox(doc, margin, 94, contentWidth, "Acceso del delegado", [
+    ["Usuario", receipt.delegateCredentials.username],
+    ["Contrasena", receipt.delegateCredentials.password],
+    ["Panel", "/delegado"]
+  ]);
+
+  const tableY = 128;
   doc.setFont("helvetica", "bold");
   doc.setFontSize(11);
   doc.text("Plantilla registrada", margin, tableY);

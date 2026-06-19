@@ -4,11 +4,13 @@ import {
   AudioLines,
   ClipboardList,
   LayoutDashboard,
+  LogIn,
   ShieldCheck,
   Trophy,
   UserPlus,
   UsersRound
 } from "lucide-react";
+import { AuthGate, SessionActions } from "./auth-gate";
 
 type ShellNavItem = {
   href: string;
@@ -19,7 +21,8 @@ type ShellNavItem = {
 const publicNav: ShellNavItem[] = [
   { href: "/", label: "Fixture", icon: Trophy },
   { href: "/registro", label: "Inscripciones", icon: UserPlus },
-  { href: "/equipos", label: "Equipos", icon: UsersRound }
+  { href: "/equipos", label: "Equipos", icon: UsersRound },
+  { href: "/login", label: "Login", icon: LogIn }
 ];
 
 const adminNav: ShellNavItem[] = [
@@ -69,6 +72,7 @@ function Header({
               </Link>
             );
           })}
+          <SessionActions />
         </nav>
       </div>
     </header>
@@ -78,7 +82,11 @@ function Header({
 function MobileNav({ nav }: { nav: ShellNavItem[] }) {
   return (
     <nav className="fixed inset-x-0 bottom-0 z-40 border-t border-ink/10 bg-white md:hidden">
-      <div className={`grid ${nav.length >= 5 ? "grid-cols-5" : "grid-cols-3"}`}>
+      <div
+        className={`grid ${
+          nav.length >= 5 ? "grid-cols-5" : nav.length === 4 ? "grid-cols-4" : "grid-cols-3"
+        }`}
+      >
         {nav.slice(0, 5).map((item) => {
           const Icon = item.icon;
           return (
@@ -126,7 +134,7 @@ export function PublicShell({ children }: { children: ReactNode }) {
 export function AdminShell({ children }: { children: ReactNode }) {
   return (
     <ShellFrame nav={adminNav} eyebrow="Panel administrador">
-      {children}
+      <AuthGate role="admin">{children}</AuthGate>
     </ShellFrame>
   );
 }
@@ -134,7 +142,7 @@ export function AdminShell({ children }: { children: ReactNode }) {
 export function DelegateShell({ children }: { children: ReactNode }) {
   return (
     <ShellFrame nav={delegateNav} eyebrow="Panel delegado">
-      {children}
+      <AuthGate role="delegate">{children}</AuthGate>
     </ShellFrame>
   );
 }
