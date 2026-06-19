@@ -2,7 +2,7 @@
 
 import { CalendarDays, CreditCard, ShieldCheck, UsersRound } from "lucide-react";
 import { matches, players, teams } from "@/lib/mock-data";
-import { formatDateTime, getTeamName, teamStatusLabel } from "@/lib/utils";
+import { formatDateTime, getTeamName, playerRoleLabel, teamStatusLabel } from "@/lib/utils";
 import { Badge, Card, Metric, SectionHeader } from "./ui";
 
 export function TeamPortal() {
@@ -63,6 +63,7 @@ export function TeamPortal() {
                   <th className="px-5 py-3">Jugador</th>
                   <th className="px-3 py-3">DNI</th>
                   <th className="px-3 py-3">Codigo</th>
+                  <th className="px-3 py-3">Rol</th>
                   <th className="px-3 py-3">Ficha</th>
                   <th className="px-5 py-3">Ciclo</th>
                 </tr>
@@ -75,6 +76,7 @@ export function TeamPortal() {
                     </td>
                     <td className="px-3 py-3">{player.dni}</td>
                     <td className="px-3 py-3">{player.studentCode}</td>
+                    <td className="px-3 py-3">{playerRoleLabel(player.lineupRole)}</td>
                     <td className="px-3 py-3">{player.enrollmentFile}</td>
                     <td className="px-5 py-3">{player.semester}</td>
                   </tr>

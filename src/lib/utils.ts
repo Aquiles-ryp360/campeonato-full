@@ -2,7 +2,7 @@ import { clsx, type ClassValue } from "clsx";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
 import { twMerge } from "tailwind-merge";
-import type { Match, StandingRow, Team, TournamentEvent } from "./types";
+import type { Match, Player, StandingRow, Team, TournamentEvent } from "./types";
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -55,6 +55,10 @@ export function teamStatusLabel(status: Team["status"]) {
     approved: "Aprobado"
   };
   return labels[status];
+}
+
+export function playerRoleLabel(role: Player["lineupRole"]) {
+  return role === "starter" ? "Titular" : "Suplente";
 }
 
 export function calculateStandings(

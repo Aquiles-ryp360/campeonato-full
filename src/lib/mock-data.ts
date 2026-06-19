@@ -212,7 +212,8 @@ export const players: Player[] = [
     dni: "74561230",
     studentCode: "20221021",
     enrollmentFile: "FM-2026-001",
-    semester: "8vo"
+    semester: "8vo",
+    lineupRole: "starter"
   },
   {
     id: "p-2",
@@ -222,7 +223,8 @@ export const players: Player[] = [
     dni: "73440119",
     studentCode: "20211045",
     enrollmentFile: "FM-2026-002",
-    semester: "9no"
+    semester: "9no",
+    lineupRole: "starter"
   },
   {
     id: "p-3",
@@ -232,7 +234,8 @@ export const players: Player[] = [
     dni: "70221245",
     studentCode: "20212008",
     enrollmentFile: "FM-2026-011",
-    semester: "8vo"
+    semester: "8vo",
+    lineupRole: "substitute"
   }
 ];
 

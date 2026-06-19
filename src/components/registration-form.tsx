@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import { Plus, Smartphone, Trash2, UserPlus } from "lucide-react";
 import { toast } from "sonner";
 import { events } from "@/lib/mock-data";
+import type { PlayerRole } from "@/lib/types";
 import { formatDateTime, formatMoney, sportLabel } from "@/lib/utils";
 import { Badge, Button, Card, Field, SectionHeader, inputClass } from "./ui";
 
@@ -14,6 +15,7 @@ interface PlayerFormRow {
   studentCode: string;
   enrollmentFile: string;
   semester: string;
+  lineupRole: PlayerRole;
 }
 
 const emptyPlayer: PlayerFormRow = {
@@ -22,8 +24,14 @@ const emptyPlayer: PlayerFormRow = {
   dni: "",
   studentCode: "",
   enrollmentFile: "",
-  semester: ""
+  semester: "",
+  lineupRole: "starter"
 };
+
+const playerRoleOptions: Array<{ value: PlayerRole; label: string }> = [
+  { value: "starter", label: "Titular" },
+  { value: "substitute", label: "Suplente" }
+];
 
 export function RegistrationForm() {
   const openEvents = events.filter((event) => event.status === "registration" || event.status === "draft");
@@ -198,7 +206,12 @@ export function RegistrationForm() {
           {players.map((player, index) => (
             <div key={index} className="rounded-md border border-ink/10 bg-white p-4">
               <div className="mb-3 flex items-center justify-between gap-3">
-                <p className="font-semibold text-ink">Jugador {index + 1}</p>
+                <div className="flex items-center gap-2">
+                  <p className="font-semibold text-ink">Jugador {index + 1}</p>
+                  <Badge tone={player.lineupRole === "starter" ? "green" : "blue"}>
+                    {player.lineupRole === "starter" ? "Titular" : "Suplente"}
+                  </Badge>
+                </div>
                 {players.length > 1 ? (
                   <button
                     type="button"
@@ -261,6 +274,20 @@ export function RegistrationForm() {
                   onChange={(changeEvent) => updatePlayer(index, "semester", changeEvent.target.value)}
                   placeholder="Ciclo/Semestre"
                 />
+                <select
+                  className={inputClass}
+                  value={player.lineupRole}
+                  onChange={(changeEvent) =>
+                    updatePlayer(index, "lineupRole", changeEvent.target.value as PlayerRole)
+                  }
+                  aria-label={`Rol del jugador ${index + 1}`}
+                >
+                  {playerRoleOptions.map((option) => (
+                    <option key={option.value} value={option.value}>
+                      {option.label}
+                    </option>
+                  ))}
+                </select>
               </div>
             </div>
           ))}

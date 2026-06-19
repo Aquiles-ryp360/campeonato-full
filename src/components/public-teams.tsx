@@ -4,7 +4,13 @@ import { useState } from "react";
 import { CalendarDays, ShieldCheck, UsersRound } from "lucide-react";
 import { events, matches, players, teams } from "@/lib/mock-data";
 import type { Team } from "@/lib/types";
-import { formatDateTime, getTeamName, sportLabel, teamStatusLabel } from "@/lib/utils";
+import {
+  formatDateTime,
+  getTeamName,
+  playerRoleLabel,
+  sportLabel,
+  teamStatusLabel
+} from "@/lib/utils";
 import { Badge, Card, Metric, SectionHeader } from "./ui";
 
 export function PublicTeams() {
@@ -115,7 +121,7 @@ export function PublicTeams() {
                       .slice(0, 6)
                       .map((player) => (
                         <p key={player.id} className="text-sm text-ink/70">
-                          {player.firstName} {player.lastName} · {player.semester}
+                          {player.firstName} {player.lastName} · {playerRoleLabel(player.lineupRole)} · {player.semester}
                         </p>
                       ))}
                   </div>

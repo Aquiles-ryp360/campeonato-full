@@ -15,6 +15,8 @@ export type TeamStatus = "pending_payment" | "registered" | "observed" | "approv
 
 export type MatchStatus = "scheduled" | "finished" | "walkover" | "postponed";
 
+export type PlayerRole = "starter" | "substitute";
+
 export interface TournamentEvent {
   id: string;
   name: string;
@@ -65,6 +67,7 @@ export interface Player {
   studentCode: string;
   enrollmentFile: string;
   semester: string;
+  lineupRole: PlayerRole;
   photoUrl?: string;
 }
 
