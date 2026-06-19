@@ -6,6 +6,7 @@ import {
   CalendarDays,
   Clock,
   Eye,
+  Medal,
   Trophy,
   UsersRound
 } from "lucide-react";
@@ -104,58 +105,22 @@ export function PublicDashboard() {
         <Metric label="Formato" value={formatLabel(selectedEvent.format)} icon={CalendarDays} tone="green" />
       </section>
 
-      <section className="grid gap-6 xl:grid-cols-[1.45fr_0.9fr]">
-        <Card className="p-5">
-          <SectionHeader
-            title="Rama del fixture"
-            description="Primero los equipos, luego los partidos y al final los clasificados. Toca un equipo para ver su informacion."
-          />
-          <div className="mt-5 grid gap-4 overflow-x-auto lg:grid-cols-[0.85fr_1.1fr_0.8fr]">
-            <div className="min-w-[220px] space-y-3">
-              <p className="text-xs font-bold uppercase text-ink/45">Equipos inscritos</p>
-              {eventTeams.map((team) => (
-                <TeamNode
-                  key={team.id}
-                  team={team}
-                  active={selectedTeam?.id === team.id}
-                  onClick={() => selectTeam(team)}
-                />
-              ))}
-            </div>
-
-            <div className="min-w-[320px] space-y-3">
-              <p className="text-xs font-bold uppercase text-ink/45">Partidos / cruces</p>
-              {eventMatches.map((match) => (
-                <MatchNode
-                  key={match.id}
-                  match={match}
-                  active={selectedMatch?.id === match.id}
-                  onClick={() => selectMatch(match)}
-                />
-              ))}
-            </div>
-
-            <div className="min-w-[220px] space-y-3">
-              <p className="text-xs font-bold uppercase text-ink/45">Avance</p>
-              {standings.slice(0, 4).map((row, index) => {
-                const team = eventTeams.find((current) => current.id === row.teamId);
-                if (!team) return null;
-                return (
-                  <button
-                    key={row.teamId}
-                    onClick={() => selectTeam(team)}
-                    className="w-full rounded-md border border-ink/10 bg-white p-3 text-left transition hover:border-field"
-                  >
-                    <p className="text-xs font-bold uppercase text-field">
-                      {index === 0 ? "Finalista parcial" : `Clasificado ${index + 1}`}
-                    </p>
-                    <p className="mt-1 font-bold text-ink">{row.teamName}</p>
-                    <p className="text-xs text-ink/55">{row.points} pts · DG {row.goalDifference}</p>
-                  </button>
-                );
-              })}
-            </div>
+      <section className="grid gap-6">
+        <Card className="overflow-hidden">
+          <div className="border-b border-ink/10 p-5">
+            <SectionHeader
+              title="Llave del fixture"
+              description="Cruces del campeonato desde la primera ronda hasta la final. Toca el ojo para ver un partido o toca un equipo para revisar sus datos."
+            />
           </div>
+          <KnockoutBracket
+            eventTeams={eventTeams}
+            eventMatches={eventMatches}
+            selectedMatchId={selectedMatch?.id}
+            selectedTeamId={selectedTeam?.id}
+            onSelectMatch={selectMatch}
+            onSelectTeam={selectTeam}
+          />
         </Card>
 
         <Card className="p-5">
@@ -297,62 +262,458 @@ export function PublicDashboard() {
   );
 }
 
-function TeamNode({
-  team,
-  active,
-  onClick
+type BracketSlot = {
+  id: string;
+  code: string;
+  match?: Match;
+  homeTeamId?: string;
+  awayTeamId?: string;
+  homePlaceholder: string;
+  awayPlaceholder: string;
+};
+
+function KnockoutBracket({
+  eventTeams,
+  eventMatches,
+  selectedMatchId,
+  selectedTeamId,
+  onSelectMatch,
+  onSelectTeam
 }: {
-  team: Team;
-  active: boolean;
-  onClick: () => void;
+  eventTeams: Team[];
+  eventMatches: Match[];
+  selectedMatchId?: string;
+  selectedTeamId?: string;
+  onSelectMatch: (match: Match) => void;
+  onSelectTeam: (team: Team) => void;
+}) {
+  const bracket = buildBracket(eventTeams, eventMatches);
+
+  return (
+    <div className="overflow-x-auto bg-[#aa1d4b] p-4 text-white sm:p-5">
+      <div className="min-w-[1120px] rounded-lg border border-white/12 bg-[#c02657] p-4 shadow-inner">
+        <div className="mb-4 grid grid-cols-[150px_150px_150px_1fr_150px_150px_150px] items-center gap-4 text-center text-[11px] font-black uppercase tracking-wide text-white/84">
+          <BracketStageLabel>Octavos</BracketStageLabel>
+          <BracketStageLabel>Cuartos</BracketStageLabel>
+          <BracketStageLabel>Semifinal</BracketStageLabel>
+          <span className="rounded-md bg-white px-4 py-2 text-[#a01643] shadow-sm">
+            Final
+          </span>
+          <BracketStageLabel>Semifinal</BracketStageLabel>
+          <BracketStageLabel>Cuartos</BracketStageLabel>
+          <BracketStageLabel>Octavos</BracketStageLabel>
+        </div>
+
+        <div className="grid min-h-[620px] grid-cols-[150px_150px_150px_1fr_150px_150px_150px] gap-4">
+          <BracketColumn>
+            {bracket.leftOctavos.map((slot) => (
+              <BracketMatchCard
+                key={slot.id}
+                slot={slot}
+                teams={eventTeams}
+                selectedMatchId={selectedMatchId}
+                selectedTeamId={selectedTeamId}
+                connector="right"
+                onSelectMatch={onSelectMatch}
+                onSelectTeam={onSelectTeam}
+              />
+            ))}
+          </BracketColumn>
+
+          <BracketColumn className="py-16">
+            {bracket.leftCuartos.map((slot) => (
+              <BracketMatchCard
+                key={slot.id}
+                slot={slot}
+                teams={eventTeams}
+                selectedMatchId={selectedMatchId}
+                selectedTeamId={selectedTeamId}
+                connector="both"
+                onSelectMatch={onSelectMatch}
+                onSelectTeam={onSelectTeam}
+              />
+            ))}
+          </BracketColumn>
+
+          <BracketColumn className="py-28">
+            <BracketMatchCard
+              slot={bracket.leftSemi}
+              teams={eventTeams}
+              selectedMatchId={selectedMatchId}
+              selectedTeamId={selectedTeamId}
+              connector="both"
+              onSelectMatch={onSelectMatch}
+              onSelectTeam={onSelectTeam}
+            />
+          </BracketColumn>
+
+          <div className="flex flex-col items-center justify-center gap-5 px-2">
+            <div className="grid h-24 w-24 place-items-center rounded-full bg-amber-300 text-[#7c1236] shadow-[0_18px_50px_rgba(0,0,0,0.24)] ring-8 ring-white/15">
+              <Trophy className="h-12 w-12" />
+            </div>
+
+            <BracketMatchCard
+              slot={bracket.final}
+              teams={eventTeams}
+              selectedMatchId={selectedMatchId}
+              selectedTeamId={selectedTeamId}
+              emphasis="final"
+              onSelectMatch={onSelectMatch}
+              onSelectTeam={onSelectTeam}
+            />
+
+            <div className="grid h-16 w-16 place-items-center rounded-full bg-[#17211f] text-amber-200 ring-4 ring-white/12">
+              <Medal className="h-8 w-8" />
+            </div>
+
+            <BracketMatchCard
+              slot={bracket.thirdPlace}
+              teams={eventTeams}
+              selectedMatchId={selectedMatchId}
+              selectedTeamId={selectedTeamId}
+              emphasis="third"
+              onSelectMatch={onSelectMatch}
+              onSelectTeam={onSelectTeam}
+            />
+          </div>
+
+          <BracketColumn className="py-28">
+            <BracketMatchCard
+              slot={bracket.rightSemi}
+              teams={eventTeams}
+              selectedMatchId={selectedMatchId}
+              selectedTeamId={selectedTeamId}
+              connector="both"
+              onSelectMatch={onSelectMatch}
+              onSelectTeam={onSelectTeam}
+            />
+          </BracketColumn>
+
+          <BracketColumn className="py-16">
+            {bracket.rightCuartos.map((slot) => (
+              <BracketMatchCard
+                key={slot.id}
+                slot={slot}
+                teams={eventTeams}
+                selectedMatchId={selectedMatchId}
+                selectedTeamId={selectedTeamId}
+                connector="both"
+                onSelectMatch={onSelectMatch}
+                onSelectTeam={onSelectTeam}
+              />
+            ))}
+          </BracketColumn>
+
+          <BracketColumn>
+            {bracket.rightOctavos.map((slot) => (
+              <BracketMatchCard
+                key={slot.id}
+                slot={slot}
+                teams={eventTeams}
+                selectedMatchId={selectedMatchId}
+                selectedTeamId={selectedTeamId}
+                connector="left"
+                onSelectMatch={onSelectMatch}
+                onSelectTeam={onSelectTeam}
+              />
+            ))}
+          </BracketColumn>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function BracketStageLabel({ children }: { children: React.ReactNode }) {
+  return (
+    <span className="rounded bg-[#17211f]/78 px-3 py-2 text-white shadow-sm">
+      {children}
+    </span>
+  );
+}
+
+function BracketColumn({
+  children,
+  className
+}: {
+  children: React.ReactNode;
+  className?: string;
 }) {
   return (
-    <button
-      onClick={onClick}
-      className={`w-full rounded-md border p-3 text-left transition ${
-        active ? "border-field bg-field/10" : "border-ink/10 bg-white hover:border-field"
+    <div className={`flex h-full flex-col justify-around gap-4 ${className ?? ""}`}>
+      {children}
+    </div>
+  );
+}
+
+function BracketMatchCard({
+  slot,
+  teams: eventTeams,
+  selectedMatchId,
+  selectedTeamId,
+  connector,
+  emphasis,
+  onSelectMatch,
+  onSelectTeam
+}: {
+  slot: BracketSlot;
+  teams: Team[];
+  selectedMatchId?: string;
+  selectedTeamId?: string;
+  connector?: "left" | "right" | "both";
+  emphasis?: "final" | "third";
+  onSelectMatch: (match: Match) => void;
+  onSelectTeam: (team: Team) => void;
+}) {
+  const matchActive = selectedMatchId === slot.match?.id;
+  const homeTeam = slot.homeTeamId
+    ? eventTeams.find((team) => team.id === slot.homeTeamId)
+    : undefined;
+  const awayTeam = slot.awayTeamId
+    ? eventTeams.find((team) => team.id === slot.awayTeamId)
+    : undefined;
+  const isFinished = slot.match?.status === "finished";
+  const homeScore = slot.match?.homeScore;
+  const awayScore = slot.match?.awayScore;
+
+  return (
+    <div
+      className={`relative rounded-md border p-2 shadow-sm transition ${
+        matchActive
+          ? "border-amber-200 bg-white text-ink shadow-[0_0_0_3px_rgba(252,211,77,0.35)]"
+          : emphasis === "final"
+            ? "border-amber-200 bg-white text-ink"
+            : emphasis === "third"
+              ? "border-white/22 bg-[#17211f] text-white"
+              : "border-white/18 bg-white text-ink"
       }`}
     >
-      <p className="font-bold text-ink">{team.name}</p>
-      <p className="mt-1 text-xs text-ink/55">Delegado: {team.delegateName}</p>
+      {connector === "right" || connector === "both" ? (
+        <span className="absolute -right-4 top-1/2 hidden h-px w-4 bg-white/45 lg:block" />
+      ) : null}
+      {connector === "left" || connector === "both" ? (
+        <span className="absolute -left-4 top-1/2 hidden h-px w-4 bg-white/45 lg:block" />
+      ) : null}
+
+      <div className="mb-2 flex min-h-7 items-center justify-between gap-2">
+        <span
+          className={`rounded px-2 py-1 text-[10px] font-black uppercase ${
+            emphasis === "third"
+              ? "bg-white/12 text-white"
+              : "bg-[#17211f] text-white"
+          }`}
+        >
+          {slot.code}
+        </span>
+        {slot.match ? (
+          <button
+            type="button"
+            title="Ver partido"
+            onClick={() => onSelectMatch(slot.match as Match)}
+            className={`grid h-7 w-7 place-items-center rounded transition ${
+              matchActive
+                ? "bg-amber-300 text-ink"
+                : emphasis === "third"
+                  ? "bg-white/10 text-white hover:bg-white/18"
+                  : "bg-mist text-ink/65 hover:bg-field/15 hover:text-field"
+            }`}
+          >
+            <Eye className="h-4 w-4" />
+          </button>
+        ) : (
+          <span className="rounded bg-black/10 px-2 py-1 text-[10px] font-bold uppercase opacity-70">
+            Pendiente
+          </span>
+        )}
+      </div>
+
+      <div className="space-y-1">
+        <BracketTeamLine
+          team={homeTeam}
+          placeholder={slot.homePlaceholder}
+          score={isFinished ? homeScore : undefined}
+          isWinner={isFinished && (homeScore ?? 0) > (awayScore ?? 0)}
+          active={selectedTeamId === homeTeam?.id}
+          dark={emphasis === "third"}
+          onSelectTeam={onSelectTeam}
+        />
+        <BracketTeamLine
+          team={awayTeam}
+          placeholder={slot.awayPlaceholder}
+          score={isFinished ? awayScore : undefined}
+          isWinner={isFinished && (awayScore ?? 0) > (homeScore ?? 0)}
+          active={selectedTeamId === awayTeam?.id}
+          dark={emphasis === "third"}
+          onSelectTeam={onSelectTeam}
+        />
+      </div>
+
+      <p
+        className={`mt-2 truncate text-[11px] ${
+          emphasis === "third" ? "text-white/60" : "text-ink/50"
+        }`}
+      >
+        {slot.match ? `${formatDateTime(slot.match.scheduledAt)} · ${slot.match.court}` : "Horario por definir"}
+      </p>
+    </div>
+  );
+}
+
+function BracketTeamLine({
+  team,
+  placeholder,
+  score,
+  isWinner,
+  active,
+  dark,
+  onSelectTeam
+}: {
+  team?: Team;
+  placeholder: string;
+  score?: number;
+  isWinner: boolean;
+  active: boolean;
+  dark?: boolean;
+  onSelectTeam: (team: Team) => void;
+}) {
+  const content = (
+    <>
+      <span
+        className="h-3 w-3 shrink-0 rounded-sm border border-black/10"
+        style={{ backgroundColor: team?.primaryColor ?? "transparent" }}
+      />
+      <span className="min-w-0 flex-1 truncate">{team?.name ?? placeholder}</span>
+      {typeof score === "number" ? (
+        <span className="grid h-6 min-w-6 place-items-center rounded bg-black/10 px-1 text-xs font-black">
+          {score}
+        </span>
+      ) : null}
+    </>
+  );
+
+  if (!team) {
+    return (
+      <div
+        className={`flex h-8 items-center gap-2 rounded px-2 text-xs font-semibold ${
+          dark ? "bg-white/8 text-white/55" : "bg-mist text-ink/42"
+        }`}
+      >
+        {content}
+      </div>
+    );
+  }
+
+  return (
+    <button
+      type="button"
+      onClick={() => onSelectTeam(team)}
+      className={`flex h-8 w-full items-center gap-2 rounded px-2 text-left text-xs font-bold transition ${
+        active
+          ? "bg-field text-white"
+          : isWinner
+            ? "bg-amber-100 text-amber-950"
+            : dark
+              ? "bg-white/8 text-white hover:bg-white/14"
+              : "bg-mist text-ink hover:bg-field/10"
+      }`}
+    >
+      {content}
     </button>
   );
 }
 
-function MatchNode({
-  match,
-  active,
-  onClick
-}: {
-  match: Match;
-  active: boolean;
-  onClick: () => void;
-}) {
-  return (
-    <button
-      onClick={onClick}
-      className={`relative w-full rounded-md border bg-white p-4 text-left transition ${
-        active ? "border-field shadow-panel" : "border-ink/10 hover:border-field"
-      }`}
-    >
-      <div className="absolute -left-4 top-1/2 hidden h-px w-4 bg-ink/15 lg:block" />
-      <div className="absolute -right-4 top-1/2 hidden h-px w-4 bg-ink/15 lg:block" />
-      <div className="flex items-center justify-between">
-        <Badge tone={match.status === "finished" ? "green" : "blue"}>
-          J{match.round}
-        </Badge>
-        <Eye className="h-4 w-4 text-ink/45" />
-      </div>
-      <div className="mt-3 grid grid-cols-[1fr_auto_1fr] items-center gap-2 text-sm font-bold">
-        <span>{getTeamName(teams, match.homeTeamId)}</span>
-        <span className="rounded-md bg-mist px-2 py-1">
-          {match.status === "finished" ? `${match.homeScore}-${match.awayScore}` : "vs"}
-        </span>
-        <span className="text-right">{getTeamName(teams, match.awayTeamId)}</span>
-      </div>
-      <p className="mt-2 text-xs text-ink/55">{formatDateTime(match.scheduledAt)}</p>
-    </button>
+function buildBracket(eventTeams: Team[], eventMatches: Match[]) {
+  const roundOne = eventMatches.filter((match) => match.round === 1);
+  const roundTwo = eventMatches.filter((match) => match.round === 2);
+  const roundThree = eventMatches.filter((match) => match.round === 3);
+  const roundFour = eventMatches.filter((match) => match.round === 4);
+
+  const octavos = Array.from({ length: 8 }, (_, index) =>
+    makeSlot({
+      id: `octavos-${index + 1}`,
+      code: `O${index + 1}`,
+      match: roundOne[index],
+      homeTeamId: eventTeams[index * 2]?.id,
+      awayTeamId: eventTeams[index * 2 + 1]?.id,
+      homePlaceholder: `Equipo ${index * 2 + 1}`,
+      awayPlaceholder: `Equipo ${index * 2 + 2}`
+    })
   );
+
+  const cuartos = Array.from({ length: 4 }, (_, index) =>
+    makeSlot({
+      id: `cuartos-${index + 1}`,
+      code: `C${index + 1}`,
+      match: roundTwo[index],
+      homePlaceholder: `Ganador O${index * 2 + 1}`,
+      awayPlaceholder: `Ganador O${index * 2 + 2}`
+    })
+  );
+
+  const semis = Array.from({ length: 2 }, (_, index) =>
+    makeSlot({
+      id: `semifinal-${index + 1}`,
+      code: `S${index + 1}`,
+      match: roundThree[index],
+      homePlaceholder: `Ganador C${index * 2 + 1}`,
+      awayPlaceholder: `Ganador C${index * 2 + 2}`
+    })
+  );
+
+  const final = makeSlot({
+    id: "final",
+    code: "Final",
+    match: roundFour[0],
+    homePlaceholder: "Ganador S1",
+    awayPlaceholder: "Ganador S2"
+  });
+
+  const thirdPlace = makeSlot({
+    id: "tercer-lugar",
+    code: "Tercer lugar",
+    match: roundFour[1],
+    homePlaceholder: "Perdedor S1",
+    awayPlaceholder: "Perdedor S2"
+  });
+
+  return {
+    leftOctavos: octavos.slice(0, 4),
+    rightOctavos: octavos.slice(4),
+    leftCuartos: cuartos.slice(0, 2),
+    rightCuartos: cuartos.slice(2),
+    leftSemi: semis[0],
+    rightSemi: semis[1],
+    final,
+    thirdPlace
+  };
+}
+
+function makeSlot({
+  id,
+  code,
+  match,
+  homeTeamId,
+  awayTeamId,
+  homePlaceholder,
+  awayPlaceholder
+}: {
+  id: string;
+  code: string;
+  match?: Match;
+  homeTeamId?: string;
+  awayTeamId?: string;
+  homePlaceholder: string;
+  awayPlaceholder: string;
+}): BracketSlot {
+  return {
+    id,
+    code,
+    match,
+    homeTeamId: match?.homeTeamId ?? homeTeamId,
+    awayTeamId: match?.awayTeamId ?? awayTeamId,
+    homePlaceholder,
+    awayPlaceholder
+  };
 }
 
 function InfoRow({ label, value }: { label: string; value: string }) {
