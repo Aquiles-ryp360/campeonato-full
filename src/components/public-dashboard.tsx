@@ -265,6 +265,7 @@ export function PublicDashboard() {
 type BracketSlot = {
   id: string;
   code: string;
+  advanceTarget?: string;
   match?: Match;
   homeTeamId?: string;
   awayTeamId?: string;
@@ -290,9 +291,9 @@ function KnockoutBracket({
   const bracket = buildBracket(eventTeams, eventMatches);
 
   return (
-    <div className="overflow-x-auto bg-[#aa1d4b] p-4 text-white sm:p-5">
-      <div className="min-w-[1120px] rounded-lg border border-white/12 bg-[#c02657] p-4 shadow-inner">
-        <div className="mb-4 grid grid-cols-[150px_150px_150px_1fr_150px_150px_150px] items-center gap-4 text-center text-[11px] font-black uppercase tracking-wide text-white/84">
+    <div className="overflow-x-auto overscroll-x-contain bg-[#aa1d4b] p-3 text-white sm:p-4 lg:p-5">
+      <div className="w-full min-w-[840px] rounded-lg border border-white/18 bg-[#c02657] p-3 shadow-inner xl:min-w-0 xl:p-4">
+        <div className="mb-4 grid grid-cols-[minmax(98px,0.72fr)_minmax(104px,0.76fr)_minmax(110px,0.82fr)_minmax(138px,1fr)_minmax(110px,0.82fr)_minmax(104px,0.76fr)_minmax(98px,0.72fr)] items-center gap-2 text-center text-[10px] font-black uppercase tracking-wide text-white/84 xl:grid-cols-[minmax(118px,0.72fr)_minmax(122px,0.76fr)_minmax(130px,0.82fr)_minmax(156px,1fr)_minmax(130px,0.82fr)_minmax(122px,0.76fr)_minmax(118px,0.72fr)] xl:gap-4 xl:text-[11px]">
           <BracketStageLabel>Octavos</BracketStageLabel>
           <BracketStageLabel>Cuartos</BracketStageLabel>
           <BracketStageLabel>Semifinal</BracketStageLabel>
@@ -304,7 +305,7 @@ function KnockoutBracket({
           <BracketStageLabel>Octavos</BracketStageLabel>
         </div>
 
-        <div className="grid min-h-[620px] grid-cols-[150px_150px_150px_1fr_150px_150px_150px] gap-4">
+        <div className="grid min-h-[700px] grid-cols-[minmax(98px,0.72fr)_minmax(104px,0.76fr)_minmax(110px,0.82fr)_minmax(138px,1fr)_minmax(110px,0.82fr)_minmax(104px,0.76fr)_minmax(98px,0.72fr)] gap-2 xl:grid-cols-[minmax(118px,0.72fr)_minmax(122px,0.76fr)_minmax(130px,0.82fr)_minmax(156px,1fr)_minmax(130px,0.82fr)_minmax(122px,0.76fr)_minmax(118px,0.72fr)] xl:gap-4">
           <BracketColumn>
             {bracket.leftOctavos.map((slot) => (
               <BracketMatchCard
@@ -475,6 +476,7 @@ function BracketMatchCard({
   const isFinished = slot.match?.status === "finished";
   const homeScore = slot.match?.homeScore;
   const awayScore = slot.match?.awayScore;
+  const status = getBracketSlotStatus(slot, eventTeams);
 
   return (
     <div
@@ -489,10 +491,10 @@ function BracketMatchCard({
       }`}
     >
       {connector === "right" || connector === "both" ? (
-        <span className="absolute -right-4 top-1/2 hidden h-px w-4 bg-white/45 lg:block" />
+        <span className="absolute -right-2 top-1/2 hidden h-0.5 w-2 bg-cyan-200/85 shadow-[0_0_10px_rgba(103,232,249,0.7)] lg:block xl:-right-4 xl:w-4" />
       ) : null}
       {connector === "left" || connector === "both" ? (
-        <span className="absolute -left-4 top-1/2 hidden h-px w-4 bg-white/45 lg:block" />
+        <span className="absolute -left-2 top-1/2 hidden h-0.5 w-2 bg-cyan-200/85 shadow-[0_0_10px_rgba(103,232,249,0.7)] lg:block xl:-left-4 xl:w-4" />
       ) : null}
 
       <div className="mb-2 flex min-h-7 items-center justify-between gap-2">
@@ -521,8 +523,11 @@ function BracketMatchCard({
             <Eye className="h-4 w-4" />
           </button>
         ) : (
-          <span className="rounded bg-black/10 px-2 py-1 text-[10px] font-bold uppercase opacity-70">
-            Pendiente
+          <span
+            title="Pendiente"
+            className="rounded bg-black/10 px-1.5 py-1 text-[9px] font-bold uppercase opacity-70 xl:px-2 xl:text-[10px]"
+          >
+            Pend.
           </span>
         )}
       </div>
@@ -555,6 +560,19 @@ function BracketMatchCard({
       >
         {slot.match ? `${formatDateTime(slot.match.scheduledAt)} · ${slot.match.court}` : "Horario por definir"}
       </p>
+      <div
+        className={`mt-2 rounded px-2 py-1 text-[10px] font-black uppercase leading-tight ${
+          status.tone === "finished"
+            ? emphasis === "third"
+              ? "bg-cyan-200/16 text-cyan-100"
+              : "bg-cyan-100 text-cyan-950"
+            : emphasis === "third"
+              ? "bg-white/10 text-white/70"
+              : "bg-black/5 text-ink/58"
+        }`}
+      >
+        {status.label}
+      </div>
     </div>
   );
 }
@@ -622,6 +640,57 @@ function BracketTeamLine({
   );
 }
 
+function getBracketSlotStatus(slot: BracketSlot, eventTeams: Team[]) {
+  if (slot.match?.status === "finished") {
+    const winner = getBracketWinner(slot, eventTeams);
+    if (!winner) return { label: "Empate registrado", tone: "finished" as const };
+
+    if (slot.advanceTarget === "Campeon") {
+      return { label: `Campeon: ${winner.name}`, tone: "finished" as const };
+    }
+
+    if (slot.advanceTarget === "Tercer lugar") {
+      return { label: `Gana ${winner.name}`, tone: "finished" as const };
+    }
+
+    return {
+      label: `Gana ${winner.name} -> ${slot.advanceTarget ?? "siguiente ronda"}`,
+      tone: "finished" as const
+    };
+  }
+
+  if (slot.match?.status === "scheduled") {
+    return {
+      label: slot.advanceTarget
+        ? `Ganador pasa a ${slot.advanceTarget}`
+        : "Partido programado",
+      tone: "pending" as const
+    };
+  }
+
+  return {
+    label: slot.advanceTarget
+      ? `Cruce pendiente -> ${slot.advanceTarget}`
+      : "Cruce pendiente",
+    tone: "pending" as const
+  };
+}
+
+function getBracketWinner(slot: BracketSlot, eventTeams: Team[]) {
+  if (!slot.match || slot.match.status !== "finished") return null;
+
+  const homeScore = slot.match.homeScore ?? 0;
+  const awayScore = slot.match.awayScore ?? 0;
+  const winnerId =
+    homeScore > awayScore
+      ? slot.match.homeTeamId
+      : awayScore > homeScore
+        ? slot.match.awayTeamId
+        : null;
+
+  return winnerId ? eventTeams.find((team) => team.id === winnerId) ?? null : null;
+}
+
 function buildBracket(eventTeams: Team[], eventMatches: Match[]) {
   const roundOne = eventMatches.filter((match) => match.round === 1);
   const roundTwo = eventMatches.filter((match) => match.round === 2);
@@ -632,6 +701,7 @@ function buildBracket(eventTeams: Team[], eventMatches: Match[]) {
     makeSlot({
       id: `octavos-${index + 1}`,
       code: `O${index + 1}`,
+      advanceTarget: `C${Math.floor(index / 2) + 1}`,
       match: roundOne[index],
       homeTeamId: eventTeams[index * 2]?.id,
       awayTeamId: eventTeams[index * 2 + 1]?.id,
@@ -644,6 +714,7 @@ function buildBracket(eventTeams: Team[], eventMatches: Match[]) {
     makeSlot({
       id: `cuartos-${index + 1}`,
       code: `C${index + 1}`,
+      advanceTarget: `S${Math.floor(index / 2) + 1}`,
       match: roundTwo[index],
       homePlaceholder: `Ganador O${index * 2 + 1}`,
       awayPlaceholder: `Ganador O${index * 2 + 2}`
@@ -654,6 +725,7 @@ function buildBracket(eventTeams: Team[], eventMatches: Match[]) {
     makeSlot({
       id: `semifinal-${index + 1}`,
       code: `S${index + 1}`,
+      advanceTarget: "Final",
       match: roundThree[index],
       homePlaceholder: `Ganador C${index * 2 + 1}`,
       awayPlaceholder: `Ganador C${index * 2 + 2}`
@@ -663,6 +735,7 @@ function buildBracket(eventTeams: Team[], eventMatches: Match[]) {
   const final = makeSlot({
     id: "final",
     code: "Final",
+    advanceTarget: "Campeon",
     match: roundFour[0],
     homePlaceholder: "Ganador S1",
     awayPlaceholder: "Ganador S2"
@@ -671,6 +744,7 @@ function buildBracket(eventTeams: Team[], eventMatches: Match[]) {
   const thirdPlace = makeSlot({
     id: "tercer-lugar",
     code: "Tercer lugar",
+    advanceTarget: "Tercer lugar",
     match: roundFour[1],
     homePlaceholder: "Perdedor S1",
     awayPlaceholder: "Perdedor S2"
@@ -691,6 +765,7 @@ function buildBracket(eventTeams: Team[], eventMatches: Match[]) {
 function makeSlot({
   id,
   code,
+  advanceTarget,
   match,
   homeTeamId,
   awayTeamId,
@@ -699,6 +774,7 @@ function makeSlot({
 }: {
   id: string;
   code: string;
+  advanceTarget?: string;
   match?: Match;
   homeTeamId?: string;
   awayTeamId?: string;
@@ -708,6 +784,7 @@ function makeSlot({
   return {
     id,
     code,
+    advanceTarget,
     match,
     homeTeamId: match?.homeTeamId ?? homeTeamId,
     awayTeamId: match?.awayTeamId ?? awayTeamId,
