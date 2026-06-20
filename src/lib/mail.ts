@@ -1,6 +1,6 @@
 import "server-only";
 
-import { Resend } from "resend";
+import nodemailer from "nodemailer";
 
 type DelegateCredentialsEmailInput = {
   to: string;
@@ -19,12 +19,14 @@ export async function sendDelegateCredentialsEmail({
   username,
   password
 }: DelegateCredentialsEmailInput) {
-  const apiKey = process.env.RESEND_API_KEY;
-  const from = process.env.RESEND_FROM_EMAIL;
+  const host = process.env.SMTP_HOST;
+  const user = process.env.SMTP_USER;
+  const pass = process.env.SMTP_PASS;
+  const from = process.env.MAIL_FROM;
   const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "https://campeonato-full.vercel.app";
 
-  if (!apiKey || !from) {
-    throw new Error("Resend env vars are not configured");
+  if (!host || !user || !pass || !from) {
+    throw new Error("SMTP env vars are not configured");
   }
 
   const loginUrl = `${appUrl.replace(/\/$/, "")}/login`;
@@ -76,21 +78,24 @@ export async function sendDelegateCredentialsEmail({
     </div>
   `;
 
-  // Resend requires a verified sending domain before emailing real delegates.
-  const resend = new Resend(apiKey);
-  const response = await resend.emails.send({
+  // Gmail SMTP uses an app password stored in SMTP_PASS, never the real account password.
+  const transporter = nodemailer.createTransport({
+    host: process.env.SMTP_HOST,
+    port: Number(process.env.SMTP_PORT || 465),
+    secure: process.env.SMTP_SECURE === "true",
+    auth: {
+      user: process.env.SMTP_USER,
+      pass: process.env.SMTP_PASS
+    }
+  });
+
+  return transporter.sendMail({
     from,
     to,
     subject,
     html,
     text
   });
-
-  if (response.error) {
-    throw new Error(response.error.message);
-  }
-
-  return response.data;
 }
 
 function escapeHtml(value: string) {
