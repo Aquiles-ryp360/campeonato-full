@@ -7,7 +7,12 @@ import {
   ShieldCheck,
   Trophy,
   UserPlus,
-  UsersRound
+  UsersRound,
+  BookOpen,
+  LayoutGrid,
+  Calendar,
+  Network,
+  ListOrdered
 } from "lucide-react";
 import { AuthGate, MobileSessionAction, SessionActions } from "./auth-gate";
 
@@ -18,7 +23,12 @@ type ShellNavItem = {
 };
 
 const publicNav: ShellNavItem[] = [
-  { href: "/", label: "Fixture", icon: Trophy },
+  { href: "/", label: "Inicio", icon: Trophy },
+  { href: "/campeonato/bases", label: "Bases", icon: BookOpen },
+  { href: "/campeonato/grupos", label: "Grupos", icon: LayoutGrid },
+  { href: "/campeonato/fixture", label: "Fixture", icon: Calendar },
+  { href: "/campeonato/bracket", label: "Playoffs", icon: Network },
+  { href: "/campeonato/posiciones", label: "Posiciones", icon: ListOrdered },
   { href: "/registro", label: "Inscripciones", icon: UserPlus },
   { href: "/equipos", label: "Equipos", icon: UsersRound }
 ];
