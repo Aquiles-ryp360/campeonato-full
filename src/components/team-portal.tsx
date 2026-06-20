@@ -1,12 +1,49 @@
 "use client";
 
+import { useEffect, useMemo, useState } from "react";
 import { CalendarDays, CreditCard, ShieldCheck, UsersRound } from "lucide-react";
-import { matches, players, teams } from "@/lib/mock-data";
+import { toast } from "sonner";
+import { fetchBrowserCompetitionData } from "@/lib/browser-competition-data";
+import type { CompetitionData } from "@/lib/data-mappers";
+import { getStoredSession } from "@/lib/auth";
 import { formatDateTime, getTeamName, playerRoleLabel, teamStatusLabel } from "@/lib/utils";
 import { Badge, Card, Metric, SectionHeader } from "./ui";
 
-export function TeamPortal() {
-  const team = teams[0];
+export function TeamPortal({ initialData }: { initialData: CompetitionData }) {
+  const [data, setData] = useState(initialData);
+  const [delegateEmail, setDelegateEmail] = useState<string | null>(null);
+  const { teams, players, matches } = data;
+  const team = useMemo(() => {
+    const normalizedEmail = delegateEmail?.toLowerCase();
+    return (
+      teams.find((current) => current.delegateEmail.toLowerCase() === normalizedEmail) ??
+      teams[0] ??
+      null
+    );
+  }, [delegateEmail, teams]);
+
+  useEffect(() => {
+    setDelegateEmail(getStoredSession()?.username.toLowerCase() ?? null);
+
+    fetchBrowserCompetitionData({ includeRegistrationCodes: true })
+      .then(setData)
+      .catch(() => {
+        toast.error("No se pudieron cargar los datos actualizados del delegado.");
+      });
+  }, []);
+
+  if (!team) {
+    return (
+      <Card className="p-6">
+        <SectionHeader
+          eyebrow="Panel delegado"
+          title="Aun no tienes equipo vinculado"
+          description="Cuando tu inscripcion quede registrada en Supabase con este correo, veras aqui tu plantilla, codigo y partidos."
+        />
+      </Card>
+    );
+  }
+
   const teamPlayers = players.filter((player) => player.teamId === team.id);
   const teamMatches = matches.filter(
     (match) => match.homeTeamId === team.id || match.awayTeamId === team.id
@@ -69,7 +106,7 @@ export function TeamPortal() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-ink/8">
-                {teamPlayers.map((player) => (
+                {teamPlayers.length > 0 ? teamPlayers.map((player) => (
                   <tr key={player.id}>
                     <td className="px-5 py-3 font-semibold">
                       {player.firstName} {player.lastName}
@@ -80,7 +117,13 @@ export function TeamPortal() {
                     <td className="px-3 py-3">{player.enrollmentFile}</td>
                     <td className="px-5 py-3">{player.semester}</td>
                   </tr>
-                ))}
+                )) : (
+                  <tr>
+                    <td colSpan={6} className="px-5 py-8 text-center text-sm text-ink/55">
+                      Todavia no hay jugadores registrados para este equipo.
+                    </td>
+                  </tr>
+                )}
               </tbody>
             </table>
           </div>
@@ -89,7 +132,7 @@ export function TeamPortal() {
         <Card className="p-5">
           <SectionHeader title="Partidos del equipo" description="El jugador puede estar en dos deportes; la asistencia queda bajo responsabilidad del equipo." />
           <div className="mt-4 space-y-3">
-            {teamMatches.map((match) => (
+            {teamMatches.length > 0 ? teamMatches.map((match) => (
               <div key={match.id} className="rounded-md border border-ink/10 bg-white p-4">
                 <div className="flex items-center justify-between">
                   <Badge tone={match.status === "finished" ? "green" : "blue"}>
@@ -105,7 +148,11 @@ export function TeamPortal() {
                   <span className="text-right">{getTeamName(teams, match.awayTeamId)}</span>
                 </div>
               </div>
-            ))}
+            )) : (
+              <div className="rounded-md border border-dashed border-ink/20 p-6 text-center text-sm text-ink/55">
+                Todavia no hay partidos programados para tu equipo.
+              </div>
+            )}
           </div>
         </Card>
       </section>

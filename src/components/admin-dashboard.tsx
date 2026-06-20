@@ -11,12 +11,8 @@ import {
   UsersRound
 } from "lucide-react";
 import { toast } from "sonner";
-import {
-  getLocalRegistrations,
-  type StoredRegistration,
-  type StoredRegistrationPlayer
-} from "@/lib/local-registrations";
-import { events, matches, players, registrationCodes, teams } from "@/lib/mock-data";
+import { fetchBrowserCompetitionData } from "@/lib/browser-competition-data";
+import type { CompetitionData } from "@/lib/data-mappers";
 import type { PaymentMethod, Player, TeamStatus } from "@/lib/types";
 import {
   eventStatusLabel,
@@ -55,29 +51,24 @@ type DelegateAdminRow = {
 
 const delegatePanelUrl = "https://campeonato-full.vercel.app/delegado";
 
-export function AdminDashboard() {
-  const [localRegistrations, setLocalRegistrations] = useState<StoredRegistration[]>([]);
+export function AdminDashboard({ initialData }: { initialData: CompetitionData }) {
+  const [data, setData] = useState(initialData);
+  const [isLoadingData, setIsLoadingData] = useState(true);
+  const { events, matches, registrationCodes, teams } = data;
   const availableCodes = registrationCodes.filter((code) => code.status === "available");
   const activeEvents = events.filter((event) => event.status !== "finished");
   const finishedMatches = matches.filter((match) => match.status === "finished");
-  const delegateRows = useMemo(
-    () => createDelegateRows(localRegistrations),
-    [localRegistrations]
-  );
+  const delegateRows = useMemo(() => createDelegateRows(data), [data]);
 
   useEffect(() => {
-    function syncLocalRegistrations() {
-      setLocalRegistrations(getLocalRegistrations());
-    }
-
-    syncLocalRegistrations();
-    window.addEventListener("storage", syncLocalRegistrations);
-    window.addEventListener("focus", syncLocalRegistrations);
-
-    return () => {
-      window.removeEventListener("storage", syncLocalRegistrations);
-      window.removeEventListener("focus", syncLocalRegistrations);
-    };
+    fetchBrowserCompetitionData({ includeRegistrationCodes: true })
+      .then((nextData) => {
+        setData(nextData);
+      })
+      .catch(() => {
+        toast.error("No se pudieron cargar todos los datos administrativos desde Supabase.");
+      })
+      .finally(() => setIsLoadingData(false));
   }, []);
 
   return (
@@ -106,7 +97,11 @@ export function AdminDashboard() {
           <SectionHeader
             title="Delegados y accesos"
             description="Lista administrativa de delegados, equipos, contacto, credenciales y cantidad de jugadores."
-            action={<Badge tone="blue">{delegateRows.length} delegados</Badge>}
+            action={
+              <Badge tone={isLoadingData ? "amber" : "blue"}>
+                {isLoadingData ? "Cargando Supabase" : `${delegateRows.length} delegados`}
+              </Badge>
+            }
           />
         </div>
         <div className="overflow-x-auto">
@@ -123,7 +118,7 @@ export function AdminDashboard() {
               </tr>
             </thead>
             <tbody className="divide-y divide-ink/8">
-              {delegateRows.map((row) => (
+              {delegateRows.length > 0 ? delegateRows.map((row) => (
                 <tr key={row.id}>
                   <td className="px-5 py-4 align-top">
                     <p className="font-semibold text-ink">{row.delegateName}</p>
@@ -195,7 +190,13 @@ export function AdminDashboard() {
                     </div>
                   </td>
                 </tr>
-              ))}
+              )) : (
+                <tr>
+                  <td colSpan={7} className="px-5 py-8 text-center text-sm text-ink/55">
+                    Todavia no hay delegados registrados.
+                  </td>
+                </tr>
+              )}
             </tbody>
           </table>
         </div>
@@ -222,7 +223,7 @@ export function AdminDashboard() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-ink/8">
-                {teams.map((team) => {
+                {teams.length > 0 ? teams.map((team) => {
                   const event = events.find((current) => current.id === team.eventId);
                   return (
                     <tr key={team.id}>
@@ -248,7 +249,13 @@ export function AdminDashboard() {
                       </td>
                     </tr>
                   );
-                })}
+                }) : (
+                  <tr>
+                    <td colSpan={6} className="px-5 py-8 text-center text-sm text-ink/55">
+                      Todavia no hay equipos inscritos.
+                    </td>
+                  </tr>
+                )}
               </tbody>
             </table>
           </div>
@@ -260,7 +267,7 @@ export function AdminDashboard() {
             description="Los resultados pueden cargarse manualmente o desde audio con revision."
           />
           <div className="mt-4 space-y-3">
-            {matches.map((match) => (
+            {matches.length > 0 ? matches.map((match) => (
               <div key={match.id} className="rounded-md border border-ink/10 bg-white p-4">
                 <div className="flex flex-wrap items-center justify-between gap-2">
                   <Badge tone={match.status === "finished" ? "green" : "blue"}>
@@ -278,7 +285,11 @@ export function AdminDashboard() {
                   <span className="text-right">{getTeamName(teams, match.awayTeamId)}</span>
                 </div>
               </div>
-            ))}
+            )) : (
+              <div className="rounded-md border border-dashed border-ink/20 p-6 text-center text-sm text-ink/55">
+                Todavia no hay partidos registrados en Supabase.
+              </div>
+            )}
           </div>
         </Card>
       </section>
@@ -286,7 +297,7 @@ export function AdminDashboard() {
       <Card className="p-5">
         <SectionHeader title="Codigos de inscripcion" description="Lote manual que el encargado entrega despues de cobrar." />
         <div className="mt-4 grid gap-3 md:grid-cols-3">
-          {registrationCodes.map((code) => (
+          {registrationCodes.length > 0 ? registrationCodes.map((code) => (
             <div key={code.id} className="rounded-md border border-ink/10 bg-white p-4">
               <div className="flex items-start justify-between gap-3">
                 <div>
@@ -315,14 +326,18 @@ export function AdminDashboard() {
                 </p>
               ) : null}
             </div>
-          ))}
+          )) : (
+            <div className="rounded-md border border-dashed border-ink/20 p-6 text-center text-sm text-ink/55 md:col-span-3">
+              Todavia no hay codigos cargados o tu sesion admin no pudo leerlos.
+            </div>
+          )}
         </div>
       </Card>
 
       <Card className="p-5">
         <SectionHeader title="Eventos" description="Configuracion principal visible para los equipos al inscribirse." />
         <div className="mt-4 grid gap-3 md:grid-cols-3">
-          {events.map((event) => (
+          {events.length > 0 ? events.map((event) => (
             <div key={event.id} className="rounded-md border border-ink/10 bg-white p-4">
               <div className="flex items-start justify-between gap-3">
                 <div>
@@ -340,14 +355,20 @@ export function AdminDashboard() {
                 <p>{formatMoney(event.registrationFee)} · max {event.maxTeams} equipos</p>
               </div>
             </div>
-          ))}
+          )) : (
+            <div className="rounded-md border border-dashed border-ink/20 p-6 text-center text-sm text-ink/55 md:col-span-3">
+              Todavia no hay eventos configurados.
+            </div>
+          )}
         </div>
       </Card>
     </div>
   );
 }
 
-function createDelegateRows(localRegistrations: StoredRegistration[]): DelegateAdminRow[] {
+function createDelegateRows(data: CompetitionData): DelegateAdminRow[] {
+  const { events, players, teams } = data;
+
   const baseRows: DelegateAdminRow[] = teams.map((team) => {
     const event = events.find((current) => current.id === team.eventId);
     const teamPlayers = players.filter((player) => player.teamId === team.id);
@@ -368,6 +389,7 @@ function createDelegateRows(localRegistrations: StoredRegistration[]): DelegateA
       playerCount: teamPlayers.length,
       starterCount: countPlayersByRole(teamPlayers, "starter"),
       substituteCount: countPlayersByRole(teamPlayers, "substitute"),
+      registeredAt: team.createdAt,
       access: {
         username: team.delegateEmail,
         passwordLabel: "Enviada por correo"
@@ -375,38 +397,11 @@ function createDelegateRows(localRegistrations: StoredRegistration[]): DelegateA
     };
   });
 
-  const localRows: DelegateAdminRow[] = localRegistrations.map((registration) => {
-    const event = events.find((current) => current.id === registration.eventId);
-
-    return {
-      id: registration.id,
-      source: "local",
-      teamName: registration.teamName,
-      delegateName: registration.delegateName,
-      delegatePhone: registration.delegatePhone,
-      delegateEmail: registration.delegateEmail,
-      eventName: event?.name ?? "Evento sin asignar",
-      eventDescription: event ? `${sportLabel(event.sport)} · ${event.category}` : "Sin evento",
-      paymentMethod: registration.paymentMethod,
-      registrationCode: registration.registrationCode,
-      teamStatus: "local",
-      statusLabel: "Registrado local",
-      playerCount: registration.players.length,
-      starterCount: countPlayersByRole(registration.players, "starter"),
-      substituteCount: countPlayersByRole(registration.players, "substitute"),
-      registeredAt: registration.createdAt,
-      access: {
-        username: registration.delegateCredentials.username,
-        passwordLabel: registration.delegateCredentials.password
-      }
-    };
-  });
-
-  return [...localRows, ...baseRows];
+  return baseRows;
 }
 
 function countPlayersByRole(
-  teamPlayers: Array<Player | StoredRegistrationPlayer>,
+  teamPlayers: Player[],
   role: "starter" | "substitute"
 ) {
   return teamPlayers.filter((player) => player.lineupRole === role).length;

@@ -5,7 +5,13 @@ import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { LayoutDashboard, LockKeyhole, LogIn, LogOut, ShieldCheck } from "lucide-react";
 import type { AuthRole, AuthSession } from "@/lib/auth";
-import { canAccess, clearStoredSession, getStoredSession } from "@/lib/auth";
+import {
+  canAccess,
+  clearStoredSession,
+  createSession,
+  getStoredSession,
+  storeSession
+} from "@/lib/auth";
 import { createSupabaseBrowserClient, hasSupabaseEnv } from "@/lib/supabase";
 import { Button, Card } from "./ui";
 
@@ -21,8 +27,61 @@ export function AuthGate({
   const [ready, setReady] = useState(false);
 
   useEffect(() => {
-    setSession(getStoredSession());
-    setReady(true);
+    async function loadSession() {
+      const storedSession = getStoredSession();
+
+      if (!hasSupabaseEnv() || !storedSession) {
+        setSession(storedSession);
+        setReady(true);
+        return;
+      }
+
+      try {
+        const supabase = createSupabaseBrowserClient();
+        const { data: userData, error: userError } = await supabase.auth.getUser();
+
+        if (userError || !userData.user) {
+          clearStoredSession();
+          setSession(null);
+          setReady(true);
+          return;
+        }
+
+        const { data: profile, error: profileError } = await supabase
+          .from("profiles")
+          .select("role, full_name")
+          .eq("id", userData.user.id)
+          .maybeSingle();
+
+        if (
+          profileError ||
+          !profile ||
+          (profile.role !== "admin" && profile.role !== "delegate")
+        ) {
+          await supabase.auth.signOut();
+          clearStoredSession();
+          setSession(null);
+          setReady(true);
+          return;
+        }
+
+        const verifiedSession = createSession(
+          profile.role,
+          userData.user.email ?? storedSession.username,
+          profile.full_name ?? userData.user.email ?? "Usuario"
+        );
+
+        storeSession(verifiedSession);
+        setSession(verifiedSession);
+      } catch {
+        clearStoredSession();
+        setSession(null);
+      } finally {
+        setReady(true);
+      }
+    }
+
+    void loadSession();
   }, []);
 
   if (!ready) {

@@ -10,7 +10,7 @@ import {
   Trophy,
   UsersRound
 } from "lucide-react";
-import { events, matches, players, teams } from "@/lib/mock-data";
+import type { CompetitionData } from "@/lib/data-mappers";
 import type { Match, Team } from "@/lib/types";
 import {
   calculateStandings,
@@ -22,14 +22,19 @@ import {
 } from "@/lib/utils";
 import { Badge, Button, Card, Metric, SectionHeader } from "./ui";
 
-export function PublicDashboard() {
+export function PublicDashboard({ data }: { data: CompetitionData }) {
+  const { events, teams, players, matches } = data;
   const [eventId, setEventId] = useState(events[0]?.id ?? "");
-  const selectedEvent = events.find((event) => event.id === eventId) ?? events[0];
-  const eventTeams = teams.filter((team) => team.eventId === selectedEvent.id);
-  const eventMatches = matches.filter((match) => match.eventId === selectedEvent.id);
+  const selectedEvent = events.find((event) => event.id === eventId) ?? events[0] ?? null;
+  const eventTeams = selectedEvent
+    ? teams.filter((team) => team.eventId === selectedEvent.id)
+    : [];
+  const eventMatches = selectedEvent
+    ? matches.filter((match) => match.eventId === selectedEvent.id)
+    : [];
   const standings = useMemo(
-    () => calculateStandings(selectedEvent, teams, matches),
-    [selectedEvent]
+    () => (selectedEvent ? calculateStandings(selectedEvent, teams, matches) : []),
+    [matches, selectedEvent, teams]
   );
 
   const [selectedTeamId, setSelectedTeamId] = useState(eventTeams[0]?.id ?? "");
@@ -39,6 +44,20 @@ export function PublicDashboard() {
   const selectedMatch =
     eventMatches.find((match) => match.id === selectedMatchId) ?? eventMatches[0] ?? null;
   const finishedMatches = eventMatches.filter((match) => match.status === "finished");
+
+  if (!selectedEvent) {
+    return (
+      <div className="space-y-6 pb-20 md:pb-0">
+        <Card className="p-6">
+          <SectionHeader
+            eyebrow="Panel publico"
+            title="No hay campeonatos configurados"
+            description="Cuando el administrador cree eventos en Supabase, apareceran aqui para el fixture, inscripciones y equipos."
+          />
+        </Card>
+      </div>
+    );
+  }
 
   function selectTeam(team: Team) {
     setSelectedTeamId(team.id);
@@ -152,7 +171,10 @@ export function PublicDashboard() {
               <div className="mt-4 grid gap-3 text-sm text-ink/65">
                 <InfoRow label="Delegado" value={selectedTeam.delegateName} />
                 <InfoRow label="Proximo partido" value={teamNextMatch(eventMatches, selectedTeam.id)} />
-                <InfoRow label="Ultimo resultado" value={teamLastResult(eventMatches, selectedTeam.id)} />
+                <InfoRow
+                  label="Ultimo resultado"
+                  value={teamLastResult(eventMatches, selectedTeam.id, teams)}
+                />
               </div>
             </div>
           ) : null}
@@ -215,7 +237,7 @@ export function PublicDashboard() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-ink/8">
-                {standings.map((row, index) => (
+                {standings.length > 0 ? standings.map((row, index) => (
                   <tr key={row.teamId} className="bg-white">
                     <td className="px-5 py-3 font-semibold">
                       <span className="mr-3 text-ink/40">{index + 1}</span>
@@ -228,7 +250,13 @@ export function PublicDashboard() {
                     <td className="px-3 py-3">{row.goalDifference}</td>
                     <td className="px-5 py-3 font-bold">{row.points}</td>
                   </tr>
-                ))}
+                )) : (
+                  <tr>
+                    <td colSpan={7} className="px-5 py-8 text-center text-sm text-ink/55">
+                      Todavia no hay equipos registrados para calcular posiciones.
+                    </td>
+                  </tr>
+                )}
               </tbody>
             </table>
           </div>
@@ -237,7 +265,7 @@ export function PublicDashboard() {
         <Card className="p-5">
           <SectionHeader title="Horarios importantes" description="Lista de partidos para revisar cruces y proximas fechas." />
           <div className="mt-4 space-y-3">
-            {eventMatches.map((match) => (
+            {eventMatches.length > 0 ? eventMatches.map((match) => (
               <button
                 key={match.id}
                 onClick={() => selectMatch(match)}
@@ -254,7 +282,11 @@ export function PublicDashboard() {
                 </p>
                 <p className="mt-1 text-xs text-ink/55">{formatDateTime(match.scheduledAt)} · {match.court}</p>
               </button>
-            ))}
+            )) : (
+              <div className="rounded-md border border-dashed border-ink/20 p-6 text-center text-sm text-ink/55">
+                Todavia no hay partidos programados para este campeonato.
+              </div>
+            )}
           </div>
         </Card>
       </section>
@@ -816,7 +848,7 @@ function teamNextMatch(eventMatches: Match[], teamId: string) {
   return next ? `${formatDateTime(next.scheduledAt)} · ${next.court}` : "Sin proximo partido";
 }
 
-function teamLastResult(eventMatches: Match[], teamId: string) {
+function teamLastResult(eventMatches: Match[], teamId: string, teams: Team[]) {
   const last = eventMatches.find(
     (match) =>
       match.status === "finished" &&

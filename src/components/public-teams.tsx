@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { CalendarDays, ShieldCheck, UsersRound } from "lucide-react";
-import { events, matches, players, teams } from "@/lib/mock-data";
+import type { CompetitionData } from "@/lib/data-mappers";
 import type { Team } from "@/lib/types";
 import {
   formatDateTime,
@@ -13,16 +13,29 @@ import {
 } from "@/lib/utils";
 import { Badge, Card, Metric, SectionHeader } from "./ui";
 
-export function PublicTeams() {
+export function PublicTeams({ data }: { data: CompetitionData }) {
+  const { events, teams, players, matches } = data;
   const [eventId, setEventId] = useState(events[0]?.id ?? "");
   const eventTeams = teams.filter((team) => team.eventId === eventId);
   const [selectedTeamId, setSelectedTeamId] = useState(eventTeams[0]?.id ?? teams[0]?.id ?? "");
   const selectedTeam = teams.find((team) => team.id === selectedTeamId) ?? eventTeams[0] ?? null;
-  const selectedEvent = events.find((event) => event.id === eventId) ?? events[0];
+  const selectedEvent = events.find((event) => event.id === eventId) ?? events[0] ?? null;
 
   function chooseEvent(nextEventId: string) {
     setEventId(nextEventId);
     setSelectedTeamId(teams.find((team) => team.eventId === nextEventId)?.id ?? "");
+  }
+
+  if (!selectedEvent) {
+    return (
+      <div className="space-y-6 pb-20 md:pb-0">
+        <SectionHeader
+          eyebrow="Publico"
+          title="No hay equipos todavia"
+          description="Primero se deben crear campeonatos en Supabase para mostrar equipos inscritos."
+        />
+      </div>
+    );
   }
 
   return (
@@ -146,6 +159,15 @@ export function PublicTeams() {
                           </p>
                         </div>
                       ))}
+                    {matches.filter(
+                      (match) =>
+                        match.homeTeamId === selectedTeam.id ||
+                        match.awayTeamId === selectedTeam.id
+                    ).length === 0 ? (
+                      <p className="text-sm text-ink/55">
+                        Todavia no hay partidos programados para este equipo.
+                      </p>
+                    ) : null}
                   </div>
                 </div>
               </div>

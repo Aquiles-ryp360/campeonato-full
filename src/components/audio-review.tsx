@@ -3,15 +3,37 @@
 import { useMemo, useState } from "react";
 import { AudioLines, CheckCircle2, FileAudio, Wand2 } from "lucide-react";
 import { toast } from "sonner";
-import { events, parsedAudioExample } from "@/lib/mock-data";
+import type { ParsedAudioResult, TournamentEvent } from "@/lib/types";
 import { Badge, Button, Card, Field, SectionHeader, inputClass } from "./ui";
 
-export function AudioReview() {
-  const [eventId, setEventId] = useState(parsedAudioExample.eventId);
+const parsedAudioExample: ParsedAudioResult = {
+  eventId: "",
+  matchId: "",
+  confidence: 0.91,
+  rawTranscript:
+    "Gano Russkaya contra 8vo Semestre dos a uno. Goles de Ivan Quispe al minuto 12 y Marco Flores al 31. Para 8vo marco Diego Mamani al 18. Hubo amarilla para Russkaya en el minuto 25.",
+  homeTeamName: "Russkaya",
+  awayTeamName: "8vo Semestre",
+  homeScore: 2,
+  awayScore: 1,
+  goals: [
+    { teamName: "Russkaya", playerName: "Ivan Quispe", minute: 12 },
+    { teamName: "8vo Semestre", playerName: "Diego Mamani", minute: 18 },
+    { teamName: "Russkaya", playerName: "Marco Flores", minute: 31 }
+  ],
+  cards: [{ teamName: "Russkaya", type: "yellow", minute: 25 }],
+  notes: "Resultado listo para revision. El modelo no encontro nombre del jugador amonestado."
+};
+
+export function AudioReview({ events }: { events: TournamentEvent[] }) {
+  const [eventId, setEventId] = useState(events[0]?.id ?? parsedAudioExample.eventId);
   const [transcript, setTranscript] = useState(parsedAudioExample.rawTranscript);
   const [parsed, setParsed] = useState(parsedAudioExample);
 
-  const event = useMemo(() => events.find((current) => current.id === eventId), [eventId]);
+  const event = useMemo(
+    () => events.find((current) => current.id === eventId),
+    [eventId, events]
+  );
 
   function simulateAiParse() {
     setParsed({ ...parsedAudioExample, eventId });
@@ -36,12 +58,15 @@ export function AudioReview() {
                 className={inputClass}
                 value={eventId}
                 onChange={(changeEvent) => setEventId(changeEvent.target.value)}
+                disabled={events.length === 0}
               >
-                {events.map((current) => (
+                {events.length > 0 ? events.map((current) => (
                   <option key={current.id} value={current.id}>
                     {current.name}
                   </option>
-                ))}
+                )) : (
+                  <option value="">Sin eventos en Supabase</option>
+                )}
               </select>
             </Field>
             <div className="rounded-md border border-dashed border-ink/20 bg-mist p-6 text-center">

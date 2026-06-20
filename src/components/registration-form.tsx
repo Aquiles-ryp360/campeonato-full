@@ -4,7 +4,6 @@ import { useMemo, useState } from "react";
 import { Download, FileText, Plus, Smartphone, Trash2, UserPlus } from "lucide-react";
 import type { jsPDF as JsPDFDocument } from "jspdf";
 import { toast } from "sonner";
-import { events } from "@/lib/mock-data";
 import type { DelegateCredentials } from "@/lib/auth";
 import type { PlayerRole, TournamentEvent } from "@/lib/types";
 import { formatDateTime, formatMoney, playerRoleLabel, sportLabel } from "@/lib/utils";
@@ -60,9 +59,12 @@ type RegisterDelegateResponse =
       error: string;
     };
 
-export function RegistrationForm() {
-  const openEvents = events.filter((event) => event.status === "registration" || event.status === "draft");
-  const [eventId, setEventId] = useState(openEvents[0]?.id ?? events[0]?.id ?? "");
+export function RegistrationForm({ events }: { events: TournamentEvent[] }) {
+  const openEvents = useMemo(
+    () => events.filter((event) => event.status === "registration" || event.status === "draft"),
+    [events]
+  );
+  const [eventId, setEventId] = useState(openEvents[0]?.id ?? "");
   const [teamName, setTeamName] = useState("");
   const [delegateName, setDelegateName] = useState("");
   const [delegatePhone, setDelegatePhone] = useState("");
@@ -78,8 +80,8 @@ export function RegistrationForm() {
   ]);
 
   const event = useMemo(
-    () => events.find((current) => current.id === eventId) ?? events[0],
-    [eventId]
+    () => openEvents.find((current) => current.id === eventId) ?? openEvents[0] ?? null,
+    [eventId, openEvents]
   );
 
   function updatePlayer(index: number, field: keyof PlayerFormRow, value: string) {
@@ -95,6 +97,11 @@ export function RegistrationForm() {
   }
 
   function addPlayer() {
+    if (!event) {
+      toast.error("No hay campeonatos abiertos para inscripcion.");
+      return;
+    }
+
     if (players.length >= event.maxPlayers) {
       toast.error(`Este campeonato permite maximo ${event.maxPlayers} jugadores.`);
       return;
@@ -105,6 +112,12 @@ export function RegistrationForm() {
 
   async function submitRegistration(eventSubmit: React.FormEvent<HTMLFormElement>) {
     eventSubmit.preventDefault();
+
+    if (!event) {
+      toast.error("No hay campeonatos abiertos para inscripcion.");
+      return;
+    }
+
     const completedPlayers = players.filter(
       (player) => player.firstName && player.lastName && player.dni && player.studentCode
     );
@@ -188,6 +201,18 @@ export function RegistrationForm() {
     }
   }
 
+  if (!event) {
+    return (
+      <Card className="p-6">
+        <SectionHeader
+          eyebrow="Inscripcion autonoma"
+          title="Inscripciones cerradas"
+          description="No hay campeonatos en estado de inscripcion. Cuando el admin abra un evento en Supabase, aparecera aqui."
+        />
+      </Card>
+    );
+  }
+
   return (
     <form className="space-y-6 pb-20 md:pb-0" onSubmit={submitRegistration}>
       <div className="grid gap-6 lg:grid-cols-[1fr_0.82fr]">
@@ -205,7 +230,7 @@ export function RegistrationForm() {
                 value={eventId}
                 onChange={(changeEvent) => setEventId(changeEvent.target.value)}
               >
-                {events.map((current) => (
+                {openEvents.map((current) => (
                   <option key={current.id} value={current.id}>
                     {current.name} - {sportLabel(current.sport)}
                   </option>

@@ -48,6 +48,7 @@ export interface Team {
   status: TeamStatus;
   primaryColor: string;
   secondaryColor: string;
+  createdAt?: string;
 }
 
 export interface RegistrationCode {
