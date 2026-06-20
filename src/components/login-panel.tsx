@@ -170,16 +170,21 @@ export function LoginPanel() {
                 <p className="font-bold text-ink">Administrador</p>
                 <Badge tone="green">Control total</Badge>
               </div>
-              <p className="mt-2 text-sm text-ink/65">
-                Usuario demo: <strong>{demoAdminCredentials.username}</strong>
-              </p>
-              <p className="mt-1 text-sm text-ink/65">
-                Contrasena: <strong>{demoAdminCredentials.password}</strong>
-              </p>
-              <p className="mt-3 text-sm leading-6 text-ink/62">
-                El demo solo funciona si las variables publicas de Supabase no estan configuradas.
-                En produccion usa un usuario admin real de Supabase.
-              </p>
+              {supabaseConfigured ? (
+                <p className="mt-3 text-sm leading-6 text-ink/62">
+                  En produccion entra con el correo administrador creado en Supabase y la
+                  contrasena temporal enviada por correo.
+                </p>
+              ) : (
+                <>
+                  <p className="mt-2 text-sm text-ink/65">
+                    Usuario demo: <strong>{demoAdminCredentials.username}</strong>
+                  </p>
+                  <p className="mt-1 text-sm text-ink/65">
+                    Contrasena: <strong>{demoAdminCredentials.password}</strong>
+                  </p>
+                </>
+              )}
             </div>
           </div>
         </Card>
@@ -194,16 +199,21 @@ export function LoginPanel() {
                 <p className="font-bold text-ink">Delegado</p>
                 <Badge tone="blue">Equipo</Badge>
               </div>
-              <p className="mt-2 text-sm text-ink/65">
-                Usuario demo: <strong>{demoDelegateCredentials.username}</strong>
-              </p>
-              <p className="mt-1 text-sm text-ink/65">
-                Contrasena demo: <strong>{demoDelegateCredentials.password}</strong>
-              </p>
-              <p className="mt-3 text-sm leading-6 text-ink/62">
-                Cuando un equipo termina su inscripcion, el servidor crea el usuario con su correo
-                y envia la contrasena temporal automaticamente.
-              </p>
+              {supabaseConfigured ? (
+                <p className="mt-3 text-sm leading-6 text-ink/62">
+                  El delegado entra con su correo y la contrasena temporal enviada al terminar la
+                  inscripcion.
+                </p>
+              ) : (
+                <>
+                  <p className="mt-2 text-sm text-ink/65">
+                    Usuario demo: <strong>{demoDelegateCredentials.username}</strong>
+                  </p>
+                  <p className="mt-1 text-sm text-ink/65">
+                    Contrasena demo: <strong>{demoDelegateCredentials.password}</strong>
+                  </p>
+                </>
+              )}
             </div>
           </div>
         </Card>
