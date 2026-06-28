@@ -1,4 +1,4 @@
-import type { DelegateCredentials } from "./auth";
+import type { DelegateAccess } from "./auth";
 import type { PaymentMethod, PlayerRole } from "./types";
 
 export interface StoredRegistrationPlayer {
@@ -22,7 +22,7 @@ export interface StoredRegistration {
   delegateEmail: string;
   paymentMethod: PaymentMethod;
   registrationCode: string;
-  delegateCredentials: DelegateCredentials;
+  delegateAccess: DelegateAccess;
   players: StoredRegistrationPlayer[];
 }
 

@@ -45,8 +45,8 @@ type DelegateAdminRow = {
   substituteCount: number;
   registeredAt?: string;
   access: {
-    username: string;
-    passwordLabel: string;
+    email: string;
+    methodLabel: string;
   };
 };
 
@@ -99,7 +99,7 @@ export function AdminDashboard({ initialData }: { initialData: CompetitionData }
         <div className="border-b border-ink/10 p-5">
           <SectionHeader
             title="Delegados y accesos"
-            description="Lista administrativa de delegados, equipos, contacto, credenciales y cantidad de jugadores."
+            description="Lista administrativa de delegados, equipos, contacto, acceso Google y cantidad de jugadores."
             action={
               <Badge tone={isLoadingData ? "amber" : "blue"}>
                 {isLoadingData ? "Cargando Supabase" : `${delegateRows.length} delegados`}
@@ -166,10 +166,10 @@ export function AdminDashboard({ initialData }: { initialData: CompetitionData }
                   </td>
                   <td className="px-3 py-4 align-top">
                     <p className="font-mono text-xs font-semibold text-ink">
-                      {row.access.username}
+                      {row.access.email}
                     </p>
                     <p className="mt-1 font-mono text-xs text-ink/65">
-                      {row.access.passwordLabel}
+                      {row.access.methodLabel}
                     </p>
                   </td>
                   <td className="px-5 py-4 align-top">
@@ -394,8 +394,8 @@ function createDelegateRows(data: CompetitionData): DelegateAdminRow[] {
       substituteCount: countPlayersByRole(teamPlayers, "substitute"),
       registeredAt: team.createdAt,
       access: {
-        username: team.delegateEmail,
-        passwordLabel: "Enviada por correo"
+        email: team.delegateEmail,
+        methodLabel: "Google/Gmail"
       }
     };
   });
@@ -414,7 +414,7 @@ async function copyDelegateAccess(row: DelegateAdminRow) {
   const accessText = createDelegateAccessText(row);
 
   if (!navigator.clipboard) {
-    toast.info("Copia manualmente el usuario y contrasena del delegado.");
+    toast.info("Copia manualmente el correo de acceso del delegado.");
     return;
   }
 
@@ -430,8 +430,8 @@ function createDelegateAccessText(row: DelegateAdminRow) {
   return [
     `Equipo: ${row.teamName}`,
     `Delegado: ${row.delegateName}`,
-    `Usuario: ${row.access.username}`,
-    `Contrasena: ${row.access.passwordLabel}`,
+    `Correo de acceso: ${row.access.email}`,
+    `Ingreso: ${row.access.methodLabel}`,
     `Panel: ${delegatePanelUrl}`
   ].join("\n");
 }
@@ -441,14 +441,14 @@ function createDelegateAccessEmailHref(row: DelegateAdminRow) {
   const body = [
     `Hola ${row.delegateName},`,
     "",
-    "Estos son tus accesos al panel de delegado del campeonato interno de Mecanica Electrica organizado por octavo semestre:",
+    "Estos son tus datos de acceso al panel de delegado del campeonato interno de Mecanica Electrica organizado por octavo semestre:",
     "",
     `Equipo: ${row.teamName}`,
-    `Usuario: ${row.access.username}`,
-    `Contrasena: ${row.access.passwordLabel}`,
+    `Correo de acceso: ${row.access.email}`,
+    `Ingreso: ${row.access.methodLabel}`,
     `Panel: ${delegatePanelUrl}`,
     "",
-    "Guarda estos datos para revisar tu plantilla, horarios y observaciones."
+    "Usa este mismo correo Google/Gmail para revisar tu plantilla, horarios y observaciones."
   ].join("\n");
 
   return `mailto:${encodeURIComponent(row.delegateEmail)}?subject=${encodeURIComponent(

@@ -2,23 +2,19 @@ import "server-only";
 
 import nodemailer from "nodemailer";
 
-type DelegateCredentialsEmailInput = {
+type DelegateAccessEmailInput = {
   to: string;
   delegateName: string;
   teamName: string;
   eventName: string;
-  username: string;
-  password: string;
 };
 
-export async function sendDelegateCredentialsEmail({
+export async function sendDelegateAccessEmail({
   to,
   delegateName,
   teamName,
-  eventName,
-  username,
-  password
-}: DelegateCredentialsEmailInput) {
+  eventName
+}: DelegateAccessEmailInput) {
   const host = process.env.SMTP_HOST;
   const user = process.env.SMTP_USER;
   const pass = process.env.SMTP_PASS;
@@ -38,11 +34,10 @@ export async function sendDelegateCredentialsEmail({
     "",
     `Equipo: ${teamName}`,
     `Campeonato: ${eventName}`,
-    `Usuario: ${username}`,
-    `Contrasena temporal: ${password}`,
+    `Correo de acceso: ${to}`,
     `Login: ${loginUrl}`,
     "",
-    "Guarda estas credenciales. Podras usarlas para entrar al panel de delegado y revisar tu plantilla, horarios y observaciones."
+    "Usa este mismo correo Google/Gmail para entrar al panel de delegado. No necesitas contrasena temporal."
   ].join("\n");
   const html = `
     <div style="font-family: Arial, sans-serif; color: #17211f; line-height: 1.5;">
@@ -59,33 +54,29 @@ export async function sendDelegateCredentialsEmail({
           <td style="padding: 8px; border: 1px solid #dde4e0;">${escapeHtml(eventName)}</td>
         </tr>
         <tr>
-          <td style="padding: 8px; border: 1px solid #dde4e0; font-weight: 700;">Usuario</td>
-          <td style="padding: 8px; border: 1px solid #dde4e0;">${escapeHtml(username)}</td>
-        </tr>
-        <tr>
-          <td style="padding: 8px; border: 1px solid #dde4e0; font-weight: 700;">Contrasena temporal</td>
-          <td style="padding: 8px; border: 1px solid #dde4e0;">${escapeHtml(password)}</td>
+          <td style="padding: 8px; border: 1px solid #dde4e0; font-weight: 700;">Correo de acceso</td>
+          <td style="padding: 8px; border: 1px solid #dde4e0;">${escapeHtml(to)}</td>
         </tr>
       </table>
       <p>
         <a href="${loginUrl}" style="display: inline-block; background: #17211f; color: #ffffff; padding: 10px 14px; border-radius: 6px; text-decoration: none;">
-          Entrar al panel
+          Entrar con Google
         </a>
       </p>
       <p style="font-size: 13px; color: #5f6c67;">
-        Guarda estas credenciales. Podras usarlas para entrar al panel de delegado y revisar tu plantilla, horarios y observaciones.
+        Usa este mismo correo Google/Gmail para entrar al panel de delegado. No necesitas contrasena temporal.
       </p>
     </div>
   `;
 
   // Gmail SMTP uses an app password stored in SMTP_PASS, never the real account password.
   const transporter = nodemailer.createTransport({
-    host: process.env.SMTP_HOST,
+    host,
     port: Number(process.env.SMTP_PORT || 465),
     secure: process.env.SMTP_SECURE === "true",
     auth: {
-      user: process.env.SMTP_USER,
-      pass: process.env.SMTP_PASS
+      user,
+      pass
     }
   });
 

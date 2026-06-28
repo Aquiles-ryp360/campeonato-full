@@ -30,7 +30,7 @@ export function AuthGate({
     async function loadSession() {
       const storedSession = getStoredSession();
 
-      if (!hasSupabaseEnv() || !storedSession) {
+      if (!hasSupabaseEnv()) {
         setSession(storedSession);
         setReady(true);
         return;
@@ -67,7 +67,7 @@ export function AuthGate({
 
         const verifiedSession = createSession(
           profile.role,
-          userData.user.email ?? storedSession.username,
+          userData.user.email ?? storedSession?.username ?? "usuario",
           profile.full_name ?? userData.user.email ?? "Usuario"
         );
 

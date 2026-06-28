@@ -7,9 +7,10 @@ export interface AuthSession {
   createdAt: string;
 }
 
-export interface DelegateCredentials {
-  username: string;
-  password: string;
+export interface DelegateAccess {
+  email: string;
+  provider: "google";
+  loginUrl: string;
 }
 
 const sessionKey = "campeonato.session";

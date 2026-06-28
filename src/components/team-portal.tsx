@@ -15,11 +15,8 @@ export function TeamPortal({ initialData }: { initialData: CompetitionData }) {
   const { teams, players, matches } = data;
   const team = useMemo(() => {
     const normalizedEmail = delegateEmail?.toLowerCase();
-    return (
-      teams.find((current) => current.delegateEmail.toLowerCase() === normalizedEmail) ??
-      teams[0] ??
-      null
-    );
+    if (!normalizedEmail) return null;
+    return teams.find((current) => current.delegateEmail.toLowerCase() === normalizedEmail) ?? null;
   }, [delegateEmail, teams]);
 
   useEffect(() => {

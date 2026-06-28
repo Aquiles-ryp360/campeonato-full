@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { sendDelegateCredentialsEmail } from "@/lib/mail";
-import { generateTemporaryPassword } from "@/lib/password";
+import { sendDelegateAccessEmail } from "@/lib/mail";
 import { createSupabaseAdminClient } from "@/lib/supabase-admin";
 
 export const runtime = "nodejs";
@@ -138,55 +137,15 @@ async function registerDelegateTeam(
     );
   }
 
-  const password = generateTemporaryPassword();
-  const username = input.delegateEmail;
-  let createdUserId: string | null = null;
   let createdTeamId: string | null = null;
   let registrationCodeMarkedUsed = false;
-
-  const { data: createdUser, error: createUserError } = await supabase.auth.admin.createUser({
-    email: input.delegateEmail,
-    password,
-    email_confirm: true,
-    user_metadata: {
-      role: "delegate",
-      full_name: input.delegateName,
-      team_name: input.teamName
-    }
-  });
-
-  if (createUserError || !createdUser.user) {
-    throw new PublicRouteError(
-      createUserError?.message.toLowerCase().includes("already")
-        ? "Ya existe un usuario registrado con ese correo."
-        : "No se pudo crear el usuario delegado en Supabase Auth.",
-      400
-    );
-  }
-
-  createdUserId = createdUser.user.id;
+  let emailSent = false;
 
   try {
-    const { error: profileError } = await supabase.from("profiles").upsert(
-      {
-        id: createdUserId,
-        role: "delegate",
-        full_name: input.delegateName,
-        phone: input.delegatePhone,
-        updated_at: new Date().toISOString()
-      },
-      { onConflict: "id" }
-    );
-
-    if (profileError) {
-      throw new PublicRouteError("No se pudo crear el perfil del delegado.", 500);
-    }
-
     const { data: team, error: teamError } = await supabase
       .from("teams")
       .insert({
         event_id: event.id,
-        delegate_user_id: createdUserId,
         name: input.teamName,
         delegate_name: input.delegateName,
         delegate_phone: input.delegatePhone,
@@ -239,34 +198,29 @@ async function registerDelegateTeam(
     registrationCodeMarkedUsed = true;
 
     try {
-      await sendDelegateCredentialsEmail({
+      await sendDelegateAccessEmail({
         to: input.delegateEmail,
         delegateName: input.delegateName,
         teamName: input.teamName,
-        eventName: event.name,
-        username,
-        password
+        eventName: event.name
       });
+      emailSent = true;
     } catch (emailError) {
-      console.error("Delegate credentials email failed", emailError);
-      throw new PublicRouteError(
-        "La inscripcion no se completo porque no se pudo enviar el correo al delegado.",
-        502
-      );
+      console.error("Delegate access email failed", emailError);
     }
 
     return {
       ok: true,
       teamId: createdTeamId,
-      emailSent: true,
-      delegateCredentials: {
-        username,
-        password
+      emailSent,
+      delegateAccess: {
+        email: input.delegateEmail,
+        provider: "google",
+        loginUrl: "/login"
       }
     };
   } catch (error) {
     await cleanupRegistration(supabase, {
-      userId: createdUserId,
       teamId: createdTeamId,
       registrationCodeId: registrationCode.id,
       resetRegistrationCode: registrationCodeMarkedUsed
@@ -317,12 +271,10 @@ async function findRegistrationCode(
 async function cleanupRegistration(
   supabase: ReturnType<typeof createSupabaseAdminClient>,
   {
-    userId,
     teamId,
     registrationCodeId,
     resetRegistrationCode
   }: {
-    userId: string | null;
     teamId: string | null;
     registrationCodeId: string;
     resetRegistrationCode: boolean;
@@ -341,10 +293,6 @@ async function cleanupRegistration(
 
   if (teamId) {
     await supabase.from("teams").delete().eq("id", teamId);
-  }
-
-  if (userId) {
-    await supabase.auth.admin.deleteUser(userId);
   }
 }
 

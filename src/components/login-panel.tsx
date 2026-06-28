@@ -2,10 +2,9 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { KeyRound, LogIn, ShieldCheck, UserRoundCheck } from "lucide-react";
+import { KeyRound, LogIn, Mail, ShieldCheck, UserRoundCheck } from "lucide-react";
 import { toast } from "sonner";
 import {
-  createSession,
   demoAdminCredentials,
   demoDelegateCredentials,
   loginWithCredentials,
@@ -14,6 +13,17 @@ import {
 import { createSupabaseBrowserClient, hasSupabaseEnv } from "@/lib/supabase";
 import { Badge, Button, Card, Field, SectionHeader, inputClass } from "./ui";
 
+const loginErrorMessages: Record<string, string> = {
+  missing_email: "Google no devolvio un correo valido.",
+  not_authorized: "Este Gmail no esta autorizado para entrar.",
+  not_registered: "Este Gmail no coincide con ningun delegado inscrito.",
+  oauth_access_failed: "No se pudo validar el acceso con Supabase.",
+  oauth_exchange_failed: "No se pudo completar el login con Google.",
+  oauth_missing_code: "Google no envio el codigo de acceso.",
+  oauth_user_missing: "No se pudo leer el usuario autenticado.",
+  supabase_not_configured: "Supabase no esta configurado en el servidor."
+};
+
 export function LoginPanel() {
   const router = useRouter();
   const supabaseConfigured = hasSupabaseEnv();
@@ -21,79 +31,54 @@ export function LoginPanel() {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isGoogleSubmitting, setIsGoogleSubmitting] = useState(false);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
-    setNextPath(params.get("next") || "/");
+    const next = params.get("next") || "/";
+    const error = params.get("error");
+
+    setNextPath(next);
+
+    if (error) {
+      toast.error(loginErrorMessages[error] ?? "No se pudo iniciar sesion.");
+    }
   }, []);
 
-  async function submitLogin(event: React.FormEvent<HTMLFormElement>) {
+  async function startGoogleLogin() {
+    if (!supabaseConfigured) {
+      toast.error("Supabase no esta configurado.");
+      return;
+    }
+
+    setIsGoogleSubmitting(true);
+
+    try {
+      const callbackUrl = new URL("/auth/callback", window.location.origin);
+
+      const { error } = await createSupabaseBrowserClient().auth.signInWithOAuth({
+        provider: "google",
+        options: {
+          redirectTo: callbackUrl.toString(),
+          queryParams: {
+            prompt: "select_account"
+          }
+        }
+      });
+
+      if (error) {
+        toast.error("No se pudo abrir el login con Google.");
+        setIsGoogleSubmitting(false);
+      }
+    } catch {
+      toast.error("No se pudo iniciar sesion con Google.");
+      setIsGoogleSubmitting(false);
+    }
+  }
+
+  function submitDemoLogin(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setIsSubmitting(true);
-
-    if (supabaseConfigured) {
-      try {
-        const supabase = createSupabaseBrowserClient();
-        const email = username.trim().toLowerCase();
-        const { data, error } = await supabase.auth.signInWithPassword({
-          email,
-          password
-        });
-
-        if (error || !data.user) {
-          toast.error("Correo o contrasena incorrectos.");
-          return;
-        }
-
-        const { data: profile, error: profileError } = await supabase
-          .from("profiles")
-          .select("role, full_name")
-          .eq("id", data.user.id)
-          .maybeSingle();
-
-        if (profileError || !profile) {
-          await supabase.auth.signOut();
-          toast.error("Tu usuario no tiene perfil asignado.");
-          return;
-        }
-
-        if (profile.role !== "admin" && profile.role !== "delegate") {
-          await supabase.auth.signOut();
-          toast.error("Tu usuario no tiene permisos para este sistema.");
-          return;
-        }
-
-        const session = createSession(
-          profile.role,
-          email,
-          profile.full_name ?? data.user.email ?? "Usuario"
-        );
-
-        storeSession(session);
-        toast.success(`Sesion iniciada como ${session.role === "admin" ? "admin" : "delegado"}.`);
-
-        if (session.role === "admin") {
-          router.push(
-            nextPath.startsWith("/admin") ||
-              nextPath.startsWith("/delegado") ||
-              nextPath === "/equipo"
-              ? nextPath
-              : "/admin"
-          );
-          return;
-        }
-
-        router.push(
-          nextPath.startsWith("/delegado") || nextPath === "/equipo" ? nextPath : "/delegado"
-        );
-        return;
-      } catch {
-        toast.error("No se pudo iniciar sesion con Supabase.");
-        return;
-      } finally {
-        setIsSubmitting(false);
-      }
-    }
 
     const session = loginWithCredentials(username, password);
 
@@ -126,37 +111,59 @@ export function LoginPanel() {
         <SectionHeader
           eyebrow="Acceso"
           title="Iniciar sesion"
-          description="Ingresa con el correo y la contrasena temporal enviada al delegado o con un usuario admin creado en Supabase."
+          description={
+            supabaseConfigured
+              ? "Entra con el mismo correo Google/Gmail usado en la inscripcion."
+              : "Modo demo local sin Supabase: usa las credenciales de prueba."
+          }
         />
 
-        <form className="mt-5 space-y-4" onSubmit={submitLogin}>
-          <Field label="Correo">
-            <input
-              className={inputClass}
-              value={username}
-              onChange={(event) => setUsername(event.target.value)}
-              placeholder={supabaseConfigured ? "delegado@correo.com" : "admin o delegado"}
-              type={supabaseConfigured ? "email" : "text"}
-              autoComplete="username"
-            />
-          </Field>
+        {supabaseConfigured ? (
+          <div className="mt-5 space-y-4">
+            <Button
+              type="button"
+              className="w-full"
+              onClick={startGoogleLogin}
+              disabled={isGoogleSubmitting}
+            >
+              <Mail className="h-4 w-4" />
+              {isGoogleSubmitting ? "Abriendo Google..." : "Entrar con Google"}
+            </Button>
+            <p className="text-sm leading-6 text-ink/62">
+              Si eres delegado, el correo debe coincidir con el correo registrado en la
+              inscripcion. Si eres admin, tu correo debe estar autorizado en Supabase.
+            </p>
+          </div>
+        ) : (
+          <form className="mt-5 space-y-4" onSubmit={submitDemoLogin}>
+            <Field label="Usuario">
+              <input
+                className={inputClass}
+                value={username}
+                onChange={(event) => setUsername(event.target.value)}
+                placeholder="admin o delegado"
+                type="text"
+                autoComplete="username"
+              />
+            </Field>
 
-          <Field label="Contrasena">
-            <input
-              className={inputClass}
-              value={password}
-              onChange={(event) => setPassword(event.target.value)}
-              placeholder="Contrasena"
-              type="password"
-              autoComplete="current-password"
-            />
-          </Field>
+            <Field label="Contrasena">
+              <input
+                className={inputClass}
+                value={password}
+                onChange={(event) => setPassword(event.target.value)}
+                placeholder="Contrasena"
+                type="password"
+                autoComplete="current-password"
+              />
+            </Field>
 
-          <Button type="submit" className="w-full" disabled={isSubmitting}>
-            <LogIn className="h-4 w-4" />
-            {isSubmitting ? "Entrando..." : "Entrar"}
-          </Button>
-        </form>
+            <Button type="submit" className="w-full" disabled={isSubmitting}>
+              <LogIn className="h-4 w-4" />
+              {isSubmitting ? "Entrando..." : "Entrar"}
+            </Button>
+          </form>
+        )}
       </Card>
 
       <div className="space-y-4">
@@ -172,8 +179,8 @@ export function LoginPanel() {
               </div>
               {supabaseConfigured ? (
                 <p className="mt-3 text-sm leading-6 text-ink/62">
-                  En produccion entra con el correo administrador creado en Supabase y la
-                  contrasena temporal enviada por correo.
+                  El admin entra con Google solo si su correo existe como admin en
+                  profiles o esta en la lista ADMIN_EMAILS del servidor.
                 </p>
               ) : (
                 <>
@@ -201,8 +208,8 @@ export function LoginPanel() {
               </div>
               {supabaseConfigured ? (
                 <p className="mt-3 text-sm leading-6 text-ink/62">
-                  El delegado entra con su correo y la contrasena temporal enviada al terminar la
-                  inscripcion.
+                  El delegado usa el mismo correo Google/Gmail que dejo en la inscripcion.
+                  Al coincidir, el sistema vincula su usuario con su equipo.
                 </p>
               ) : (
                 <>
@@ -224,11 +231,10 @@ export function LoginPanel() {
               <KeyRound className="h-5 w-5" />
             </div>
             <div>
-              <p className="font-bold text-ink">Siguiente paso recomendado</p>
+              <p className="font-bold text-ink">Seguridad</p>
               <p className="mt-2 text-sm leading-6 text-ink/62">
-                Cuando conectemos Supabase real, admin creara eventos y codigos; delegado
-                vera su plantilla, constancia, horarios, observaciones y solicitudes de
-                correccion, sin poder tocar resultados.
+                Tener Gmail no da acceso automatico. El correo debe estar inscrito como
+                delegado o autorizado como administrador.
               </p>
             </div>
           </div>

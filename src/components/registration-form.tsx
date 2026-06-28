@@ -4,7 +4,7 @@ import { useMemo, useState } from "react";
 import { Download, FileText, Plus, Smartphone, Trash2, UserPlus } from "lucide-react";
 import type { jsPDF as JsPDFDocument } from "jspdf";
 import { toast } from "sonner";
-import type { DelegateCredentials } from "@/lib/auth";
+import type { DelegateAccess } from "@/lib/auth";
 import type { PlayerRole, TournamentEvent } from "@/lib/types";
 import { formatDateTime, formatMoney, playerRoleLabel, sportLabel } from "@/lib/utils";
 import { Badge, Button, Card, Field, SectionHeader, inputClass } from "./ui";
@@ -42,7 +42,7 @@ interface RegistrationReceipt {
   delegateEmail: string;
   paymentMethod: "yape" | "plin";
   registrationCode: string;
-  delegateCredentials: DelegateCredentials;
+  delegateAccess: DelegateAccess;
   players: PlayerFormRow[];
   generatedAt: string;
 }
@@ -52,7 +52,7 @@ type RegisterDelegateResponse =
       ok: true;
       teamId: string;
       emailSent: boolean;
-      delegateCredentials: DelegateCredentials;
+      delegateAccess: DelegateAccess;
     }
   | {
       ok: false;
@@ -178,7 +178,7 @@ export function RegistrationForm({ events }: { events: TournamentEvent[] }) {
         delegateEmail,
         paymentMethod,
         registrationCode,
-        delegateCredentials: payload.delegateCredentials,
+        delegateAccess: payload.delegateAccess,
         players: completedPlayers,
         generatedAt
       };
@@ -447,12 +447,11 @@ export function RegistrationForm({ events }: { events: TournamentEvent[] }) {
                 </p>
                 <div className="mt-3 grid gap-2 text-sm text-ink/70 sm:grid-cols-2">
                   <p>
-                    Usuario delegado:{" "}
-                    <strong className="text-ink">{lastReceipt.delegateCredentials.username}</strong>
+                    Correo de acceso:{" "}
+                    <strong className="text-ink">{lastReceipt.delegateAccess.email}</strong>
                   </p>
                   <p>
-                    Contrasena:{" "}
-                    <strong className="text-ink">{lastReceipt.delegateCredentials.password}</strong>
+                    Ingreso: <strong className="text-ink">Entrar con Google</strong>
                   </p>
                 </div>
               </div>
@@ -535,9 +534,9 @@ async function generateRegistrationReceiptPdf(receipt: RegistrationReceipt) {
   ]);
 
   drawInfoBox(doc, margin, 102, contentWidth, "Acceso del delegado", [
-    ["Usuario", receipt.delegateCredentials.username],
-    ["Contrasena", receipt.delegateCredentials.password],
-    ["Panel", "/delegado"]
+    ["Correo", receipt.delegateAccess.email],
+    ["Ingreso", "Entrar con Google"],
+    ["Panel", receipt.delegateAccess.loginUrl]
   ]);
 
   const tableY = 136;
