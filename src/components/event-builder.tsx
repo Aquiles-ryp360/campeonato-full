@@ -7,13 +7,51 @@ import { mapEvent, type EventRow } from "@/lib/data-mappers";
 import { createSupabaseBrowserClient, hasSupabaseEnv } from "@/lib/supabase";
 import { formatLabel, sportLabel } from "@/lib/utils";
 import { Badge, Button, Card, Field, SectionHeader, inputClass } from "./ui";
-import type { Sport, TournamentEvent, TournamentFormat } from "@/lib/types";
+import type { SportKey, TournamentEvent, TournamentFormat } from "@/lib/types";
+
+const newEventSelectColumns = `
+  id,
+  name,
+  sport_id,
+  category,
+  format_id,
+  status,
+  registration_fee,
+  registration_open_until,
+  max_teams,
+  min_players,
+  max_players,
+  points_win,
+  points_draw,
+  points_loss,
+  rules_summary,
+  prevent_cross_sport_conflicts,
+  minimum_rest_minutes
+`;
+
+const legacyEventSelectColumns = `
+  id,
+  name,
+  sport,
+  category,
+  format,
+  status,
+  registration_fee,
+  registration_open_until,
+  max_teams,
+  min_players,
+  max_players,
+  points_win,
+  points_draw,
+  points_loss,
+  rules_summary
+`;
 
 export function EventBuilder({ initialEvents }: { initialEvents: TournamentEvent[] }) {
   const [eventList, setEventList] = useState(initialEvents);
   const [eventName, setEventName] = useState("");
   const [category, setCategory] = useState("");
-  const [sport, setSport] = useState<Sport>("futsal");
+  const [sport, setSport] = useState<SportKey>("futsal");
   const [format, setFormat] = useState<TournamentFormat>("league");
   const [registrationOpenUntil, setRegistrationOpenUntil] = useState("2026-07-31T23:59");
   const [registrationFee, setRegistrationFee] = useState(40);
@@ -52,46 +90,45 @@ export function EventBuilder({ initialEvents }: { initialEvents: TournamentEvent
         return;
       }
 
-      const { data, error } = await supabase
-        .from("events")
-        .insert({
-          name: eventName.trim(),
-          slug: slugify(eventName),
-          sport,
-          category: category.trim(),
-          format,
-          status: "draft",
-          registration_fee: registrationFee,
-          registration_open_until: new Date(registrationOpenUntil).toISOString(),
-          max_teams: maxTeams,
-          min_players: minPlayers,
-          max_players: maxPlayers,
-          points_win: pointsWin,
-          points_draw: pointsDraw,
-          points_loss: pointsLoss,
-          rules_summary: rulesSummary.trim(),
-          created_by: userData.user.id
-        })
-        .select(
-          `
-            id,
-            name,
-            sport,
-            category,
-            format,
-            status,
-            registration_fee,
-            registration_open_until,
-            max_teams,
-            min_players,
-            max_players,
-            points_win,
-            points_draw,
-            points_loss,
-            rules_summary
-          `
-        )
-        .single<EventRow>();
+      const baseEvent = {
+        name: eventName.trim(),
+        slug: slugify(eventName),
+        category: category.trim(),
+        status: "draft",
+        registration_fee: registrationFee,
+        registration_open_until: new Date(registrationOpenUntil).toISOString(),
+        max_teams: maxTeams,
+        min_players: minPlayers,
+        max_players: maxPlayers,
+        points_win: pointsWin,
+        points_draw: pointsDraw,
+        points_loss: pointsLoss,
+        rules_summary: rulesSummary.trim(),
+        created_by: userData.user.id
+      };
+
+      const catalogRefs = await resolveCatalogRefs(supabase, sport, format);
+      const { data, error } = catalogRefs
+        ? await supabase
+            .from("events")
+            .insert({
+              ...baseEvent,
+              sport_id: catalogRefs.sportId,
+              format_id: catalogRefs.formatId,
+              prevent_cross_sport_conflicts: false,
+              minimum_rest_minutes: 60
+            })
+            .select(newEventSelectColumns)
+            .single<EventRow>()
+        : await supabase
+            .from("events")
+            .insert({
+              ...baseEvent,
+              sport,
+              format
+            })
+            .select(legacyEventSelectColumns)
+            .single<EventRow>();
 
       if (error || !data) {
         toast.error(
@@ -102,7 +139,7 @@ export function EventBuilder({ initialEvents }: { initialEvents: TournamentEvent
         return;
       }
 
-      setEventList((current) => [mapEvent(data), ...current]);
+      setEventList((current) => [mapEvent({ ...data, sport, format }), ...current]);
       setEventName("");
       setCategory("");
       setRulesSummary("");
@@ -144,7 +181,7 @@ export function EventBuilder({ initialEvents }: { initialEvents: TournamentEvent
               <select
                 className={inputClass}
                 value={sport}
-                onChange={(event) => setSport(event.target.value as Sport)}
+                onChange={(event) => setSport(event.target.value as SportKey)}
               >
                 <option value="futsal">Futsal varones</option>
                 <option value="voley">Voley mixto</option>
@@ -310,4 +347,24 @@ function slugify(value: string) {
     .replace(/^-+|-+$/g, "");
 
   return slug || `evento-${Date.now()}`;
+}
+
+async function resolveCatalogRefs(
+  supabase: ReturnType<typeof createSupabaseBrowserClient>,
+  sport: SportKey,
+  format: TournamentFormat
+) {
+  const sportName = sport === "voley" ? "V%" : sport === "futbol" ? "F%" : "Futsal";
+  const [sportResponse, formatResponse] = await Promise.all([
+    supabase.from("sports").select("id").ilike("name", sportName).limit(1).maybeSingle(),
+    supabase.from("competition_formats").select("id").eq("key", format).maybeSingle()
+  ]);
+
+  if (sportResponse.error || formatResponse.error) return null;
+  if (!sportResponse.data?.id || !formatResponse.data?.id) return null;
+
+  return {
+    sportId: sportResponse.data.id as string,
+    formatId: formatResponse.data.id as string
+  };
 }

@@ -25,7 +25,12 @@ export function formatMoney(value: number) {
 }
 
 export function sportLabel(sport: TournamentEvent["sport"]) {
-  return sport === "futsal" ? "Futsal varones" : "Voley mixto";
+  const labels: Record<TournamentEvent["sport"], string> = {
+    futsal: "Futsal varones",
+    voley: "Voley mixto",
+    futbol: "Futbol 11"
+  };
+  return labels[sport];
 }
 
 export function formatLabel(formatValue: TournamentEvent["format"]) {

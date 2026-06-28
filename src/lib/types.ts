@@ -1,4 +1,4 @@
-export type Sport = "futsal" | "voley";
+export type SportKey = "futsal" | "voley" | "futbol";
 
 export type TournamentFormat =
   | "league"
@@ -17,11 +17,60 @@ export type MatchStatus = "scheduled" | "finished" | "walkover" | "postponed";
 
 export type PlayerRole = "starter" | "substitute";
 
+export type MatchStage =
+  | "group_stage"
+  | "round_of_16"
+  | "quarter_finals"
+  | "semi_finals"
+  | "final"
+  | "third_place";
+
+export interface Sport {
+  id: string;
+  name: string;
+  playersPerTeam: number;
+  matchDuration: number;
+  active: boolean;
+  createdAt?: string;
+}
+
+export interface CompetitionFormat {
+  id: string;
+  name: string;
+  key: string;
+  description?: string;
+  active: boolean;
+  createdAt?: string;
+}
+
+export interface TournamentBases {
+  id: string;
+  championshipName: string;
+  year: number;
+  organizer: string;
+  startDate: string;
+  endDate: string;
+  description: string;
+  matchDuration: number;
+  pointsWin: number;
+  pointsDraw: number;
+  pointsLoss: number;
+  tiebreakerRules: string;
+  walkoverRules: string;
+  maxPlayersPerTeam: number;
+  sanctions: string;
+  published: boolean;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
 export interface TournamentEvent {
   id: string;
   name: string;
-  sport: Sport;
+  sportId: string;
+  sport: SportKey;
   category: string;
+  formatId: string;
   format: TournamentFormat;
   status: EventStatus;
   registrationFee: number;
@@ -33,6 +82,8 @@ export interface TournamentEvent {
   pointsDraw: number;
   pointsLoss: number;
   rulesSummary: string;
+  preventCrossSportConflicts: boolean;
+  minimumRestMinutes: number;
 }
 
 export interface Team {
@@ -42,6 +93,7 @@ export interface Team {
   delegateName: string;
   delegatePhone: string;
   delegateEmail: string;
+  academicCareer?: string;
   paymentMethod: PaymentMethod;
   registrationCode: string;
   paymentStatus: PaymentStatus;
@@ -73,13 +125,64 @@ export interface Player {
   photoUrl?: string;
 }
 
+export interface Venue {
+  id: string;
+  name: string;
+  location?: string;
+  active: boolean;
+  createdAt?: string;
+}
+
+export interface TimeSlot {
+  id: string;
+  dayOfWeek: number; // 0: Domingo, 1: Lunes, etc.
+  startTime: string; // "HH:MM:SS" o "HH:MM"
+  endTime: string;
+  active: boolean;
+}
+
+export interface Group {
+  id: string;
+  eventId: string;
+  name: string;
+  createdAt?: string;
+}
+
+export interface GroupTeam {
+  id: string;
+  groupId: string;
+  teamId: string;
+  createdAt?: string;
+}
+
+export interface GroupStanding {
+  id: string;
+  groupId: string;
+  teamId: string;
+  played: number;
+  won: number;
+  drawn: number;
+  lost: number;
+  goalsFor: number;
+  goalsAgainst: number;
+  goalDifference: number;
+  points: number;
+  updatedAt?: string;
+}
+
 export interface Match {
   id: string;
   eventId: string;
   round: number;
+  stage: MatchStage;
+  groupId?: string;
+  bracketPosition?: number;
+  nextMatchId?: string;
+  isHomeNext?: boolean;
   homeTeamId: string;
   awayTeamId: string;
   scheduledAt: string;
+  venueId?: string;
   court: string;
   status: MatchStatus;
   homeScore?: number;

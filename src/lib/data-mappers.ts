@@ -4,8 +4,18 @@ import type {
   PaymentStatus,
   Player,
   RegistrationCode,
+  SportKey,
   Team,
-  TournamentEvent
+  TournamentFormat,
+  TournamentEvent,
+  Sport,
+  CompetitionFormat,
+  TournamentBases,
+  Venue,
+  TimeSlot,
+  Group,
+  GroupTeam,
+  GroupStanding
 } from "./types";
 
 export interface CompetitionData {
@@ -14,6 +24,14 @@ export interface CompetitionData {
   players: Player[];
   matches: Match[];
   registrationCodes: RegistrationCode[];
+  sports: Sport[];
+  competitionFormats: CompetitionFormat[];
+  venues: Venue[];
+  timeSlots: TimeSlot[];
+  groups: Group[];
+  groupTeams: GroupTeam[];
+  groupStandings: GroupStanding[];
+  tournamentBases: TournamentBases[];
 }
 
 export const emptyCompetitionData: CompetitionData = {
@@ -21,15 +39,146 @@ export const emptyCompetitionData: CompetitionData = {
   teams: [],
   players: [],
   matches: [],
-  registrationCodes: []
+  registrationCodes: [],
+  sports: [],
+  competitionFormats: [],
+  venues: [],
+  timeSlots: [],
+  groups: [],
+  groupTeams: [],
+  groupStandings: [],
+  tournamentBases: []
+};
+
+export function applyCatalogLabels(data: CompetitionData): CompetitionData {
+  return {
+    ...data,
+    events: data.events.map((event) => {
+      const sport = data.sports.find((current) => current.id === event.sportId);
+      const format = data.competitionFormats.find((current) => current.id === event.formatId);
+
+      return {
+        ...event,
+        sport: sport ? normalizeSportKey(sport.name) : event.sport,
+        format: format ? normalizeFormatKey(format.key) : event.format
+      };
+    }),
+    matches: data.matches.map((match) => {
+      const venue = data.venues.find((current) => current.id === match.venueId);
+      return {
+        ...match,
+        court: venue?.name ?? match.court
+      };
+    })
+  };
+}
+
+export type SportRow = {
+  id: string;
+  name: string;
+  players_per_team: number;
+  match_duration: number;
+  active: boolean;
+  created_at?: string;
+};
+
+export type CompetitionFormatRow = {
+  id: string;
+  name: string;
+  key: string;
+  description: string | null;
+  active: boolean;
+  created_at?: string;
+};
+
+export type TournamentBasesRow = {
+  id: string;
+  championship_name: string;
+  year: number;
+  organizer: string;
+  start_date: string;
+  end_date: string;
+  description: string;
+  match_duration: number;
+  points_win: number;
+  points_draw: number;
+  points_loss: number;
+  tiebreaker_rules: string;
+  walkover_rules: string;
+  max_players_per_team: number;
+  sanctions: string;
+  published: boolean;
+  created_at?: string;
+  updated_at?: string;
+};
+
+export type VenueRow = {
+  id: string;
+  name: string;
+  location: string | null;
+  active: boolean;
+  created_at?: string;
+};
+
+export type TimeSlotRow = {
+  id: string;
+  day_of_week: number;
+  start_time: string;
+  end_time: string;
+  active: boolean;
+};
+
+export type GroupRow = {
+  id: string;
+  event_id: string;
+  name: string;
+  created_at?: string;
+};
+
+export type GroupTeamRow = {
+  id: string;
+  group_id: string;
+  team_id: string;
+  created_at?: string;
+};
+
+export type GroupStandingRow = {
+  id: string;
+  group_id: string;
+  team_id: string;
+  played: number;
+  won: number;
+  drawn: number;
+  lost: number;
+  goals_for: number;
+  goals_against: number;
+  goal_difference: number;
+  points: number;
+  updated_at?: string;
+};
+
+type NestedRelation<T> = T | T[] | null;
+
+type SportRelation = {
+  name: string | null;
+};
+
+type FormatRelation = {
+  key: string | null;
+};
+
+type VenueRelation = {
+  name: string | null;
 };
 
 export type EventRow = {
   id: string;
   name: string;
-  sport: TournamentEvent["sport"];
+  sport_id?: string | null;
+  sport?: SportKey | NestedRelation<SportRelation>;
   category: string;
-  format: TournamentEvent["format"];
+  format_id?: string | null;
+  format?: TournamentFormat | NestedRelation<FormatRelation>;
   status: TournamentEvent["status"];
   registration_fee: number | string;
   registration_open_until: string;
@@ -40,6 +189,8 @@ export type EventRow = {
   points_draw: number;
   points_loss: number;
   rules_summary: string | null;
+  prevent_cross_sport_conflicts?: boolean | null;
+  minimum_rest_minutes?: number | null;
 };
 
 export type RegistrationCodeRow = {
@@ -62,6 +213,7 @@ export type TeamRow = {
   delegate_name: string;
   delegate_phone: string;
   delegate_email: string | null;
+  academic_career?: string | null;
   primary_color: string | null;
   secondary_color: string | null;
   status: Team["status"];
@@ -86,22 +238,135 @@ export type MatchRow = {
   id: string;
   event_id: string;
   round: number;
+  stage?: Match["stage"] | null;
+  group_id?: string | null;
+  bracket_position?: number | null;
+  next_match_id?: string | null;
+  is_home_next?: boolean | null;
   home_team_id: string;
   away_team_id: string;
   scheduled_at: string;
+  venue_id?: string | null;
+  venue?: NestedRelation<VenueRelation>;
+  court?: string | null;
   status: Match["status"];
   home_score: number | null;
   away_score: number | null;
   notes: string | null;
 };
 
-export function mapEvent(row: EventRow): TournamentEvent {
+export function mapSport(row: SportRow): Sport {
   return {
     id: row.id,
     name: row.name,
-    sport: row.sport,
+    playersPerTeam: row.players_per_team,
+    matchDuration: row.match_duration,
+    active: row.active,
+    createdAt: row.created_at
+  };
+}
+
+export function mapCompetitionFormat(row: CompetitionFormatRow): CompetitionFormat {
+  return {
+    id: row.id,
+    name: row.name,
+    key: row.key,
+    description: row.description ?? undefined,
+    active: row.active,
+    createdAt: row.created_at
+  };
+}
+
+export function mapTournamentBases(row: TournamentBasesRow): TournamentBases {
+  return {
+    id: row.id,
+    championshipName: row.championship_name,
+    year: row.year,
+    organizer: row.organizer,
+    startDate: row.start_date,
+    endDate: row.end_date,
+    description: row.description,
+    matchDuration: row.match_duration,
+    pointsWin: row.points_win,
+    pointsDraw: row.points_draw,
+    pointsLoss: row.points_loss,
+    tiebreakerRules: row.tiebreaker_rules,
+    walkoverRules: row.walkover_rules,
+    maxPlayersPerTeam: row.max_players_per_team,
+    sanctions: row.sanctions,
+    published: row.published,
+    createdAt: row.created_at,
+    updatedAt: row.updated_at
+  };
+}
+
+export function mapVenue(row: VenueRow): Venue {
+  return {
+    id: row.id,
+    name: row.name,
+    location: row.location ?? undefined,
+    active: row.active,
+    createdAt: row.created_at
+  };
+}
+
+export function mapTimeSlot(row: TimeSlotRow): TimeSlot {
+  return {
+    id: row.id,
+    dayOfWeek: row.day_of_week,
+    startTime: row.start_time,
+    endTime: row.end_time,
+    active: row.active
+  };
+}
+
+export function mapGroup(row: GroupRow): Group {
+  return {
+    id: row.id,
+    eventId: row.event_id,
+    name: row.name,
+    createdAt: row.created_at
+  };
+}
+
+export function mapGroupTeam(row: GroupTeamRow): GroupTeam {
+  return {
+    id: row.id,
+    groupId: row.group_id,
+    teamId: row.team_id,
+    createdAt: row.created_at
+  };
+}
+
+export function mapGroupStanding(row: GroupStandingRow): GroupStanding {
+  return {
+    id: row.id,
+    groupId: row.group_id,
+    teamId: row.team_id,
+    played: row.played,
+    won: row.won,
+    drawn: row.drawn,
+    lost: row.lost,
+    goalsFor: row.goals_for,
+    goalsAgainst: row.goals_against,
+    goalDifference: row.goal_difference,
+    points: row.points,
+    updatedAt: row.updated_at
+  };
+}
+
+export function mapEvent(row: EventRow): TournamentEvent {
+  const sport = sportKeyFromValue(row.sport) ?? sportKeyFromId(row.sport_id);
+  const format = formatKeyFromValue(row.format) ?? formatKeyFromId(row.format_id);
+
+  return {
+    id: row.id,
+    name: row.name,
+    sportId: row.sport_id ?? sportIdFromKey(sport),
+    sport,
     category: row.category,
-    format: row.format,
+    formatId: row.format_id ?? formatIdFromKey(format),
+    format,
     status: row.status,
     registrationFee: Number(row.registration_fee),
     registrationOpenUntil: row.registration_open_until,
@@ -111,7 +376,9 @@ export function mapEvent(row: EventRow): TournamentEvent {
     pointsWin: row.points_win,
     pointsDraw: row.points_draw,
     pointsLoss: row.points_loss,
-    rulesSummary: row.rules_summary ?? ""
+    rulesSummary: row.rules_summary ?? "",
+    preventCrossSportConflicts: row.prevent_cross_sport_conflicts ?? false,
+    minimumRestMinutes: row.minimum_rest_minutes ?? 60
   };
 }
 
@@ -137,6 +404,7 @@ export function mapTeam(row: TeamRow): Team {
     delegateName: row.delegate_name,
     delegatePhone: row.delegate_phone,
     delegateEmail: row.delegate_email ?? "",
+    academicCareer: row.academic_career ?? undefined,
     paymentMethod: embeddedCode?.method ?? "yape",
     registrationCode: embeddedCode?.code ?? "Codigo no visible",
     paymentStatus: paymentStatusFromCode(embeddedCode?.status),
@@ -167,15 +435,87 @@ export function mapMatch(row: MatchRow): Match {
     id: row.id,
     eventId: row.event_id,
     round: row.round,
+    stage: row.stage ?? "group_stage",
+    groupId: row.group_id ?? undefined,
+    bracketPosition: row.bracket_position ?? undefined,
+    nextMatchId: row.next_match_id ?? undefined,
+    isHomeNext: row.is_home_next ?? undefined,
     homeTeamId: row.home_team_id,
     awayTeamId: row.away_team_id,
     scheduledAt: row.scheduled_at,
-    court: "Cancha por definir",
+    venueId: row.venue_id ?? undefined,
+    court: venueNameFromValue(row.venue) ?? row.court ?? "Cancha por definir",
     status: row.status,
     homeScore: row.home_score ?? undefined,
     awayScore: row.away_score ?? undefined,
     notes: row.notes ?? undefined
   };
+}
+
+function sportKeyFromValue(value: EventRow["sport"]): SportKey | null {
+  const current = firstNested(value);
+  if (!current) return null;
+
+  if (typeof current === "string") return normalizeSportKey(current);
+  return normalizeSportKey(current.name);
+}
+
+function sportKeyFromId(value?: string | null): SportKey {
+  return normalizeSportKey(value);
+}
+
+function normalizeSportKey(value?: string | null): SportKey {
+  const normalized = normalizeText(value);
+  if (normalized.includes("voley") || normalized.includes("volley")) return "voley";
+  if (normalized.includes("futbol")) return "futbol";
+  return "futsal";
+}
+
+function sportIdFromKey(value: SportKey) {
+  if (value === "voley") return "sport-voley";
+  if (value === "futbol") return "sport-futbol";
+  return "sport-futsal";
+}
+
+function formatKeyFromValue(value: EventRow["format"]): TournamentFormat | null {
+  const current = firstNested(value);
+  if (!current) return null;
+
+  if (typeof current === "string") return normalizeFormatKey(current);
+  return normalizeFormatKey(current.key);
+}
+
+function formatKeyFromId(value?: string | null): TournamentFormat {
+  return normalizeFormatKey(value);
+}
+
+function normalizeFormatKey(value?: string | null): TournamentFormat {
+  const normalized = normalizeText(value);
+  if (normalized.includes("single") || normalized.includes("knockout")) {
+    return "single_elimination";
+  }
+  if (normalized.includes("group") || normalized.includes("grupo")) {
+    return "groups_then_knockout";
+  }
+  return "league";
+}
+
+function formatIdFromKey(value: TournamentFormat) {
+  if (value === "single_elimination") return "format-knockout";
+  if (value === "groups_then_knockout") return "format-groups";
+  return "format-league";
+}
+
+function venueNameFromValue(value: MatchRow["venue"]) {
+  const current = firstNested(value);
+  return current?.name ?? null;
+}
+
+function normalizeText(value?: string | null) {
+  return (value ?? "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase();
 }
 
 function firstNested<T>(value: T | T[] | null | undefined) {
