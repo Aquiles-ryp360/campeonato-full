@@ -4,6 +4,7 @@ import { PublicShell } from "@/components/shell";
 import { Card, SectionHeader, Badge } from "@/components/ui";
 import { BookOpen, Scale, ShieldAlert, Trophy } from "lucide-react";
 import { formatDateTime } from "@/lib/utils";
+import Link from "next/link";
 
 export const dynamic = "force-dynamic";
 
@@ -125,6 +126,23 @@ export default async function BasesPage() {
           </p>
           <div className="mt-3 bg-mist p-4 rounded-md text-sm font-semibold text-ink/80 whitespace-pre-line">
             {bases.tiebreakerRules}
+          </div>
+        </Card>
+
+        <Card className="p-5">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <h3 className="text-lg font-bold text-ink">Bases especificas de futbol 11</h3>
+              <p className="mt-1 text-sm text-ink/65">
+                Formato de eliminacion directa, reglas de penales y llaves generadas por sorteo admin.
+              </p>
+            </div>
+            <Link
+              href="/campeonato/futbol"
+              className="inline-flex min-h-10 items-center justify-center rounded-md bg-ink px-4 py-2 text-sm font-semibold text-white transition hover:bg-ink/90"
+            >
+              Ver futbol
+            </Link>
           </div>
         </Card>
       </div>

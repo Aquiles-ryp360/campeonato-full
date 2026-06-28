@@ -185,6 +185,7 @@ export function EventBuilder({ initialEvents }: { initialEvents: TournamentEvent
               >
                 <option value="futsal">Futsal varones</option>
                 <option value="voley">Voley mixto</option>
+                <option value="futbol">Futbol 11</option>
               </select>
             </Field>
             <Field label="Formato">
@@ -354,17 +355,28 @@ async function resolveCatalogRefs(
   sport: SportKey,
   format: TournamentFormat
 ) {
-  const sportName = sport === "voley" ? "V%" : sport === "futbol" ? "F%" : "Futsal";
   const [sportResponse, formatResponse] = await Promise.all([
-    supabase.from("sports").select("id").ilike("name", sportName).limit(1).maybeSingle(),
+    supabase.from("sports").select("id, name"),
     supabase.from("competition_formats").select("id").eq("key", format).maybeSingle()
   ]);
 
   if (sportResponse.error || formatResponse.error) return null;
-  if (!sportResponse.data?.id || !formatResponse.data?.id) return null;
+  const sportRow = (sportResponse.data ?? []).find((row) => sportFromCatalogName(row.name) === sport);
+  if (!sportRow?.id || !formatResponse.data?.id) return null;
 
   return {
-    sportId: sportResponse.data.id as string,
+    sportId: sportRow.id as string,
     formatId: formatResponse.data.id as string
   };
+}
+
+function sportFromCatalogName(value: string) {
+  const normalized = value
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase();
+
+  if (normalized.includes("voley") || normalized.includes("volley")) return "voley";
+  if (normalized.includes("futbol")) return "futbol";
+  return "futsal";
 }

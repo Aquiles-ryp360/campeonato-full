@@ -30,6 +30,7 @@ import {
   type GroupStandingRow,
   type TournamentBasesRow
 } from "./data-mappers";
+import { withRepositoryFootballDefaults } from "./football-content";
 
 const eventColumns = `
   id,
@@ -144,7 +145,7 @@ const legacyMatchColumns = `
 
 export async function getPublicCompetitionData(): Promise<CompetitionData> {
   const supabase = createPublicSupabaseClient();
-  if (!supabase) return emptyCompetitionData;
+  if (!supabase) return withRepositoryFootballDefaults(emptyCompetitionData);
 
   const [
     eventsResponse,
@@ -202,10 +203,10 @@ export async function getPublicCompetitionData(): Promise<CompetitionData> {
       basesResponse.error
     ])
   ) {
-    return getLegacyPublicCompetitionData(supabase);
+    return withRepositoryFootballDefaults(await getLegacyPublicCompetitionData(supabase));
   }
 
-  return applyCatalogLabels({
+  return withRepositoryFootballDefaults(applyCatalogLabels({
     events: ((eventsResponse.data ?? []) as EventRow[]).map(mapEvent),
     teams: ((teamsResponse.data ?? []) as TeamRow[]).map(mapTeam),
     players: ((playersResponse.data ?? []) as PlayerRow[]).map(mapPlayer),
@@ -219,7 +220,7 @@ export async function getPublicCompetitionData(): Promise<CompetitionData> {
     groupTeams: ((groupTeamsResponse.data ?? []) as GroupTeamRow[]).map(mapGroupTeam),
     groupStandings: ((groupStandingsResponse.data ?? []) as GroupStandingRow[]).map(mapGroupStanding),
     tournamentBases: ((basesResponse.data ?? []) as TournamentBasesRow[]).map(mapTournamentBases)
-  });
+  }));
 }
 
 async function getLegacyPublicCompetitionData(

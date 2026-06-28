@@ -24,6 +24,7 @@ type ShellNavItem = {
 
 const publicNav: ShellNavItem[] = [
   { href: "/", label: "Inicio", icon: Trophy },
+  { href: "/campeonato/futbol", label: "Futbol", icon: Trophy },
   { href: "/campeonato/bases", label: "Bases", icon: BookOpen },
   { href: "/campeonato/grupos", label: "Grupos", icon: LayoutGrid },
   { href: "/campeonato/fixture", label: "Fixture", icon: Calendar },

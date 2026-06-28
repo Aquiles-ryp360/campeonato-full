@@ -31,6 +31,7 @@ import {
   type GroupStandingRow,
   type TournamentBasesRow
 } from "./data-mappers";
+import { withRepositoryFootballDefaults } from "./football-content";
 import { createSupabaseBrowserClient, hasSupabaseEnv } from "./supabase";
 
 const eventColumns = `
@@ -178,7 +179,7 @@ export async function fetchBrowserCompetitionData({
 }: {
   includeRegistrationCodes?: boolean;
 } = {}): Promise<CompetitionData> {
-  if (!hasSupabaseEnv()) return emptyCompetitionData;
+  if (!hasSupabaseEnv()) return withRepositoryFootballDefaults(emptyCompetitionData);
 
   const supabase = createSupabaseBrowserClient();
   const teamSelect = includeRegistrationCodes ? teamColumnsWithCode : teamColumns;
@@ -233,7 +234,9 @@ export async function fetchBrowserCompetitionData({
       basesResponse.error
     ])
   ) {
-    return fetchLegacyBrowserCompetitionData(supabase, includeRegistrationCodes);
+    return withRepositoryFootballDefaults(
+      await fetchLegacyBrowserCompetitionData(supabase, includeRegistrationCodes)
+    );
   }
 
   if (eventsResponse.error) throw new Error("No se pudieron cargar los eventos.");
@@ -250,7 +253,7 @@ export async function fetchBrowserCompetitionData({
   if (groupStandingsResponse.error) throw new Error("No se pudieron cargar la tabla de posiciones por grupo.");
   if (basesResponse.error) throw new Error("No se pudieron cargar las bases del torneo.");
 
-  return applyCatalogLabels({
+  return withRepositoryFootballDefaults(applyCatalogLabels({
     events: ((eventsResponse.data ?? []) as EventRow[]).map(mapEvent),
     teams: ((teamsResponse.data ?? []) as unknown as TeamRow[]).map(mapTeam),
     players: ((playersResponse.data ?? []) as PlayerRow[]).map(mapPlayer),
@@ -264,7 +267,7 @@ export async function fetchBrowserCompetitionData({
     groupTeams: ((groupTeamsResponse.data ?? []) as GroupTeamRow[]).map(mapGroupTeam),
     groupStandings: ((groupStandingsResponse.data ?? []) as GroupStandingRow[]).map(mapGroupStanding),
     tournamentBases: ((basesResponse.data ?? []) as TournamentBasesRow[]).map(mapTournamentBases)
-  });
+  }));
 }
 
 async function fetchLegacyBrowserCompetitionData(

@@ -14,6 +14,7 @@ import { toast } from "sonner";
 import { fetchBrowserCompetitionData } from "@/lib/browser-competition-data";
 import type { CompetitionData } from "@/lib/data-mappers";
 import type { PaymentMethod, Player, TeamStatus } from "@/lib/types";
+import { FootballDrawPanel } from "./football-draw-panel";
 import {
   eventStatusLabel,
   formatDateTime,
@@ -91,6 +92,8 @@ export function AdminDashboard({ initialData }: { initialData: CompetitionData }
         <Metric label="Codigos disponibles" value={`${availableCodes.length}`} icon={CircleDollarSign} tone="amber" />
         <Metric label="Resultados publicados" value={`${finishedMatches.length}`} icon={CheckCircle2} tone="green" />
       </section>
+
+      <FootballDrawPanel data={data} onDataChange={setData} />
 
       <Card className="overflow-hidden">
         <div className="border-b border-ink/10 p-5">
