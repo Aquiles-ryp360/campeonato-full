@@ -4,6 +4,8 @@ import type { User } from "@supabase/supabase-js";
 import type { AuthRole } from "./auth";
 import { createSupabaseAdminClient } from "./supabase-admin";
 
+const defaultAdminEmails = ["renzomamanigalindo@gmail.com"];
+
 type ProfileRow = {
   id: string;
   role: "admin" | "delegate" | "viewer";
@@ -181,9 +183,10 @@ async function linkDelegateTeams(
 }
 
 function isAllowedAdminEmail(email: string) {
-  return (process.env.ADMIN_EMAILS ?? "")
+  const configuredEmails = (process.env.ADMIN_EMAILS ?? "")
     .split(",")
     .map((current) => current.trim().toLowerCase())
-    .filter(Boolean)
-    .includes(email);
+    .filter(Boolean);
+
+  return [...defaultAdminEmails, ...configuredEmails].includes(email);
 }
