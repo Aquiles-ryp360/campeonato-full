@@ -10,6 +10,10 @@ loadEnvFile(".env.local");
 const data = buildFutsal10Seed();
 const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+const catalogIds = {
+  sport: "dddddddd-dddd-4ddd-8ddd-dddddddddd01",
+  format: "eeeeeeee-eeee-4eee-8eee-eeeeeeeeee01"
+};
 
 async function main() {
   console.log("Seed objetivo: Futsal Varones 2026");
@@ -62,6 +66,7 @@ async function main() {
 }
 
 type AdminClient = SupabaseClient;
+type IdResponse = PromiseLike<{ data: { id: string } | null; error: { message: string } | null }>;
 
 async function assertFixtureSchemaReady(supabase: AdminClient) {
   const [eventsCheck, matchesCheck] = await Promise.all([
@@ -145,28 +150,30 @@ async function resetSportsData(supabase: AdminClient) {
 }
 
 async function seedCatalogs(supabase: AdminClient) {
-  await requireOk(
+  const sport = await requireOk(
     supabase
       .from("sports")
-      .upsert({ id: "dddddddd-dddd-4ddd-8ddd-dddddddddd01", name: "Futsal", players_per_team: 5, match_duration: 20, active: true })
+      .upsert({ name: "Futsal", players_per_team: 5, match_duration: 20, active: true }, { onConflict: "name" })
       .select("id")
-      .single(),
+      .single() as IdResponse,
     "sport Futsal"
   );
-  await requireOk(
+  catalogIds.sport = String(sport.id);
+
+  const format = await requireOk(
     supabase
       .from("competition_formats")
       .upsert({
-        id: "eeeeeeee-eeee-4eee-8eee-eeeeeeeeee01",
         name: "Eliminacion Directa",
         key: "single_elimination",
         description: "Llave automatica con preliminares y byes.",
         active: true
       }, { onConflict: "key" })
       .select("id")
-      .single(),
+      .single() as IdResponse,
     "formato eliminacion"
   );
+  catalogIds.format = String(format.id);
 }
 
 async function seedEvent(supabase: AdminClient) {
@@ -175,9 +182,9 @@ async function seedEvent(supabase: AdminClient) {
     id: event.id,
     name: event.name,
     slug: "futsal-varones-2026",
-    sport_id: "dddddddd-dddd-4ddd-8ddd-dddddddddd01",
+    sport_id: catalogIds.sport,
     category: event.category,
-    format_id: "eeeeeeee-eeee-4eee-8eee-eeeeeeeeee01",
+    format_id: catalogIds.format,
     status: event.status,
     registration_fee: event.registrationFee,
     registration_open_until: event.registrationOpenUntil,
@@ -212,9 +219,9 @@ async function seedEvent(supabase: AdminClient) {
         id: event.id,
         name: event.name,
         slug: "futsal-varones-2026",
-        sport_id: "dddddddd-dddd-4ddd-8ddd-dddddddddd01",
+        sport_id: catalogIds.sport,
         category: event.category,
-        format_id: "eeeeeeee-eeee-4eee-8eee-eeeeeeeeee01",
+        format_id: catalogIds.format,
         status: event.status,
         registration_fee: event.registrationFee,
         registration_open_until: event.registrationOpenUntil,
@@ -396,8 +403,10 @@ async function requireOk<T>(
   promise: PromiseLike<{ data: T | null; error: { message: string } | null }>,
   label: string
 ) {
-  const { error } = await promise;
+  const { data, error } = await promise;
   if (error) throw new Error(`Fallo al insertar ${label}: ${error.message}`);
+  if (data === null) throw new Error(`Fallo al insertar ${label}: respuesta sin datos.`);
+  return data;
 }
 
 function loadEnvFile(file: string) {
