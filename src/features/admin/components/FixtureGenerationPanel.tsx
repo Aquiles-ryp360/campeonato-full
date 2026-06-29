@@ -30,7 +30,7 @@ export function FixtureGenerationPanel({ data }: { data: CompetitionData }) {
     [data.teams, selectedEvent]
   );
   const drawableTeams = useMemo(
-    () => eventTeams.filter((team) => team.status === "registered" || team.status === "approved"),
+    () => eventTeams.filter((team) => team.status === "approved"),
     [eventTeams]
   );
   const eventMatches = useMemo(

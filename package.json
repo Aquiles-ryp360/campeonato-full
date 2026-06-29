@@ -8,6 +8,8 @@
     "start": "next start",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
+    "test": "tsx scripts/smoke-tests.ts",
+    "verify:schema": "tsx scripts/verify-schema.ts",
     "seed": "tsx scripts/reset-and-seed-futsal-10.ts",
     "validate:fixture": "tsx scripts/validate-futsal-10.ts"
   },

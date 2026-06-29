@@ -253,7 +253,7 @@ async function findDrawableTeams(
     .from("teams")
     .select("id, event_id, name, status, created_at")
     .eq("event_id", eventId)
-    .in("status", ["registered", "approved"])
+    .eq("status", "approved")
     .order("created_at", { ascending: true });
 
   if (error) {
