@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { AlertTriangle, CheckCircle2, Eye, Rocket } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { AlertTriangle, CheckCircle2, Eye, Loader2, Rocket } from "lucide-react";
 import { toast } from "sonner";
 import type {
   EventStatus,
@@ -91,8 +92,10 @@ export function ChampionshipWizard({
   data: CompetitionData;
   initialEvent?: TournamentEvent | null;
 }) {
+  const router = useRouter();
   const activeVenues = useMemo(() => data.venues.filter((venue) => venue.active), [data.venues]);
   const [draft, setDraft] = useState(() => buildInitialDraft(initialEvent, activeVenues));
+  const [isPublishing, setIsPublishing] = useState(false);
   const maxCourts = activeVenues.length;
   const selectedVenueNames = useMemo(
     () =>
@@ -193,7 +196,7 @@ export function ChampionshipWizard({
     });
   }
 
-  function publishChampionship() {
+  async function publishChampionship() {
     if (!canPublish) {
       toast.error(publishErrors[0]);
       return;
@@ -204,7 +207,66 @@ export function ChampionshipWizard({
       return;
     }
 
-    toast.success("Campeonato validado para publicar.");
+    setIsPublishing(true);
+    try {
+      const response = await fetch("/api/admin/championships", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          eventId: initialEvent?.id,
+          name: draft.name,
+          sport: draft.sport,
+          category: draft.category,
+          eventDate: draft.eventDate,
+          status: draft.publishRegistration ? "registration" : draft.status,
+          description: draft.description,
+          format: draft.format,
+          seedingMode: draft.seedingMode,
+          maxTeams: draft.maxTeams,
+          thirdPlace: draft.thirdPlace,
+          allowByes: draft.allowByes,
+          penaltiesEnabled: draft.penaltiesEnabled,
+          registrationFee: draft.registrationFee,
+          registrationOpenUntil: draft.registrationOpenUntil,
+          minPlayers: draft.minPlayers,
+          maxPlayers: draft.maxPlayers,
+          paymentMethods: draft.paymentMethods,
+          registrationCodeBatch: draft.registrationCodeBatch,
+          pointsWin: draft.pointsWin,
+          pointsDraw: draft.pointsDraw,
+          pointsLoss: draft.pointsLoss,
+          matchDurationMinutes: draft.matchDurationMinutes,
+          startTime: draft.startTime,
+          endTime: draft.endTime,
+          transitionMinutes: draft.transitionMinutes,
+          minimumRestMinutes: draft.minimumRestMinutes,
+          allowCompactPreview: draft.allowCompactPreview,
+          selectedCourts: selectedVenueNames,
+          basesText: draft.basesText
+        })
+      });
+      const payload = (await response.json().catch(() => null)) as
+        | { ok: true; eventId: string; slug: string }
+        | { ok: false; error: string }
+        | null;
+
+      if (!response.ok || !payload?.ok) {
+        toast.error(payload && !payload.ok ? payload.error : "No se pudo publicar el campeonato.");
+        return;
+      }
+
+      toast.success(initialEvent ? "Campeonato actualizado." : "Campeonato publicado.");
+      if (!initialEvent) {
+        router.push(`/admin/campeonatos/${payload.eventId}`);
+      }
+      router.refresh();
+    } catch {
+      toast.error("No se pudo conectar con el servidor para publicar el campeonato.");
+    } finally {
+      setIsPublishing(false);
+    }
   }
 
   return (
@@ -421,9 +483,9 @@ export function ChampionshipWizard({
             <p className="text-sm text-ink/60">
               {canPublish ? "La configuracion esta completa." : publishErrors[0]}
             </p>
-            <Button onClick={publishChampionship}>
-              <Rocket className="h-4 w-4" />
-              Publicar campeonato
+            <Button onClick={() => void publishChampionship()} disabled={isPublishing}>
+              {isPublishing ? <Loader2 className="h-4 w-4 animate-spin" /> : <Rocket className="h-4 w-4" />}
+              {isPublishing ? "Publicando..." : "Publicar campeonato"}
             </Button>
           </div>
         </Card>
