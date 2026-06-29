@@ -55,6 +55,11 @@ export function LoginPanel() {
 
     try {
       const callbackUrl = new URL("/auth/callback", window.location.origin);
+      const safeNextPath = sanitizeNextPath(nextPath);
+
+      if (safeNextPath !== "/") {
+        callbackUrl.searchParams.set("next", safeNextPath);
+      }
 
       const { error } = await createSupabaseBrowserClient().auth.signInWithOAuth({
         provider: "google",
@@ -242,4 +247,12 @@ export function LoginPanel() {
       </div>
     </div>
   );
+}
+
+function sanitizeNextPath(value: string) {
+  if (!value.startsWith("/") || value.startsWith("//")) {
+    return "/";
+  }
+
+  return value;
 }

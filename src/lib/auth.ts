@@ -14,6 +14,7 @@ export interface DelegateAccess {
 }
 
 const sessionKey = "campeonato.session";
+export const sessionChangeEvent = "campeonato.session-change";
 
 export const demoAdminCredentials = {
   username: "admin",
@@ -51,11 +52,13 @@ export function getStoredSession() {
 export function storeSession(session: AuthSession) {
   if (typeof window === "undefined") return;
   window.localStorage.setItem(sessionKey, JSON.stringify(session));
+  window.dispatchEvent(new Event(sessionChangeEvent));
 }
 
 export function clearStoredSession() {
   if (typeof window === "undefined") return;
   window.localStorage.removeItem(sessionKey);
+  window.dispatchEvent(new Event(sessionChangeEvent));
 }
 
 export function canAccess(session: AuthSession | null, requiredRole: AuthRole) {

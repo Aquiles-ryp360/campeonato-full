@@ -10,6 +10,7 @@ import {
   clearStoredSession,
   createSession,
   getStoredSession,
+  sessionChangeEvent,
   storeSession
 } from "@/lib/auth";
 import { createSupabaseBrowserClient, hasSupabaseEnv } from "@/lib/supabase";
@@ -131,10 +132,12 @@ export function SessionActions() {
     syncSession();
     window.addEventListener("storage", syncSession);
     window.addEventListener("focus", syncSession);
+    window.addEventListener(sessionChangeEvent, syncSession);
 
     return () => {
       window.removeEventListener("storage", syncSession);
       window.removeEventListener("focus", syncSession);
+      window.removeEventListener(sessionChangeEvent, syncSession);
     };
   }, []);
 
@@ -195,10 +198,12 @@ export function MobileSessionAction() {
     syncSession();
     window.addEventListener("storage", syncSession);
     window.addEventListener("focus", syncSession);
+    window.addEventListener(sessionChangeEvent, syncSession);
 
     return () => {
       window.removeEventListener("storage", syncSession);
       window.removeEventListener("focus", syncSession);
+      window.removeEventListener(sessionChangeEvent, syncSession);
     };
   }, []);
 
