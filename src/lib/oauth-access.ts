@@ -13,6 +13,11 @@ type ProfileRow = {
   phone: string | null;
 };
 
+type AdminEmailRow = {
+  email: string;
+  full_name: string | null;
+};
+
 type DelegateTeamRow = {
   id: string;
   delegate_name: string;
@@ -41,9 +46,10 @@ export async function resolveOAuthAccess(user: User): Promise<OAuthAccessResult>
 
   const supabase = createSupabaseAdminClient();
   const profile = await getProfile(supabase, user.id);
-  const displayName = profile?.full_name || getUserDisplayName(user) || email;
+  const adminEmail = await getAdminEmail(supabase, email);
+  const displayName = profile?.full_name || adminEmail?.full_name || getUserDisplayName(user) || email;
 
-  if (profile?.role === "admin" || isAllowedAdminEmail(email)) {
+  if (profile?.role === "admin" || adminEmail || isAllowedAdminEmail(email)) {
     await upsertProfile(supabase, {
       id: user.id,
       role: "admin",
@@ -110,6 +116,24 @@ async function getProfile(
 
   if (error) {
     throw new Error(`Could not load OAuth profile: ${error.message}`);
+  }
+
+  return data;
+}
+
+async function getAdminEmail(
+  supabase: ReturnType<typeof createSupabaseAdminClient>,
+  email: string
+) {
+  const { data, error } = await supabase
+    .from("admin_emails")
+    .select("email, full_name")
+    .eq("email", email)
+    .eq("active", true)
+    .maybeSingle<AdminEmailRow>();
+
+  if (error) {
+    throw new Error(`Could not load admin email allowlist: ${error.message}`);
   }
 
   return data;
