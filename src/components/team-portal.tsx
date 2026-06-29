@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { CalendarDays, CreditCard, ShieldCheck, UsersRound } from "lucide-react";
+import { Bell, CalendarDays, CreditCard, ShieldCheck, UsersRound } from "lucide-react";
 import { toast } from "sonner";
 import { fetchBrowserCompetitionData } from "@/lib/browser-competition-data";
 import type { CompetitionData } from "@/lib/data-mappers";
@@ -31,13 +31,15 @@ export function TeamPortal({ initialData }: { initialData: CompetitionData }) {
 
   if (!team) {
     return (
-      <Card className="p-6">
-        <SectionHeader
-          eyebrow="Panel delegado"
-          title="Aun no tienes equipo vinculado"
-          description="Cuando tu inscripcion quede registrada en Supabase con este correo, veras aqui tu plantilla, codigo y partidos."
-        />
-      </Card>
+      <div id="resumen" className="scroll-mt-24">
+        <Card className="p-6">
+          <SectionHeader
+            eyebrow="Panel delegado"
+            title="Aun no tienes equipo vinculado"
+            description="Cuando tu inscripcion quede registrada en Supabase con este correo, veras aqui tu plantilla, codigo y partidos."
+          />
+        </Card>
+      </div>
     );
   }
 
@@ -47,7 +49,8 @@ export function TeamPortal({ initialData }: { initialData: CompetitionData }) {
   );
 
   return (
-    <div className="space-y-6 pb-20 md:pb-0">
+    <div id="resumen" className="space-y-6 pb-20 scroll-mt-24 md:pb-0">
+      <section id="mi-equipo" className="scroll-mt-24">
       <Card className="p-5">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
@@ -74,8 +77,9 @@ export function TeamPortal({ initialData }: { initialData: CompetitionData }) {
           </div>
         </div>
       </Card>
+      </section>
 
-      <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <section id="inscripcion" className="grid scroll-mt-24 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <Metric label="Jugadores" value={`${teamPlayers.length}`} icon={UsersRound} />
         <Metric label="Partidos" value={`${teamMatches.length}`} icon={CalendarDays} tone="blue" />
         <Metric label="Codigo" value={team.registrationCode} icon={CreditCard} tone="amber" />
@@ -83,6 +87,7 @@ export function TeamPortal({ initialData }: { initialData: CompetitionData }) {
       </section>
 
       <section className="grid gap-6 lg:grid-cols-[1fr_0.9fr]">
+        <div id="jugadores" className="scroll-mt-24">
         <Card className="overflow-hidden">
           <div className="border-b border-ink/10 p-5">
             <SectionHeader
@@ -125,9 +130,13 @@ export function TeamPortal({ initialData }: { initialData: CompetitionData }) {
             </table>
           </div>
         </Card>
+        </div>
 
+        <div id="mis-partidos" className="scroll-mt-24">
         <Card className="p-5">
-          <SectionHeader title="Partidos del equipo" description="El jugador puede estar en dos deportes; la asistencia queda bajo responsabilidad del equipo." />
+          <div id="resultados" className="scroll-mt-24">
+            <SectionHeader title="Partidos del equipo" description="El jugador puede estar en dos deportes; la asistencia queda bajo responsabilidad del equipo." />
+          </div>
           <div className="mt-4 space-y-3">
             {teamMatches.length > 0 ? teamMatches.map((match) => (
               <div key={match.id} className="rounded-md border border-ink/10 bg-white p-4">
@@ -150,6 +159,23 @@ export function TeamPortal({ initialData }: { initialData: CompetitionData }) {
                 Todavia no hay partidos programados para tu equipo.
               </div>
             )}
+          </div>
+        </Card>
+        </div>
+      </section>
+
+      <section id="comunicados" className="scroll-mt-24">
+        <Card className="p-5">
+          <div className="flex items-start gap-3">
+            <div className="grid h-11 w-11 shrink-0 place-items-center rounded-md bg-sky/10 text-sky-900">
+              <Bell className="h-5 w-5" />
+            </div>
+            <div>
+              <SectionHeader
+                title="Comunicados"
+                description="Avisos oficiales sobre horarios, bases, cambios y decisiones del campeonato."
+              />
+            </div>
           </div>
         </Card>
       </section>

@@ -3,7 +3,14 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
-import { LayoutDashboard, LockKeyhole, LogIn, LogOut, ShieldCheck } from "lucide-react";
+import {
+  LayoutDashboard,
+  LockKeyhole,
+  LogIn,
+  LogOut,
+  ShieldCheck,
+  UserRound
+} from "lucide-react";
 import type { AuthRole, AuthSession } from "@/lib/auth";
 import {
   canAccess,
@@ -121,7 +128,7 @@ export function AuthGate({
   return <>{children}</>;
 }
 
-export function SessionActions() {
+export function SessionActions({ showPanelLink = true }: { showPanelLink?: boolean }) {
   const [session, setSession] = useState<AuthSession | null>(null);
 
   useEffect(() => {
@@ -148,7 +155,7 @@ export function SessionActions() {
         className="inline-flex min-h-10 items-center justify-center gap-2 rounded-md bg-ink px-4 py-2 text-sm font-semibold text-white transition hover:bg-ink/90"
       >
         <LogIn className="h-4 w-4" />
-        Login
+        Ingresar
       </Link>
     );
   }
@@ -159,14 +166,24 @@ export function SessionActions() {
 
   return (
     <>
-      <Link
-        href={panelHref}
-        className="inline-flex min-h-10 items-center justify-center gap-2 rounded-md bg-field px-4 py-2 text-sm font-semibold text-white transition hover:bg-field/90"
-        title={`${session.displayName} (${session.role})`}
-      >
-        <PanelIcon className="h-4 w-4" />
-        {panelLabel}
-      </Link>
+      {showPanelLink ? (
+        <Link
+          href={panelHref}
+          className="inline-flex min-h-10 items-center justify-center gap-2 rounded-md bg-field px-4 py-2 text-sm font-semibold text-white transition hover:bg-field/90"
+          title={`${session.displayName} (${session.role})`}
+        >
+          <PanelIcon className="h-4 w-4" />
+          {panelLabel}
+        </Link>
+      ) : (
+        <span
+          className="inline-flex min-h-10 items-center justify-center gap-2 rounded-md bg-field/10 px-4 py-2 text-sm font-semibold text-field"
+          title={`${session.displayName} (${session.role})`}
+        >
+          <UserRound className="h-4 w-4" />
+          Cuenta
+        </span>
+      )}
       <button
         type="button"
         onClick={async () => {
@@ -208,7 +225,7 @@ export function MobileSessionAction() {
   }, []);
 
   const href = session ? (session.role === "admin" ? "/admin" : "/delegado") : "/login";
-  const label = session ? (session.role === "admin" ? "Admin" : "Equipo") : "Login";
+  const label = session ? (session.role === "admin" ? "Admin" : "Equipo") : "Ingresar";
   const Icon = session ? (session.role === "admin" ? LayoutDashboard : ShieldCheck) : LogIn;
 
   return (

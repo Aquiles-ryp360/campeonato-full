@@ -2,12 +2,17 @@
 
 import { useEffect, useMemo, useState } from "react";
 import {
+  Bell,
   CheckCircle2,
   CircleDollarSign,
   Copy,
+  FileText,
+  Gavel,
   Mail,
+  MapPin,
   Settings2,
   Trophy,
+  UserCog,
   UsersRound
 } from "lucide-react";
 import { toast } from "sonner";
@@ -73,7 +78,7 @@ export function AdminDashboard({ initialData }: { initialData: CompetitionData }
   }, []);
 
   return (
-    <div className="space-y-6 pb-20 md:pb-0">
+    <div id="resumen" className="space-y-6 pb-20 scroll-mt-24 md:pb-0">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
         <SectionHeader
           eyebrow="Panel administrador"
@@ -93,10 +98,13 @@ export function AdminDashboard({ initialData }: { initialData: CompetitionData }
         <Metric label="Resultados publicados" value={`${finishedMatches.length}`} icon={CheckCircle2} tone="green" />
       </section>
 
-      <FootballDrawPanel data={data} onDataChange={setData} />
+      <section id="fixture" className="scroll-mt-24">
+        <FootballDrawPanel data={data} onDataChange={setData} />
+      </section>
 
+      <section id="equipos" className="scroll-mt-24">
       <Card className="overflow-hidden">
-        <div className="border-b border-ink/10 p-5">
+        <div id="jugadores" className="border-b border-ink/10 p-5 scroll-mt-24">
           <SectionHeader
             title="Delegados y accesos"
             description="Lista administrativa de delegados, equipos, contacto, acceso Google y cantidad de jugadores."
@@ -204,8 +212,10 @@ export function AdminDashboard({ initialData }: { initialData: CompetitionData }
           </table>
         </div>
       </Card>
+      </section>
 
       <section className="grid gap-6 lg:grid-cols-[1fr_0.95fr]">
+        <div id="inscripciones" className="scroll-mt-24">
         <Card className="overflow-hidden">
           <div className="border-b border-ink/10 p-5">
             <SectionHeader
@@ -263,7 +273,9 @@ export function AdminDashboard({ initialData }: { initialData: CompetitionData }
             </table>
           </div>
         </Card>
+        </div>
 
+        <div id="resultados" className="scroll-mt-24">
         <Card className="p-5">
           <SectionHeader
             title="Partidos recientes"
@@ -295,8 +307,10 @@ export function AdminDashboard({ initialData }: { initialData: CompetitionData }
             )}
           </div>
         </Card>
+        </div>
       </section>
 
+      <section id="reportes" className="scroll-mt-24">
       <Card className="p-5">
         <SectionHeader title="Codigos de inscripcion" description="Lote manual que el encargado entrega despues de cobrar." />
         <div className="mt-4 grid gap-3 md:grid-cols-3">
@@ -336,7 +350,9 @@ export function AdminDashboard({ initialData }: { initialData: CompetitionData }
           )}
         </div>
       </Card>
+      </section>
 
+      <section id="campeonatos" className="scroll-mt-24">
       <Card className="p-5">
         <SectionHeader title="Eventos" description="Configuracion principal visible para los equipos al inscribirse." />
         <div className="mt-4 grid gap-3 md:grid-cols-3">
@@ -365,6 +381,64 @@ export function AdminDashboard({ initialData }: { initialData: CompetitionData }
           )}
         </div>
       </Card>
+      </section>
+
+      <section id="operacion" className="grid scroll-mt-24 gap-4 md:grid-cols-3">
+        <Card className="p-5" >
+          <div id="sanciones" className="scroll-mt-24">
+            <div className="grid h-11 w-11 place-items-center rounded-md bg-amber-100 text-amber-900">
+              <Gavel className="h-5 w-5" />
+            </div>
+            <h3 className="mt-4 font-bold text-ink">Sanciones</h3>
+            <p className="mt-2 text-sm leading-6 text-ink/60">
+              Control disciplinario conectado a resultados, actas y observaciones del campeonato.
+            </p>
+          </div>
+        </Card>
+        <Card className="p-5">
+          <div id="comunicados" className="scroll-mt-24">
+            <div className="grid h-11 w-11 place-items-center rounded-md bg-sky/10 text-sky-900">
+              <Bell className="h-5 w-5" />
+            </div>
+            <h3 className="mt-4 font-bold text-ink">Comunicados</h3>
+            <p className="mt-2 text-sm leading-6 text-ink/60">
+              Avisos para delegados sobre horarios, cambios, bases y decisiones oficiales.
+            </p>
+          </div>
+        </Card>
+        <Card className="p-5">
+          <div id="sistema" className="scroll-mt-24">
+            <div className="grid h-11 w-11 place-items-center rounded-md bg-field/10 text-field">
+              <MapPin className="h-5 w-5" />
+            </div>
+            <h3 className="mt-4 font-bold text-ink">Operacion</h3>
+            <p className="mt-2 text-sm leading-6 text-ink/60">
+              Canchas, horarios, reportes y configuracion operativa del torneo.
+            </p>
+          </div>
+        </Card>
+      </section>
+
+      <section id="usuarios" className="grid scroll-mt-24 gap-4 md:grid-cols-2">
+        <Card className="p-5">
+          <div className="grid h-11 w-11 place-items-center rounded-md bg-field/10 text-field">
+            <UserCog className="h-5 w-5" />
+          </div>
+          <h3 className="mt-4 font-bold text-ink">Usuarios y roles</h3>
+          <p className="mt-2 text-sm leading-6 text-ink/60">
+            Administradores, delegados y correos autorizados para ingresar con Google.
+          </p>
+        </Card>
+        <Card className="p-5">
+          <div className="grid h-11 w-11 place-items-center rounded-md bg-ink/10 text-ink">
+            <FileText className="h-5 w-5" />
+          </div>
+          <h3 className="mt-4 font-bold text-ink">Reportes</h3>
+          <p className="mt-2 text-sm leading-6 text-ink/60">
+            Exportacion y revision de equipos, jugadores, fixture, pagos y resultados.
+          </p>
+        </Card>
+      </section>
     </div>
   );
 }
