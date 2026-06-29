@@ -12,10 +12,22 @@ export function ScheduleConfigForm() {
           <input className={inputClass} type="time" defaultValue="18:00" />
         </Field>
         <Field label="Duracion partido">
-          <input className={inputClass} type="number" defaultValue={40} />
+          <input className={inputClass} type="number" defaultValue={20} />
         </Field>
         <Field label="Descanso minimo">
-          <input className={inputClass} type="number" defaultValue={60} />
+          <input className={inputClass} type="number" defaultValue={40} />
+        </Field>
+        <Field label="Transicion">
+          <input className={inputClass} type="number" defaultValue={0} />
+        </Field>
+        <Field label="Canchas disponibles">
+          <input className={inputClass} defaultValue="Cancha A, Cancha B" />
+        </Field>
+        <Field label="Fixture compacto preliminar">
+          <select className={inputClass} defaultValue="yes">
+            <option value="yes">Permitido</option>
+            <option value="no">No permitido</option>
+          </select>
         </Field>
       </div>
     </Card>

@@ -17,8 +17,13 @@ export type MatchStatus = "scheduled" | "finished" | "walkover" | "postponed";
 
 export type PlayerRole = "starter" | "substitute";
 
+export type FixtureStatus = "draft_auto" | "draft_review" | "published" | "locked";
+
+export type SeedingMode = "random" | "registration_order" | "manual" | "ranking";
+
 export type MatchStage =
   | "group_stage"
+  | "preliminary"
   | "round_of_16"
   | "quarter_finals"
   | "semi_finals"
@@ -84,6 +89,21 @@ export interface TournamentEvent {
   rulesSummary: string;
   preventCrossSportConflicts: boolean;
   minimumRestMinutes: number;
+  eventDate?: string;
+  fixtureStatus?: FixtureStatus;
+  seedingMode?: SeedingMode;
+  thirdPlace?: boolean;
+  allowByes?: boolean;
+  penaltiesEnabled?: boolean;
+  fixtureCompactPreview?: boolean;
+  scheduleConfig?: {
+    startTime: string;
+    matchDurationMinutes: number;
+    transitionMinutes: number;
+    courts: string[];
+    minimumRestMinutes: number;
+    allowCompactPreview: boolean;
+  };
 }
 
 export interface Team {
@@ -181,12 +201,22 @@ export interface Match {
   bracketPosition?: number;
   nextMatchId?: string;
   isHomeNext?: boolean;
+  label?: string;
+  homePlaceholder?: string;
+  awayPlaceholder?: string;
+  homeSourceMatchId?: string;
+  awaySourceMatchId?: string;
+  sourceMatchIds?: string[];
+  dependsOnMatchIds?: string[];
   homeTeamId: string;
   awayTeamId: string;
   scheduledAt: string;
+  scheduledEndAt?: string;
   venueId?: string;
   court: string;
   status: MatchStatus;
+  fixtureStatus?: FixtureStatus;
+  isFixturePreliminary?: boolean;
   homeScore?: number;
   awayScore?: number;
   homeFouls?: number;

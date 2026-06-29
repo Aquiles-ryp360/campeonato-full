@@ -4,7 +4,7 @@ import { Clock, MapPin } from "lucide-react";
 import type { Match, Team, TournamentEvent } from "@/lib/types";
 import type { ScheduleConflict } from "@/lib/domain/conflict-detector";
 import { Badge } from "@/components/ui";
-import { formatDateTime, getTeamName } from "@/lib/utils";
+import { fixtureStatusLabel, formatDateTime, getMatchSideLabel } from "@/lib/utils";
 import { ConflictBadge } from "./ConflictBadge";
 
 export function MatchCard({
@@ -24,6 +24,7 @@ export function MatchCard({
 }) {
   const homeTeam = teams.find((team) => team.id === match.homeTeamId);
   const awayTeam = teams.find((team) => team.id === match.awayTeamId);
+  const fixturePreliminary = match.isFixturePreliminary || match.fixtureStatus === "draft_auto" || match.fixtureStatus === "draft_review";
 
   return (
     <article className="rounded-md border border-ink/10 bg-white p-4 transition hover:border-field/30">
@@ -33,12 +34,13 @@ export function MatchCard({
             {match.status === "finished" ? "Finalizado" : "Programado"}
           </Badge>
           {event ? <Badge tone="neutral">{event.name}</Badge> : null}
+          {fixturePreliminary ? <Badge tone="amber">{fixtureStatusLabel(match.fixtureStatus)}</Badge> : null}
         </div>
         <ConflictBadge conflicts={conflicts} />
       </div>
 
       <div className="my-4 grid w-full grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-3 text-left">
-        <TeamName team={homeTeam} fallback={getTeamName(teams, match.homeTeamId)} onOpenTeam={onOpenTeam} />
+        <TeamName team={homeTeam} fallback={getMatchSideLabel(match, teams, "home")} onOpenTeam={onOpenTeam} />
         <button
           type="button"
           onClick={() => onOpenMatch?.(match)}
@@ -49,7 +51,7 @@ export function MatchCard({
         </button>
         <TeamName
           team={awayTeam}
-          fallback={getTeamName(teams, match.awayTeamId)}
+          fallback={getMatchSideLabel(match, teams, "away")}
           align="right"
           onOpenTeam={onOpenTeam}
         />

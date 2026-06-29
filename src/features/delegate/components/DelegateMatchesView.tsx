@@ -1,5 +1,5 @@
 import type { Match, Team, TournamentEvent } from "@/lib/types";
-import { Card, SectionHeader } from "@/components/ui";
+import { Badge, Card, SectionHeader } from "@/components/ui";
 import { MatchCard } from "@/features/fixture/components/MatchCard";
 
 export function DelegateMatchesView({
@@ -22,7 +22,15 @@ export function DelegateMatchesView({
   return (
     <div className="space-y-6">
       <Card className="p-5">
-        <SectionHeader title="Proximo partido destacado" description={team.name} />
+        <SectionHeader
+          title="Proximo partido destacado"
+          description={team.name}
+          action={
+            event.fixtureStatus === "draft_auto" || event.fixtureStatus === "draft_review" ? (
+              <Badge tone="amber">Fixture preliminar, puede cambiar</Badge>
+            ) : null
+          }
+        />
         <div className="mt-4">
           {next ? (
             <MatchCard match={next} event={event} teams={teams} />

@@ -191,6 +191,14 @@ export type EventRow = {
   rules_summary: string | null;
   prevent_cross_sport_conflicts?: boolean | null;
   minimum_rest_minutes?: number | null;
+  event_date?: string | null;
+  fixture_status?: TournamentEvent["fixtureStatus"] | null;
+  seeding_mode?: TournamentEvent["seedingMode"] | null;
+  third_place?: boolean | null;
+  allow_byes?: boolean | null;
+  penalties_enabled?: boolean | null;
+  fixture_compact_preview?: boolean | null;
+  schedule_config?: TournamentEvent["scheduleConfig"] | null;
 };
 
 export type RegistrationCodeRow = {
@@ -243,13 +251,23 @@ export type MatchRow = {
   bracket_position?: number | null;
   next_match_id?: string | null;
   is_home_next?: boolean | null;
-  home_team_id: string;
-  away_team_id: string;
+  label?: string | null;
+  home_placeholder?: string | null;
+  away_placeholder?: string | null;
+  home_source_match_id?: string | null;
+  away_source_match_id?: string | null;
+  source_match_ids?: string[] | null;
+  depends_on_match_ids?: string[] | null;
+  home_team_id: string | null;
+  away_team_id: string | null;
   scheduled_at: string;
+  scheduled_end_at?: string | null;
   venue_id?: string | null;
   venue?: NestedRelation<VenueRelation>;
   court?: string | null;
   status: Match["status"];
+  fixture_status?: Match["fixtureStatus"] | null;
+  is_fixture_preliminary?: boolean | null;
   home_score: number | null;
   away_score: number | null;
   notes: string | null;
@@ -378,7 +396,15 @@ export function mapEvent(row: EventRow): TournamentEvent {
     pointsLoss: row.points_loss,
     rulesSummary: row.rules_summary ?? "",
     preventCrossSportConflicts: row.prevent_cross_sport_conflicts ?? false,
-    minimumRestMinutes: row.minimum_rest_minutes ?? 60
+    minimumRestMinutes: row.minimum_rest_minutes ?? 60,
+    eventDate: row.event_date ?? undefined,
+    fixtureStatus: row.fixture_status ?? undefined,
+    seedingMode: row.seeding_mode ?? undefined,
+    thirdPlace: row.third_place ?? undefined,
+    allowByes: row.allow_byes ?? undefined,
+    penaltiesEnabled: row.penalties_enabled ?? undefined,
+    fixtureCompactPreview: row.fixture_compact_preview ?? undefined,
+    scheduleConfig: row.schedule_config ?? undefined
   };
 }
 
@@ -440,12 +466,22 @@ export function mapMatch(row: MatchRow): Match {
     bracketPosition: row.bracket_position ?? undefined,
     nextMatchId: row.next_match_id ?? undefined,
     isHomeNext: row.is_home_next ?? undefined,
-    homeTeamId: row.home_team_id,
-    awayTeamId: row.away_team_id,
+    label: row.label ?? undefined,
+    homePlaceholder: row.home_placeholder ?? undefined,
+    awayPlaceholder: row.away_placeholder ?? undefined,
+    homeSourceMatchId: row.home_source_match_id ?? undefined,
+    awaySourceMatchId: row.away_source_match_id ?? undefined,
+    sourceMatchIds: row.source_match_ids ?? undefined,
+    dependsOnMatchIds: row.depends_on_match_ids ?? undefined,
+    homeTeamId: row.home_team_id ?? "",
+    awayTeamId: row.away_team_id ?? "",
     scheduledAt: row.scheduled_at,
+    scheduledEndAt: row.scheduled_end_at ?? undefined,
     venueId: row.venue_id ?? undefined,
     court: venueNameFromValue(row.venue) ?? row.court ?? "Cancha por definir",
     status: row.status,
+    fixtureStatus: row.fixture_status ?? undefined,
+    isFixturePreliminary: row.is_fixture_preliminary ?? undefined,
     homeScore: row.home_score ?? undefined,
     awayScore: row.away_score ?? undefined,
     notes: row.notes ?? undefined

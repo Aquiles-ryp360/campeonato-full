@@ -1,7 +1,7 @@
 "use client";
 
 import type { Match, Team, TournamentEvent } from "@/lib/types";
-import type { ScheduleConflict } from "@/lib/domain/conflict-detector";
+import { conflictsForMatch, type ScheduleConflict } from "@/lib/domain/conflict-detector";
 import { MatchCard } from "./MatchCard";
 
 export function CourtTimeline({
@@ -35,7 +35,7 @@ export function CourtTimeline({
             match={match}
             event={events.find((event) => event.id === match.eventId)}
             teams={teams}
-            conflicts={conflicts.filter((conflict) => conflict.matchId === match.id)}
+            conflicts={conflictsForMatch(conflicts, match.id)}
             onOpenTeam={onOpenTeam}
             onOpenMatch={onOpenMatch}
           />

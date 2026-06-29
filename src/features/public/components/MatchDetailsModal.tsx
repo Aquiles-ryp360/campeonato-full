@@ -3,7 +3,7 @@
 import { X } from "lucide-react";
 import type { Match, Team } from "@/lib/types";
 import { Badge } from "@/components/ui";
-import { formatDateTime, getTeamName } from "@/lib/utils";
+import { formatDateTime, getMatchSideLabel } from "@/lib/utils";
 
 export function MatchDetailsModal({
   match,
@@ -25,7 +25,7 @@ export function MatchDetailsModal({
               {match.status === "finished" ? "Finalizado" : "Programado"}
             </Badge>
             <h2 className="mt-3 text-xl font-bold text-ink">
-              {getTeamName(teams, match.homeTeamId)} vs {getTeamName(teams, match.awayTeamId)}
+              {getMatchSideLabel(match, teams, "home")} vs {getMatchSideLabel(match, teams, "away")}
             </h2>
           </div>
           <button

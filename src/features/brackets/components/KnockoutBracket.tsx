@@ -19,14 +19,15 @@ export function KnockoutBracket({
   onOpenTeam?: (team: Team) => void;
 }) {
   const bracket = generateKnockoutBracket({ eventId, teams, matches });
+  const rounds = bracket.rounds.filter((round) => round.stage !== "third_place");
 
   return (
     <div className="overflow-x-auto overscroll-x-contain rounded-md border border-ink/10 bg-ink p-4 text-white">
       <div
         className="grid min-w-[760px] gap-4"
-        style={{ gridTemplateColumns: `repeat(${Math.max(1, bracket.rounds.length)}, minmax(180px, 1fr))` }}
+        style={{ gridTemplateColumns: `repeat(${Math.max(1, rounds.length)}, minmax(180px, 1fr))` }}
       >
-        {bracket.rounds.map((round) => (
+        {rounds.map((round) => (
           <section key={round.id} className="flex min-h-[360px] flex-col gap-3">
             <div className="flex items-center justify-between gap-2 rounded-md bg-white/10 px-3 py-2">
               <p className="text-xs font-black uppercase tracking-wide">{round.name}</p>

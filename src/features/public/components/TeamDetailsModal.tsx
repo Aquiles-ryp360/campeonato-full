@@ -3,7 +3,7 @@
 import { X } from "lucide-react";
 import type { Match, Player, Team, TournamentEvent } from "@/lib/types";
 import { Badge, Button } from "@/components/ui";
-import { formatDateTime, getTeamName, teamStatusLabel } from "@/lib/utils";
+import { formatDateTime, getMatchSideLabel, teamStatusLabel } from "@/lib/utils";
 import { DelegateInfo } from "@/features/teams/components/DelegateInfo";
 import { TeamRoster } from "@/features/teams/components/TeamRoster";
 
@@ -64,8 +64,8 @@ export function TeamDetailsModal({
               {nextMatch ? (
                 <div className="mt-2 space-y-1 text-ink/70">
                   <p className="font-bold text-ink">
-                    {getTeamName(teams, nextMatch.homeTeamId)} vs{" "}
-                    {getTeamName(teams, nextMatch.awayTeamId)}
+                    {getMatchSideLabel(nextMatch, teams, "home")} vs{" "}
+                    {getMatchSideLabel(nextMatch, teams, "away")}
                   </p>
                   <p>{formatDateTime(nextMatch.scheduledAt)}</p>
                   <p>{nextMatch.court}</p>

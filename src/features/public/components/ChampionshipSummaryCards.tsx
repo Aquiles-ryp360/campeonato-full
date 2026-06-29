@@ -1,7 +1,7 @@
 import { CalendarDays, Clock, Trophy, UsersRound } from "lucide-react";
 import type { Match, Team, TournamentEvent } from "@/lib/types";
 import { Metric } from "@/components/ui";
-import { formatDateTime } from "@/lib/utils";
+import { fixtureStatusLabel, formatDateTime } from "@/lib/utils";
 import { tournamentFormatLabel } from "@/lib/domain/tournament-format";
 
 export function ChampionshipSummaryCards({
@@ -28,8 +28,8 @@ export function ChampionshipSummaryCards({
         tone="amber"
       />
       <Metric
-        label="Descanso minimo"
-        value={`${event.minimumRestMinutes} min`}
+        label="Fixture"
+        value={fixtureStatusLabel(event.fixtureStatus)}
         icon={Clock}
         tone="green"
       />

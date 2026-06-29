@@ -3,7 +3,6 @@ import "server-only";
 import { createClient } from "@supabase/supabase-js";
 import {
   applyCatalogLabels,
-  emptyCompetitionData,
   mapEvent,
   mapMatch,
   mapPlayer,
@@ -30,27 +29,7 @@ import {
   type GroupStandingRow,
   type TournamentBasesRow
 } from "./data-mappers";
-import { withRepositoryFootballDefaults } from "./football-content";
-
-const eventColumns = `
-  id,
-  name,
-  sport_id,
-  category,
-  format_id,
-  status,
-  registration_fee,
-  registration_open_until,
-  max_teams,
-  min_players,
-  max_players,
-  points_win,
-  points_draw,
-  points_loss,
-  rules_summary,
-  prevent_cross_sport_conflicts,
-  minimum_rest_minutes
-`;
+import { mockCompetitionData } from "./mock-data";
 
 const legacyEventColumns = `
   id,
@@ -97,7 +76,7 @@ const legacyPublicTeamColumns = `
   created_at
 `;
 
-const playerColumns = `
+const privatePlayerColumns = `
   id,
   team_id,
   first_name,
@@ -110,23 +89,15 @@ const playerColumns = `
   photo_url
 `;
 
-const matchColumns = `
+const publicPlayerColumns = `
   id,
-  event_id,
-  round,
-  stage,
-  group_id,
-  bracket_position,
-  next_match_id,
-  is_home_next,
-  home_team_id,
-  away_team_id,
-  scheduled_at,
-  venue_id,
-  status,
-  home_score,
-  away_score,
-  notes
+  team_id,
+  first_name,
+  last_name,
+  student_code,
+  semester,
+  lineup_role,
+  photo_url
 `;
 
 const legacyMatchColumns = `
@@ -143,9 +114,20 @@ const legacyMatchColumns = `
   notes
 `;
 
-export async function getPublicCompetitionData(): Promise<CompetitionData> {
+type CompetitionDataOptions = {
+  includePrivatePlayerFields?: boolean;
+};
+
+type PublicPlayerRow = Omit<PlayerRow, "dni" | "enrollment_file"> &
+  Partial<Pick<PlayerRow, "dni" | "enrollment_file">>;
+
+export async function getPublicCompetitionData({
+  includePrivatePlayerFields = false
+}: CompetitionDataOptions = {}): Promise<CompetitionData> {
   const supabase = createPublicSupabaseClient();
-  if (!supabase) return withRepositoryFootballDefaults(emptyCompetitionData);
+  if (!supabase) return filterPrivatePlayerFields(mockCompetitionData, includePrivatePlayerFields);
+
+  const playerSelect = includePrivatePlayerFields ? privatePlayerColumns : publicPlayerColumns;
 
   const [
     eventsResponse,
@@ -161,10 +143,10 @@ export async function getPublicCompetitionData(): Promise<CompetitionData> {
     groupStandingsResponse,
     basesResponse
   ] = await Promise.all([
-    supabase.from("events").select(eventColumns).order("created_at", { ascending: true }),
+    supabase.from("events").select("*").order("created_at", { ascending: true }),
     supabase.from("teams").select(publicTeamColumns).order("created_at", { ascending: true }),
-    supabase.from("players").select(playerColumns).order("created_at", { ascending: true }),
-    supabase.from("matches").select(matchColumns).order("scheduled_at", { ascending: true }),
+    supabase.from("players").select(playerSelect).order("created_at", { ascending: true }),
+    supabase.from("matches").select("*").order("scheduled_at", { ascending: true }),
     supabase.from("sports").select("*").order("name", { ascending: true }),
     supabase.from("competition_formats").select("*").order("name", { ascending: true }),
     supabase.from("venues").select("*").order("name", { ascending: true }),
@@ -203,13 +185,13 @@ export async function getPublicCompetitionData(): Promise<CompetitionData> {
       basesResponse.error
     ])
   ) {
-    return withRepositoryFootballDefaults(await getLegacyPublicCompetitionData(supabase));
+    return getLegacyPublicCompetitionData(supabase, includePrivatePlayerFields);
   }
 
-  return withRepositoryFootballDefaults(applyCatalogLabels({
+  return applyCatalogLabels({
     events: ((eventsResponse.data ?? []) as EventRow[]).map(mapEvent),
     teams: ((teamsResponse.data ?? []) as TeamRow[]).map(mapTeam),
-    players: ((playersResponse.data ?? []) as PlayerRow[]).map(mapPlayer),
+    players: mapPlayerRows((playersResponse.data ?? []) as unknown as PublicPlayerRow[], includePrivatePlayerFields),
     matches: ((matchesResponse.data ?? []) as MatchRow[]).map(mapMatch),
     registrationCodes: [],
     sports: ((sportsResponse.data ?? []) as SportRow[]).map(mapSport),
@@ -220,16 +202,18 @@ export async function getPublicCompetitionData(): Promise<CompetitionData> {
     groupTeams: ((groupTeamsResponse.data ?? []) as GroupTeamRow[]).map(mapGroupTeam),
     groupStandings: ((groupStandingsResponse.data ?? []) as GroupStandingRow[]).map(mapGroupStanding),
     tournamentBases: ((basesResponse.data ?? []) as TournamentBasesRow[]).map(mapTournamentBases)
-  }));
+  });
 }
 
 async function getLegacyPublicCompetitionData(
-  supabase: NonNullable<ReturnType<typeof createPublicSupabaseClient>>
+  supabase: NonNullable<ReturnType<typeof createPublicSupabaseClient>>,
+  includePrivatePlayerFields: boolean
 ): Promise<CompetitionData> {
+  const playerSelect = includePrivatePlayerFields ? privatePlayerColumns : publicPlayerColumns;
   const [eventsResponse, teamsResponse, playersResponse, matchesResponse] = await Promise.all([
     supabase.from("events").select(legacyEventColumns).order("created_at", { ascending: true }),
     supabase.from("teams").select(legacyPublicTeamColumns).order("created_at", { ascending: true }),
-    supabase.from("players").select(playerColumns).order("created_at", { ascending: true }),
+    supabase.from("players").select(playerSelect).order("created_at", { ascending: true }),
     supabase.from("matches").select(legacyMatchColumns).order("scheduled_at", { ascending: true })
   ]);
 
@@ -241,7 +225,7 @@ async function getLegacyPublicCompetitionData(
   return {
     events: ((eventsResponse.data ?? []) as EventRow[]).map(mapEvent),
     teams: ((teamsResponse.data ?? []) as TeamRow[]).map(mapTeam),
-    players: ((playersResponse.data ?? []) as PlayerRow[]).map(mapPlayer),
+    players: mapPlayerRows((playersResponse.data ?? []) as unknown as PublicPlayerRow[], includePrivatePlayerFields),
     matches: ((matchesResponse.data ?? []) as MatchRow[]).map(mapMatch),
     registrationCodes: [],
     sports: [],
@@ -252,6 +236,29 @@ async function getLegacyPublicCompetitionData(
     groupTeams: [],
     groupStandings: [],
     tournamentBases: []
+  };
+}
+
+function mapPlayerRows(rows: PublicPlayerRow[], includePrivatePlayerFields: boolean) {
+  return rows.map((row) =>
+    mapPlayer({
+      ...row,
+      dni: includePrivatePlayerFields ? row.dni ?? "" : "",
+      enrollment_file: includePrivatePlayerFields ? row.enrollment_file ?? "" : ""
+    })
+  );
+}
+
+function filterPrivatePlayerFields(data: CompetitionData, includePrivatePlayerFields: boolean): CompetitionData {
+  if (includePrivatePlayerFields) return data;
+
+  return {
+    ...data,
+    players: data.players.map((player) => ({
+      ...player,
+      dni: "",
+      enrollmentFile: ""
+    }))
   };
 }
 

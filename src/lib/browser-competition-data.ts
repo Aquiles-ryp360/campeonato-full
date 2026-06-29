@@ -2,7 +2,6 @@
 
 import {
   applyCatalogLabels,
-  emptyCompetitionData,
   mapEvent,
   mapMatch,
   mapPlayer,
@@ -31,28 +30,8 @@ import {
   type GroupStandingRow,
   type TournamentBasesRow
 } from "./data-mappers";
-import { withRepositoryFootballDefaults } from "./football-content";
+import { mockCompetitionData } from "./mock-data";
 import { createSupabaseBrowserClient, hasSupabaseEnv } from "./supabase";
-
-const eventColumns = `
-  id,
-  name,
-  sport_id,
-  category,
-  format_id,
-  status,
-  registration_fee,
-  registration_open_until,
-  max_teams,
-  min_players,
-  max_players,
-  points_win,
-  points_draw,
-  points_loss,
-  rules_summary,
-  prevent_cross_sport_conflicts,
-  minimum_rest_minutes
-`;
 
 const legacyEventColumns = `
   id,
@@ -132,25 +111,6 @@ const playerColumns = `
   photo_url
 `;
 
-const matchColumns = `
-  id,
-  event_id,
-  round,
-  stage,
-  group_id,
-  bracket_position,
-  next_match_id,
-  is_home_next,
-  home_team_id,
-  away_team_id,
-  scheduled_at,
-  venue_id,
-  status,
-  home_score,
-  away_score,
-  notes
-`;
-
 const legacyMatchColumns = `
   id,
   event_id,
@@ -179,7 +139,7 @@ export async function fetchBrowserCompetitionData({
 }: {
   includeRegistrationCodes?: boolean;
 } = {}): Promise<CompetitionData> {
-  if (!hasSupabaseEnv()) return withRepositoryFootballDefaults(emptyCompetitionData);
+  if (!hasSupabaseEnv()) return mockCompetitionData;
 
   const supabase = createSupabaseBrowserClient();
   const teamSelect = includeRegistrationCodes ? teamColumnsWithCode : teamColumns;
@@ -199,10 +159,10 @@ export async function fetchBrowserCompetitionData({
     groupStandingsResponse,
     basesResponse
   ] = await Promise.all([
-    supabase.from("events").select(eventColumns).order("created_at", { ascending: true }),
+    supabase.from("events").select("*").order("created_at", { ascending: true }),
     supabase.from("teams").select(teamSelect).order("created_at", { ascending: true }),
     supabase.from("players").select(playerColumns).order("created_at", { ascending: true }),
-    supabase.from("matches").select(matchColumns).order("scheduled_at", { ascending: true }),
+    supabase.from("matches").select("*").order("scheduled_at", { ascending: true }),
     includeRegistrationCodes
       ? supabase
           .from("registration_codes")
@@ -234,9 +194,7 @@ export async function fetchBrowserCompetitionData({
       basesResponse.error
     ])
   ) {
-    return withRepositoryFootballDefaults(
-      await fetchLegacyBrowserCompetitionData(supabase, includeRegistrationCodes)
-    );
+    return fetchLegacyBrowserCompetitionData(supabase, includeRegistrationCodes);
   }
 
   if (eventsResponse.error) throw new Error("No se pudieron cargar los eventos.");
@@ -253,7 +211,7 @@ export async function fetchBrowserCompetitionData({
   if (groupStandingsResponse.error) throw new Error("No se pudieron cargar la tabla de posiciones por grupo.");
   if (basesResponse.error) throw new Error("No se pudieron cargar las bases del torneo.");
 
-  return withRepositoryFootballDefaults(applyCatalogLabels({
+  return applyCatalogLabels({
     events: ((eventsResponse.data ?? []) as EventRow[]).map(mapEvent),
     teams: ((teamsResponse.data ?? []) as unknown as TeamRow[]).map(mapTeam),
     players: ((playersResponse.data ?? []) as PlayerRow[]).map(mapPlayer),
@@ -267,7 +225,7 @@ export async function fetchBrowserCompetitionData({
     groupTeams: ((groupTeamsResponse.data ?? []) as GroupTeamRow[]).map(mapGroupTeam),
     groupStandings: ((groupStandingsResponse.data ?? []) as GroupStandingRow[]).map(mapGroupStanding),
     tournamentBases: ((basesResponse.data ?? []) as TournamentBasesRow[]).map(mapTournamentBases)
-  }));
+  });
 }
 
 async function fetchLegacyBrowserCompetitionData(

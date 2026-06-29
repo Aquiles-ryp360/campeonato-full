@@ -1,5 +1,5 @@
 import { differenceInMinutes, parseISO } from "date-fns";
-import type { Match, Player, Team, TournamentEvent } from "../types";
+import type { FixtureStatus, Match, Player, Team, TournamentEvent } from "../types";
 
 export type ConflictSeverity = "info" | "warning" | "error";
 
@@ -10,9 +10,16 @@ export interface ScheduleConflict {
     | "player"
     | "rest"
     | "slots"
-    | "phase";
+    | "phase"
+    | "fixture_preliminary"
+    | "fixture_published"
+    | "fixture_locked";
   severity: ConflictSeverity;
   message: string;
+  affectedMatchIds: string[];
+  affectedTeamIds: string[];
+  affectedPlayerIds: string[];
+  suggestion: string;
   matchId?: string;
 }
 
@@ -42,72 +49,130 @@ export function detectScheduleConflicts({
       const sameTime = Math.abs(differenceInMinutes(currentStart, otherStart)) < 1;
 
       if (sameTime && current.court === other.court) {
-        conflicts.push({
+        conflicts.push(createConflict({
           type: "court",
           severity: "error",
-          matchId: current.id,
-          message: `Cancha ocupada: ${current.court} tiene dos partidos a la misma hora.`
-        });
+          message: `Cancha ocupada: ${current.court} tiene dos partidos a la misma hora.`,
+          affectedMatchIds: [current.id, other.id],
+          suggestion: "Mueve uno de los partidos a otra cancha u horario."
+        }));
       }
 
-      if (
-        sameTime &&
-        [current.homeTeamId, current.awayTeamId].some((teamId) =>
-          [other.homeTeamId, other.awayTeamId].includes(teamId)
-        )
-      ) {
-        conflicts.push({
+      const repeatedTeamIds = knownTeamIds(current).filter((teamId) => knownTeamIds(other).includes(teamId));
+      if (sameTime && repeatedTeamIds.length > 0) {
+        conflicts.push(createConflict({
           type: "team",
           severity: "error",
-          matchId: current.id,
-          message: "Un equipo aparece en dos partidos simultaneos."
-        });
+          message: "Un equipo aparece en dos partidos simultaneos.",
+          affectedMatchIds: [current.id, other.id],
+          affectedTeamIds: repeatedTeamIds,
+          suggestion: "Reprograma uno de los partidos del equipo afectado."
+        }));
       }
 
       const repeatedPlayers = findRepeatedPlayers(current, other, teams, players);
       if (sameTime && repeatedPlayers.length > 0) {
-        conflicts.push({
+        conflicts.push(createConflict({
           type: "player",
           severity: "warning",
-          matchId: current.id,
-          message: `${repeatedPlayers.length} jugador(es) repetidos tienen cruce de horario.`
-        });
+          message: `${repeatedPlayers.length} jugador(es) repetidos tienen cruce de horario.`,
+          affectedMatchIds: [current.id, other.id],
+          affectedPlayerIds: repeatedPlayers.map((player) => player.id),
+          affectedTeamIds: unique([
+            ...knownTeamIds(current),
+            ...knownTeamIds(other)
+          ]),
+          suggestion: "Revisa planteles duplicados o separa esos partidos."
+        }));
       }
     }
 
     if (event) {
-      const teamMatches = matches.filter(
-        (match) =>
-          match.id !== current.id &&
-          match.scheduledAt &&
-          match.status !== "postponed" &&
-          (match.homeTeamId === current.homeTeamId ||
-            match.awayTeamId === current.homeTeamId ||
-            match.homeTeamId === current.awayTeamId ||
-            match.awayTeamId === current.awayTeamId)
-      );
+      conflicts.push(...restConflicts(current, matches, event));
+    }
+  }
 
-      const hasRestWarning = teamMatches.some((match) => {
-        const diff = Math.abs(differenceInMinutes(currentStart, parseISO(match.scheduledAt)));
-        return diff > 0 && diff < event.minimumRestMinutes;
-      });
-
-      if (hasRestWarning) {
-        conflicts.push({
-          type: "rest",
-          severity: "warning",
-          matchId: current.id,
-          message: `Descanso menor a ${event.minimumRestMinutes} minutos.`
-        });
-      }
+  for (const event of events) {
+    const status = event.fixtureStatus ?? "draft_auto";
+    const eventMatches = matches.filter((match) => match.eventId === event.id);
+    if (status === "draft_auto") {
+      conflicts.push(createConflict({
+        type: "fixture_preliminary",
+        severity: "info",
+        message: "Fixture preliminar: puede cambiar hasta cierre de inscripciones.",
+        affectedMatchIds: eventMatches.map((match) => match.id),
+        suggestion: "Publica el fixture solo despues de revisarlo al cerrar inscripciones."
+      }));
+    }
+    if (status === "published") {
+      conflicts.push(createConflict({
+        type: "fixture_published",
+        severity: "info",
+        message: "Fixture publicado: no se regenera automaticamente.",
+        affectedMatchIds: eventMatches.map((match) => match.id),
+        suggestion: "Si hubo cambios posteriores, revisa y regenera manualmente."
+      }));
+    }
+    if (status === "locked") {
+      conflicts.push(createConflict({
+        type: "fixture_locked",
+        severity: "info",
+        message: "Fixture bloqueado: no debe modificarse automaticamente.",
+        affectedMatchIds: eventMatches.map((match) => match.id),
+        suggestion: "Desbloquea solo si la organizacion decide reprogramar."
+      }));
     }
   }
 
   return conflicts;
 }
 
+export function shouldAutoRegenerateFixture(status: FixtureStatus) {
+  return status === "draft_auto";
+}
+
+export function canRegenerateFixtureManually(status: FixtureStatus) {
+  return status === "draft_auto" || status === "draft_review";
+}
+
+export function canPublishFixture(status: FixtureStatus) {
+  return status === "draft_review" || status === "draft_auto";
+}
+
 export function conflictsForMatch(conflicts: ScheduleConflict[], matchId: string) {
-  return conflicts.filter((conflict) => conflict.matchId === matchId);
+  return conflicts.filter((conflict) => conflict.affectedMatchIds.includes(matchId) || conflict.matchId === matchId);
+}
+
+function restConflicts(current: Match, matches: Match[], event: TournamentEvent): ScheduleConflict[] {
+  const conflicts: ScheduleConflict[] = [];
+  const currentStart = parseISO(current.scheduledAt);
+  const currentTeams = knownTeamIds(current);
+
+  if (currentTeams.length === 0) return conflicts;
+
+  const teamMatches = matches.filter(
+    (match) =>
+      match.id !== current.id &&
+      match.scheduledAt &&
+      match.status !== "postponed" &&
+      knownTeamIds(match).some((teamId) => currentTeams.includes(teamId))
+  );
+
+  for (const match of teamMatches) {
+    const diff = Math.abs(differenceInMinutes(currentStart, parseISO(match.scheduledAt)));
+    if (diff > 0 && diff < event.minimumRestMinutes) {
+      conflicts.push(createConflict({
+        type: "rest",
+        severity: "warning",
+        message: `Descanso menor a ${event.minimumRestMinutes} minutos.`,
+        affectedMatchIds: [current.id, match.id],
+        affectedTeamIds: knownTeamIds(match).filter((teamId) => currentTeams.includes(teamId)),
+        suggestion: "Aumenta el descanso minimo o separa rondas antes de publicar."
+      }));
+    }
+  }
+
+  return conflicts;
 }
 
 function findRepeatedPlayers(
@@ -116,10 +181,10 @@ function findRepeatedPlayers(
   teams: Team[],
   players: Player[]
 ) {
-  const firstEventTeamIds = [firstMatch.homeTeamId, firstMatch.awayTeamId];
-  const secondEventTeamIds = [secondMatch.homeTeamId, secondMatch.awayTeamId];
-  const firstTeams = teams.filter((team) => firstEventTeamIds.includes(team.id));
-  const secondTeams = teams.filter((team) => secondEventTeamIds.includes(team.id));
+  const firstTeamIds = knownTeamIds(firstMatch);
+  const secondTeamIds = knownTeamIds(secondMatch);
+  const firstTeams = teams.filter((team) => firstTeamIds.includes(team.id));
+  const secondTeams = teams.filter((team) => secondTeamIds.includes(team.id));
   const firstCodes = new Set(
     players
       .filter((player) => firstTeams.some((team) => team.id === player.teamId))
@@ -131,4 +196,37 @@ function findRepeatedPlayers(
       secondTeams.some((team) => team.id === player.teamId) &&
       firstCodes.has(player.studentCode)
   );
+}
+
+function knownTeamIds(match: Match) {
+  return [match.homeTeamId, match.awayTeamId].filter((teamId) => teamId && !teamId.startsWith("placeholder:"));
+}
+
+function createConflict({
+  type,
+  severity,
+  message,
+  affectedMatchIds = [],
+  affectedTeamIds = [],
+  affectedPlayerIds = [],
+  suggestion
+}: Omit<ScheduleConflict, "affectedMatchIds" | "affectedTeamIds" | "affectedPlayerIds"> & {
+  affectedMatchIds?: string[];
+  affectedTeamIds?: string[];
+  affectedPlayerIds?: string[];
+}): ScheduleConflict {
+  return {
+    type,
+    severity,
+    message,
+    affectedMatchIds,
+    affectedTeamIds,
+    affectedPlayerIds,
+    suggestion,
+    matchId: affectedMatchIds[0]
+  };
+}
+
+function unique(values: string[]) {
+  return Array.from(new Set(values));
 }

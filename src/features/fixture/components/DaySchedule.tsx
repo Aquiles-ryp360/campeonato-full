@@ -3,7 +3,7 @@
 import { useMemo, useState } from "react";
 import { Filter } from "lucide-react";
 import type { Match, Player, Team, TournamentEvent, Venue } from "@/lib/types";
-import { detectScheduleConflicts } from "@/lib/domain/conflict-detector";
+import { conflictsForMatch, detectScheduleConflicts } from "@/lib/domain/conflict-detector";
 import { Card, Field, SectionHeader, inputClass } from "@/components/ui";
 import { TeamDetailsModal } from "@/features/public/components/TeamDetailsModal";
 import { MatchDetailsModal } from "@/features/public/components/MatchDetailsModal";
@@ -129,17 +129,29 @@ export function DaySchedule({
 
       {filteredMatches.length > 0 ? (
         view === "hour" ? (
-          <div className="grid gap-4 lg:grid-cols-2">
-            {filteredMatches.map((match) => (
-              <MatchCard
-                key={match.id}
-                match={match}
-                event={events.find((event) => event.id === match.eventId)}
-                teams={teams}
-                conflicts={conflicts.filter((conflict) => conflict.matchId === match.id)}
-                onOpenTeam={setSelectedTeam}
-                onOpenMatch={setSelectedMatch}
-              />
+          <div className="space-y-5">
+            {Array.from(new Set(filteredMatches.map((match) => timeKey(match.scheduledAt)))).map((time) => (
+              <section key={time} className="grid gap-3 rounded-md border border-ink/10 bg-white/70 p-4 lg:grid-cols-[90px_1fr]">
+                <div>
+                  <p className="text-2xl font-bold text-ink">{time}</p>
+                  <p className="text-xs font-semibold uppercase text-ink/45">Hora</p>
+                </div>
+                <div className="grid gap-3 lg:grid-cols-2">
+                  {filteredMatches
+                    .filter((match) => timeKey(match.scheduledAt) === time)
+                    .map((match) => (
+                      <MatchCard
+                        key={match.id}
+                        match={match}
+                        event={events.find((event) => event.id === match.eventId)}
+                        teams={teams}
+                        conflicts={conflictsForMatch(conflicts, match.id)}
+                        onOpenTeam={setSelectedTeam}
+                        onOpenMatch={setSelectedMatch}
+                      />
+                    ))}
+                </div>
+              </section>
             ))}
           </div>
         ) : (
@@ -175,4 +187,13 @@ export function DaySchedule({
       <MatchDetailsModal match={selectedMatch} teams={teams} onClose={() => setSelectedMatch(null)} />
     </div>
   );
+}
+
+function timeKey(value: string) {
+  return new Intl.DateTimeFormat("es-PE", {
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+    timeZone: "America/Lima"
+  }).format(new Date(value));
 }

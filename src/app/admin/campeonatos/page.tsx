@@ -6,7 +6,7 @@ import { eventStatusLabel, formatMoney } from "@/lib/utils";
 export const dynamic = "force-dynamic";
 
 export default async function AdminChampionshipsPage() {
-  const data = await getPublicCompetitionData();
+  const data = await getPublicCompetitionData({ includePrivatePlayerFields: true });
 
   return (
     <div className="space-y-6 pb-20 md:pb-0">

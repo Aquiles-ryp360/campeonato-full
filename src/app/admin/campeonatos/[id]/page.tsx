@@ -9,7 +9,10 @@ export default async function EditChampionshipPage({
 }: {
   params: Promise<{ id: string }>;
 }) {
-  const [{ id }, data] = await Promise.all([params, getPublicCompetitionData()]);
+  const [{ id }, data] = await Promise.all([
+    params,
+    getPublicCompetitionData({ includePrivatePlayerFields: true })
+  ]);
   const event = data.events.find((item) => item.id === id);
 
   return (

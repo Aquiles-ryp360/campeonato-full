@@ -142,3 +142,21 @@ export function calculateStandings(
 export function getTeamName(teams: Team[], id: string) {
   return teams.find((team) => team.id === id)?.name ?? "Equipo pendiente";
 }
+
+export function getMatchSideLabel(match: Match, teams: Team[], side: "home" | "away") {
+  const teamId = side === "home" ? match.homeTeamId : match.awayTeamId;
+  const placeholder = side === "home" ? match.homePlaceholder : match.awayPlaceholder;
+  if (!teamId) return placeholder ?? "Equipo por confirmar";
+  return teams.find((team) => team.id === teamId)?.name ?? placeholder ?? "Equipo por confirmar";
+}
+
+export function fixtureStatusLabel(status?: TournamentEvent["fixtureStatus"] | Match["fixtureStatus"]) {
+  const labels = {
+    draft_auto: "Fixture preliminar",
+    draft_review: "Fixture en revision",
+    published: "Fixture oficial",
+    locked: "Fixture cerrado"
+  };
+
+  return labels[status ?? "draft_auto"];
+}

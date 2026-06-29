@@ -2,7 +2,7 @@
 
 import { CalendarDays, FileText, ListChecks, UserPlus } from "lucide-react";
 import type { TournamentEvent } from "@/lib/types";
-import { eventStatusLabel } from "@/lib/utils";
+import { eventStatusLabel, fixtureStatusLabel } from "@/lib/utils";
 import {
   championshipSlug,
   eventStatusTone,
@@ -32,6 +32,7 @@ export function ChampionshipHero({
       <div className="flex flex-wrap items-center gap-2">
         <Badge tone="dark">{sportDisplayName(event)}</Badge>
         <Badge tone={eventStatusTone(event.status)}>{eventStatusLabel(event.status)}</Badge>
+        <Badge tone="amber">{fixtureStatusLabel(event.fixtureStatus)}</Badge>
         <Badge tone="dark">{tournamentFormatLabel(event.format)}</Badge>
       </div>
 
