@@ -20,11 +20,11 @@ export default async function EditChampionshipPage({
       <Card className="p-5">
         <SectionHeader
           title={event?.name ?? "Campeonato"}
-          description="Edicion preparada sobre el wizard. Persistencia completa depende de tablas Supabase."
-          action={<Badge tone="blue">Compatibilidad</Badge>}
+          description="Edicion en una sola pantalla con datos, inscripcion, canchas y publicacion."
+          action={<Badge tone="blue">Editor unico</Badge>}
         />
       </Card>
-      <ChampionshipWizard data={data} />
+      <ChampionshipWizard data={data} initialEvent={event} />
     </div>
   );
 }
