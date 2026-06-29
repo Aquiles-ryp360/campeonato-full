@@ -181,22 +181,78 @@ ALTER TABLE public.matches
     ADD COLUMN is_home_next boolean,
     ADD COLUMN venue_id uuid REFERENCES public.venues(id);
 
--- Crear canchas por defecto para migrar los textos de matches.court
-INSERT INTO public.venues (name, location)
-SELECT DISTINCT court, 'Sede principal' FROM public.matches WHERE court IS NOT NULL AND court <> ''
-ON CONFLICT (name) DO NOTHING;
+-- Crear canchas por defecto y migrar referencias legacy.
+-- El esquema inicial usa matches.court_id -> courts.id; otras variantes usaban matches.court.
+DO $$
+BEGIN
+    IF to_regclass('public.courts') IS NOT NULL THEN
+        INSERT INTO public.venues (name, location)
+        SELECT DISTINCT c.name, c.location
+        FROM public.courts c
+        WHERE c.name IS NOT NULL AND c.name <> ''
+        ON CONFLICT (name) DO UPDATE
+        SET location = COALESCE(public.venues.location, EXCLUDED.location);
+    END IF;
 
--- Si no hay ninguna cancha, insertar una por defecto
-INSERT INTO public.venues (name, location) VALUES ('Losa Principal', 'Losa principal') ON CONFLICT DO NOTHING;
+    IF EXISTS (
+        SELECT 1
+        FROM information_schema.columns
+        WHERE table_schema = 'public'
+          AND table_name = 'matches'
+          AND column_name = 'court'
+    ) THEN
+        EXECUTE $sql$
+            INSERT INTO public.venues (name, location)
+            SELECT DISTINCT court, 'Sede principal'
+            FROM public.matches
+            WHERE court IS NOT NULL AND court <> ''
+            ON CONFLICT (name) DO NOTHING
+        $sql$;
+    END IF;
 
--- Mapear canchas existentes a ids
-UPDATE public.matches m
-SET venue_id = v.id
-FROM public.venues v
-WHERE m.court = v.name;
+    INSERT INTO public.venues (name, location)
+    VALUES ('Losa Principal', 'Losa principal')
+    ON CONFLICT (name) DO NOTHING;
 
--- Eliminar columna antigua court
-ALTER TABLE public.matches DROP COLUMN court;
+    IF to_regclass('public.courts') IS NOT NULL AND EXISTS (
+        SELECT 1
+        FROM information_schema.columns
+        WHERE table_schema = 'public'
+          AND table_name = 'matches'
+          AND column_name = 'court_id'
+    ) THEN
+        EXECUTE $sql$
+            UPDATE public.matches m
+            SET venue_id = v.id
+            FROM public.courts c
+            JOIN public.venues v ON v.name = c.name
+            WHERE m.court_id = c.id
+              AND m.venue_id IS NULL
+        $sql$;
+    END IF;
+
+    IF EXISTS (
+        SELECT 1
+        FROM information_schema.columns
+        WHERE table_schema = 'public'
+          AND table_name = 'matches'
+          AND column_name = 'court'
+    ) THEN
+        EXECUTE $sql$
+            UPDATE public.matches m
+            SET venue_id = v.id
+            FROM public.venues v
+            WHERE m.court = v.name
+              AND m.venue_id IS NULL
+        $sql$;
+    END IF;
+
+    UPDATE public.matches
+    SET venue_id = (SELECT id FROM public.venues WHERE name = 'Losa Principal' LIMIT 1)
+    WHERE venue_id IS NULL;
+END $$;
+
+ALTER TABLE public.matches DROP COLUMN IF EXISTS court;
 
 -- ====================================================
 -- 4. POLÍTICAS DE SEGURIDAD RLS (Row Level Security)
