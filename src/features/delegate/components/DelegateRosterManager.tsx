@@ -1,9 +1,10 @@
 "use client";
 
-import { Plus } from "lucide-react";
+import { Download, Plus } from "lucide-react";
 import type { Player, Team, TournamentEvent } from "@/lib/types";
 import { canEditRoster } from "@/lib/domain/permissions";
 import { rosterLimitState } from "@/lib/domain/registration-rules";
+import { playerRoleLabel } from "@/lib/utils";
 import { Button, Card, Field, SectionHeader, inputClass } from "@/components/ui";
 import { PlayerTable } from "@/features/teams/components/PlayerTable";
 
@@ -22,18 +23,52 @@ export function DelegateRosterManager({
   const editable = canEditRoster(event, team);
   const limit = rosterLimitState({ event, playerCount: players.length });
   const positions = event.sport === "voley" ? voleyPositions : footballPositions;
+  const canDownloadRoster = team.status === "approved";
+
+  function downloadRoster() {
+    const rows = [
+      ["#", "Nombres", "Apellidos", "DNI", "Codigo", "Semestre", "Rol", "Camiseta", "Posicion"],
+      ...players.map((player, index) => [
+        String(index + 1),
+        player.firstName,
+        player.lastName,
+        player.dni,
+        player.studentCode,
+        player.semester,
+        playerRoleLabel(player.lineupRole),
+        player.jerseyNumber?.toString() ?? "",
+        player.position ?? ""
+      ])
+    ];
+    const csv = rows.map((row) => row.map(csvCell).join(",")).join("\r\n");
+    const blob = new Blob([`\ufeff${csv}`], { type: "text/csv;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `jugadores-${slugify(team.name)}.csv`;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    URL.revokeObjectURL(url);
+  }
 
   return (
     <Card className="overflow-hidden">
       <div className="border-b border-ink/10 p-5">
         <SectionHeader
           title="Plantel"
-          description={`Minimo ${event.minPlayers}, maximo ${event.maxPlayers}. Estado: ${limit}.`}
+          description={`Minimo ${event.minPlayers}, maximo ${event.maxPlayers}. Estado: ${limit}. La descarga se habilita cuando administracion aprueba el equipo.`}
           action={
-            <Button variant="secondary" disabled={!editable}>
-              <Plus className="h-4 w-4" />
-              Agregar jugador
-            </Button>
+            <div className="flex flex-wrap gap-2">
+              <Button variant="secondary" onClick={downloadRoster} disabled={!canDownloadRoster}>
+                <Download className="h-4 w-4" />
+                Descargar lista
+              </Button>
+              <Button variant="secondary" disabled={!editable}>
+                <Plus className="h-4 w-4" />
+                Agregar jugador
+              </Button>
+            </div>
           }
         />
       </div>
@@ -63,4 +98,18 @@ export function DelegateRosterManager({
       <PlayerTable players={players} privateView />
     </Card>
   );
+}
+
+function csvCell(value: string) {
+  return `"${value.replace(/"/g, '""')}"`;
+}
+
+function slugify(value: string) {
+  return value
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .slice(0, 40) || "equipo";
 }

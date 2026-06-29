@@ -142,7 +142,7 @@ export function ChampionshipWizard({ data }: { data: CompetitionData }) {
         </Card>
       ) : null}
 
-      {step === 3 ? <ScheduleConfigForm /> : null}
+      {step === 3 ? <ScheduleConfigForm venues={data.venues} /> : null}
       {step === 4 ? <BasesUploadForm /> : null}
       {step === 5 ? <FixtureGenerationPanel data={data} /> : null}
 
