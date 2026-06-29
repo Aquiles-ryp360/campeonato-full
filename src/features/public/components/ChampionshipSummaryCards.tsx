@@ -2,7 +2,7 @@ import { CalendarDays, Clock, Trophy, UsersRound } from "lucide-react";
 import type { Match, Team, TournamentEvent } from "@/lib/types";
 import { Metric } from "@/components/ui";
 import { fixtureStatusLabel, formatDateTime } from "@/lib/utils";
-import { tournamentFormatLabel } from "@/lib/domain/tournament-format";
+import { sportDisplayName } from "@/lib/domain/tournament-format";
 
 export function ChampionshipSummaryCards({
   event,
@@ -20,7 +20,7 @@ export function ChampionshipSummaryCards({
   return (
     <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
       <Metric label="Equipos inscritos" value={`${teams.length}/${event.maxTeams}`} icon={UsersRound} />
-      <Metric label="Formato" value={tournamentFormatLabel(event.format)} icon={Trophy} tone="blue" />
+      <Metric label="Formato" value={sportDisplayName(event)} icon={Trophy} tone="blue" />
       <Metric
         label="Fecha base"
         value={nextMatch ? formatDateTime(nextMatch.scheduledAt) : "Por definir"}

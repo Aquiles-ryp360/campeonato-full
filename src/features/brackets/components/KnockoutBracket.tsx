@@ -2,7 +2,7 @@
 
 import { Trophy } from "lucide-react";
 import { generateKnockoutBracket } from "@/lib/domain/bracket-generator";
-import type { Match, Team } from "@/lib/types";
+import type { Match, SeedingMode, Team } from "@/lib/types";
 import { Badge } from "@/components/ui";
 import { formatDateTime } from "@/lib/utils";
 import { ThirdPlaceMatch } from "./ThirdPlaceMatch";
@@ -11,14 +11,18 @@ export function KnockoutBracket({
   eventId,
   teams,
   matches,
+  seedingMode,
+  randomSeed,
   onOpenTeam
 }: {
   eventId: string;
   teams: Team[];
   matches: Match[];
+  seedingMode?: SeedingMode;
+  randomSeed?: string;
   onOpenTeam?: (team: Team) => void;
 }) {
-  const bracket = generateKnockoutBracket({ eventId, teams, matches });
+  const bracket = generateKnockoutBracket({ eventId, teams, matches, seedingMode, randomSeed });
   const rounds = bracket.rounds.filter((round) => round.stage !== "third_place");
 
   return (

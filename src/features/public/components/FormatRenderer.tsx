@@ -12,6 +12,7 @@ import type {
   TournamentEvent
 } from "@/lib/types";
 import { Card, SectionHeader } from "@/components/ui";
+import { sportDisplayName } from "@/lib/domain/tournament-format";
 import { MatchCard } from "@/features/fixture/components/MatchCard";
 import { KnockoutBracket } from "@/features/brackets/components/KnockoutBracket";
 import { GroupStageView } from "@/features/brackets/components/GroupStageView";
@@ -27,7 +28,8 @@ export function FormatRenderer({
   standings,
   groups,
   groupTeams,
-  groupStandings
+  groupStandings,
+  drawSeed
 }: {
   event: TournamentEvent;
   teams: Team[];
@@ -37,6 +39,7 @@ export function FormatRenderer({
   groups: Group[];
   groupTeams: GroupTeam[];
   groupStandings: GroupStanding[];
+  drawSeed?: string;
 }) {
   const [selectedTeam, setSelectedTeam] = useState<Team | null>(null);
   const [selectedMatch, setSelectedMatch] = useState<Match | null>(null);
@@ -46,7 +49,10 @@ export function FormatRenderer({
     .slice(0, 4);
 
   return (
-    <section id="formato" className="grid scroll-mt-24 gap-6 lg:grid-cols-[1fr_0.82fr]">
+    <section
+      id="formato"
+      className={`grid scroll-mt-24 gap-6 ${upcomingMatches.length > 0 ? "lg:grid-cols-[1fr_0.82fr]" : "lg:grid-cols-1"}`}
+    >
       <div className="space-y-6">
         {event.format === "league" ? (
           <Card className="overflow-hidden">
@@ -82,6 +88,8 @@ export function FormatRenderer({
                   eventId={event.id}
                   teams={teams}
                   matches={matches}
+                  seedingMode={drawSeed ? "random" : event.seedingMode}
+                  randomSeed={drawSeed}
                   onOpenTeam={setSelectedTeam}
                 />
               </div>
@@ -91,12 +99,14 @@ export function FormatRenderer({
 
         {event.format === "single_elimination" ? (
           <Card className="p-5">
-            <SectionHeader title="Llave de eliminacion" description="Generada segun cantidad de equipos, con byes cuando corresponde." />
+            <SectionHeader title={`Llaves - ${sportDisplayName(event)}`} description="Cruces generados por sorteo para eliminacion directa." />
             <div className="mt-4">
               <KnockoutBracket
                 eventId={event.id}
                 teams={teams}
                 matches={matches}
+                seedingMode={drawSeed ? "random" : event.seedingMode}
+                randomSeed={drawSeed}
                 onOpenTeam={setSelectedTeam}
               />
             </div>
@@ -104,11 +114,11 @@ export function FormatRenderer({
         ) : null}
       </div>
 
-      <Card className="p-5">
-        <SectionHeader title="Proximos partidos" description="Cruces inmediatos del campeonato seleccionado." />
-        <div className="mt-4 space-y-3">
-          {upcomingMatches.length > 0 ? (
-            upcomingMatches.map((match) => (
+      {upcomingMatches.length > 0 ? (
+        <Card className="p-5">
+          <SectionHeader title="Proximos partidos" description="Cruces inmediatos del campeonato seleccionado." />
+          <div className="mt-4 space-y-3">
+            {upcomingMatches.map((match) => (
               <MatchCard
                 key={match.id}
                 match={match}
@@ -117,14 +127,10 @@ export function FormatRenderer({
                 onOpenTeam={setSelectedTeam}
                 onOpenMatch={setSelectedMatch}
               />
-            ))
-          ) : (
-            <div className="rounded-md border border-dashed border-ink/20 p-6 text-center text-sm text-ink/55">
-              No hay partidos programados.
-            </div>
-          )}
-        </div>
-      </Card>
+            ))}
+          </div>
+        </Card>
+      ) : null}
 
       <TeamDetailsModal
         team={selectedTeam}

@@ -1,7 +1,8 @@
 import type { ParsedAudioResult } from "./types";
-import { buildFutsal10Seed } from "./futsal-10-seed";
+import { emptyCompetitionData } from "./data-mappers";
+import { withRepositoryFootballDefaults } from "./football-content";
 
-export const mockCompetitionData = buildFutsal10Seed();
+export const mockCompetitionData = withRepositoryFootballDefaults(emptyCompetitionData);
 
 export const sports = mockCompetitionData.sports;
 export const competitionFormats = mockCompetitionData.competitionFormats;
@@ -16,15 +17,16 @@ export const groupStandings = mockCompetitionData.groupStandings;
 export const registrationCodes = mockCompetitionData.registrationCodes;
 export const players = mockCompetitionData.players;
 export const matches = mockCompetitionData.matches;
+const firstMatch = matches[0];
 
 export const parsedAudioExample: ParsedAudioResult = {
-  eventId: events[0].id,
-  matchId: matches[0].id,
+  eventId: events[0]?.id ?? "event-preview",
+  matchId: firstMatch?.id ?? "match-preview",
   confidence: 0.91,
   rawTranscript:
     "Educacion Fisica gano por dos a uno a Contabilidad en la ronda preliminar.",
-  homeTeamName: matches[0].homePlaceholder ?? "Educacion Fisica",
-  awayTeamName: matches[0].awayPlaceholder ?? "Contabilidad",
+  homeTeamName: firstMatch?.homePlaceholder ?? teams[0]?.name ?? "Equipo A",
+  awayTeamName: firstMatch?.awayPlaceholder ?? teams[1]?.name ?? "Equipo B",
   homeScore: 2,
   awayScore: 1,
   goals: [

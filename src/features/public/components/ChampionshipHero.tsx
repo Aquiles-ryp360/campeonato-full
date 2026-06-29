@@ -1,6 +1,6 @@
 "use client";
 
-import { CalendarDays, FileText, ListChecks, UserPlus } from "lucide-react";
+import { CalendarDays, FileText, UserPlus, UsersRound } from "lucide-react";
 import type { TournamentEvent } from "@/lib/types";
 import { eventStatusLabel, fixtureStatusLabel } from "@/lib/utils";
 import {
@@ -65,9 +65,9 @@ export function ChampionshipHero({
             <UserPlus className="h-4 w-4" />
             Inscribir equipo
           </Button>
-          <Button href="#formato" variant="ghost" className="bg-white/10 text-white hover:bg-white/15">
-            <ListChecks className="h-4 w-4" />
-            Ver formato
+          <Button href="#equipos-inscritos" variant="ghost" className="bg-white/10 text-white hover:bg-white/15">
+            <UsersRound className="h-4 w-4" />
+            Equipos inscritos
           </Button>
         </div>
       </div>

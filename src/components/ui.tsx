@@ -77,13 +77,16 @@ export function Button({
 
 export function Card({
   children,
-  className
+  className,
+  id
 }: {
   children: React.ReactNode;
   className?: string;
+  id?: string;
 }) {
   return (
     <section
+      id={id}
       className={cn(
         "rounded-lg border border-ink/10 bg-white/92 shadow-panel backdrop-blur",
         className

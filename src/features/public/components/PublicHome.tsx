@@ -1,9 +1,10 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { Shuffle } from "lucide-react";
 import type { CompetitionData } from "@/lib/data-mappers";
 import { getChampionshipPublicContext } from "@/lib/queries/public";
-import { Card, SectionHeader } from "@/components/ui";
+import { Badge, Button, Card, SectionHeader } from "@/components/ui";
 import { TeamCard } from "@/features/teams/components/TeamCard";
 import { TeamDetailsModal } from "./TeamDetailsModal";
 import { ChampionshipHero } from "./ChampionshipHero";
@@ -20,6 +21,7 @@ export function PublicHome({
   const initial = getChampionshipPublicContext(data, initialChampionship);
   const [eventId, setEventId] = useState(initial.event?.id ?? "");
   const [selectedTeamId, setSelectedTeamId] = useState<string | null>(null);
+  const [drawSeed, setDrawSeed] = useState<string | null>(null);
   const context = useMemo(
     () => getChampionshipPublicContext(data, eventId || initialChampionship),
     [data, eventId, initialChampionship]
@@ -39,6 +41,16 @@ export function PublicHome({
 
   const courts = Array.from(new Set(context.matches.map((match) => match.court))).slice(0, 3);
   const selectedTeam = context.teams.find((team) => team.id === selectedTeamId) ?? null;
+  const canDraw = context.teams.length >= 2;
+
+  function handleDraw() {
+    if (!context.event || !canDraw) return;
+
+    setDrawSeed(`${context.event.id}-${Date.now()}`);
+    window.setTimeout(() => {
+      document.getElementById("formato")?.scrollIntoView({ behavior: "smooth", block: "start" });
+    }, 50);
+  }
 
   return (
     <div className="space-y-6 pb-20 md:pb-0">
@@ -50,6 +62,7 @@ export function PublicHome({
         onChangeEvent={(nextEventId) => {
           setEventId(nextEventId);
           setSelectedTeamId(null);
+          setDrawSeed(null);
         }}
       />
 
@@ -59,18 +72,7 @@ export function PublicHome({
         matches={context.matches}
       />
 
-      <FormatRenderer
-        event={context.event}
-        teams={context.teams}
-        players={context.players}
-        matches={context.matches}
-        standings={context.standings}
-        groups={context.groups}
-        groupTeams={context.groupTeams}
-        groupStandings={context.groupStandings}
-      />
-
-      <Card className="p-5">
+      <Card id="equipos-inscritos" className="p-5">
         <SectionHeader
           title="Equipos inscritos"
           description="Selecciona un equipo para ver detalle publico sin DNI ni documentos."
@@ -92,6 +94,45 @@ export function PublicHome({
           )}
         </div>
       </Card>
+
+      <Card id="sorteo" className="p-5">
+        <SectionHeader
+          title="Sortear"
+          description="Genera las llaves con los equipos inscritos del formato Futbol 11 Varones."
+          action={drawSeed ? <Badge tone="green">Sorteo realizado</Badge> : null}
+        />
+        <div className="mt-4 flex flex-col gap-3 rounded-md border border-dashed border-ink/15 bg-mist p-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex items-center gap-3">
+            <div className="grid h-11 w-11 shrink-0 place-items-center rounded-md bg-white text-field">
+              <Shuffle className="h-5 w-5" />
+            </div>
+            <div>
+              <p className="font-bold text-ink">{context.teams.length} equipos listos</p>
+              <p className="text-sm text-ink/60">
+                {canDraw ? "El sorteo enviara la vista a las llaves." : "Se necesitan al menos 2 equipos."}
+              </p>
+            </div>
+          </div>
+          <Button onClick={handleDraw} disabled={!canDraw || Boolean(drawSeed)} className="w-full sm:w-auto">
+            <Shuffle className="h-4 w-4" />
+            {drawSeed ? "Sorteo realizado" : "Sortear"}
+          </Button>
+        </div>
+      </Card>
+
+      {drawSeed ? (
+        <FormatRenderer
+          event={context.event}
+          teams={context.teams}
+          players={context.players}
+          matches={context.matches}
+          standings={context.standings}
+          groups={context.groups}
+          groupTeams={context.groupTeams}
+          groupStandings={context.groupStandings}
+          drawSeed={drawSeed}
+        />
+      ) : null}
 
       <TeamDetailsModal
         team={selectedTeam}

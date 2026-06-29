@@ -6,7 +6,7 @@ export const footballVenueId = "22222222-2222-4222-8222-222222222222";
 
 export const footballBases: TournamentBases = {
   id: "bases-futbol-2026",
-  championshipName: "Campeonato Futbol 11 Intercarreras 2026",
+  championshipName: "Campeonato Futbol 11 Varones Intercarreras 2026",
   year: 2026,
   organizer: "Comision deportiva de Mecanica Electrica",
   startDate: "2026-07-20T15:00:00-05:00",
@@ -39,13 +39,13 @@ export const footballRules = [
 
 export const footballEvent: TournamentEvent = {
   id: footballEventId,
-  name: "Campeonato Futbol 11",
+  name: "Campeonato Futbol 11 Varones",
   sportId: "sport-futbol",
   sport: "futbol",
-  category: "Libre",
+  category: "Varones",
   formatId: "format-knockout",
   format: "single_elimination",
-  status: "in_progress",
+  status: "registration",
   registrationFee: 40,
   registrationOpenUntil: "2026-07-18T23:59:00-05:00",
   maxTeams: 8,
@@ -96,17 +96,12 @@ export function withRepositoryFootballDefaults(data: CompetitionData): Competiti
   const hasFootballEvent = data.events.some((current) => current.id === event.id);
   const teams = data.teams.filter((team) => team.eventId === event.id);
   const fallbackTeams = footballTeams.map((team) => ({ ...team, eventId: event.id }));
-  const effectiveTeams = teams.length > 0 ? teams : fallbackTeams;
   const hasFootballVenue = data.venues.some((venue) => venue.id === footballVenue.id);
-  const existingMatches = data.matches.filter((match) => match.eventId === event.id);
-  const previewMatches =
-    existingMatches.length > 0 ? [] : createFootballPreviewMatches(event.id, effectiveTeams);
-
   return {
     ...data,
     events: hasFootballEvent ? data.events : [...data.events, event],
     teams: teams.length > 0 ? data.teams : [...data.teams, ...fallbackTeams],
-    matches: [...data.matches, ...previewMatches],
+    matches: data.matches,
     venues: hasFootballVenue ? data.venues : [...data.venues, footballVenue],
     tournamentBases: data.tournamentBases.some((base) => base.id === footballBases.id)
       ? data.tournamentBases

@@ -24,7 +24,7 @@ export function sportDisplayName(event: Pick<TournamentEvent, "sport" | "categor
   const sportNames: Record<TournamentEvent["sport"], string> = {
     futsal: "Futsal",
     voley: "Voley",
-    futbol: "Futbol"
+    futbol: "Futbol 11"
   };
 
   return `${sportNames[event.sport]} ${event.category}`.trim();
@@ -49,5 +49,25 @@ export function eventStatusTone(status: TournamentEvent["status"]) {
 
 export function visiblePublicEvents(events: TournamentEvent[]) {
   const published = events.filter((event) => event.status !== "draft");
-  return published.length > 0 ? published : events;
+  const visible = published.length > 0 ? published : events;
+  const footballEvents = visible.filter(isFootball11Event);
+  const footballVaronesEvents = footballEvents.filter((event) =>
+    normalizeText(`${event.name} ${event.category}`).includes("varon")
+  );
+
+  if (footballVaronesEvents.length > 0) return footballVaronesEvents;
+  if (footballEvents.length > 0) return footballEvents;
+  return visible;
+}
+
+function isFootball11Event(event: TournamentEvent) {
+  const label = normalizeText(`${event.name} ${event.sport}`);
+  return event.sport === "futbol" || label.includes("futbol 11");
+}
+
+function normalizeText(value: string) {
+  return value
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase();
 }

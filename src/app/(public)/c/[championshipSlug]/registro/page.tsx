@@ -12,5 +12,5 @@ export default async function ChampionshipRegistrationPage({
   const [{ championshipSlug }, data] = await Promise.all([params, getPublicCompetitionData()]);
   const context = getChampionshipPublicContext(data, championshipSlug);
 
-  return <RegistrationForm events={data.events} initialEventId={context.event?.id} />;
+  return <RegistrationForm events={context.events} initialEventId={context.event?.id} />;
 }
