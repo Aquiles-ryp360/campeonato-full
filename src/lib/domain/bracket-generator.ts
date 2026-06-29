@@ -113,7 +113,18 @@ export function generateKnockoutBracket({
     thirdPlace,
     fixtureStatus
   });
-  const effectiveMatches = matches.length > 0 ? mergeExistingMatches(generated.matches, matches, resolvedEventId) : generated.matches;
+  const existingKnockoutMatches = matches
+    .filter((match) => match.eventId === resolvedEventId && match.stage !== "group_stage")
+    .map((match) => ({ ...match }));
+  if (existingKnockoutMatches.length > 0) {
+    linkNextMatches(existingKnockoutMatches);
+  }
+  const effectiveMatches =
+    existingKnockoutMatches.length > 0
+      ? existingKnockoutMatches
+      : matches.length > 0
+        ? mergeExistingMatches(generated.matches, matches, resolvedEventId)
+        : generated.matches;
   const rounds = matchesToRounds(effectiveMatches);
   const thirdPlaceMatch = effectiveMatches.find((match) => match.stage === "third_place");
 

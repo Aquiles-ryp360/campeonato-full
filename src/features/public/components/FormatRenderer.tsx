@@ -28,8 +28,7 @@ export function FormatRenderer({
   standings,
   groups,
   groupTeams,
-  groupStandings,
-  drawSeed
+  groupStandings
 }: {
   event: TournamentEvent;
   teams: Team[];
@@ -39,7 +38,6 @@ export function FormatRenderer({
   groups: Group[];
   groupTeams: GroupTeam[];
   groupStandings: GroupStanding[];
-  drawSeed?: string;
 }) {
   const [selectedTeam, setSelectedTeam] = useState<Team | null>(null);
   const [selectedMatch, setSelectedMatch] = useState<Match | null>(null);
@@ -88,8 +86,6 @@ export function FormatRenderer({
                   eventId={event.id}
                   teams={teams}
                   matches={matches}
-                  seedingMode={drawSeed ? "random" : event.seedingMode}
-                  randomSeed={drawSeed}
                   onOpenTeam={setSelectedTeam}
                 />
               </div>
@@ -105,8 +101,6 @@ export function FormatRenderer({
                 eventId={event.id}
                 teams={teams}
                 matches={matches}
-                seedingMode={drawSeed ? "random" : event.seedingMode}
-                randomSeed={drawSeed}
                 onOpenTeam={setSelectedTeam}
               />
             </div>
