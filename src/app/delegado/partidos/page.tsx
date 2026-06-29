@@ -3,8 +3,7 @@ import { getPublicCompetitionData } from "@/lib/supabase-data";
 
 export const dynamic = "force-dynamic";
 
-export default async function DelegatePage() {
+export default async function DelegateMatchesPage() {
   const data = await getPublicCompetitionData();
-
-  return <DelegateDashboard initialData={data} />;
+  return <DelegateDashboard initialData={data} view="matches" />;
 }

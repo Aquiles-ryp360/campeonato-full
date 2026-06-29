@@ -122,6 +122,8 @@ export interface Player {
   enrollmentFile: string;
   semester: string;
   lineupRole: PlayerRole;
+  jerseyNumber?: number;
+  position?: string;
   photoUrl?: string;
 }
 

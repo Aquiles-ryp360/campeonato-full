@@ -59,12 +59,19 @@ type RegisterDelegateResponse =
       error: string;
     };
 
-export function RegistrationForm({ events }: { events: TournamentEvent[] }) {
+export function RegistrationForm({
+  events,
+  initialEventId
+}: {
+  events: TournamentEvent[];
+  initialEventId?: string;
+}) {
   const openEvents = useMemo(
     () => events.filter((event) => event.status === "registration" || event.status === "draft"),
     [events]
   );
-  const [eventId, setEventId] = useState(openEvents[0]?.id ?? "");
+  const initialOpenEvent = openEvents.find((event) => event.id === initialEventId) ?? openEvents[0];
+  const [eventId, setEventId] = useState(initialOpenEvent?.id ?? "");
   const [teamName, setTeamName] = useState("");
   const [delegateName, setDelegateName] = useState("");
   const [delegatePhone, setDelegatePhone] = useState("");

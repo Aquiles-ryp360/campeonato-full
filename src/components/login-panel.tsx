@@ -98,7 +98,7 @@ export function LoginPanel() {
 
     if (session.role === "admin") {
       router.push(
-        nextPath.startsWith("/admin") || nextPath.startsWith("/delegado") || nextPath === "/equipo"
+        nextPath.startsWith("/admin") || nextPath.startsWith("/delegado")
           ? nextPath
           : "/admin"
       );
@@ -106,7 +106,7 @@ export function LoginPanel() {
       return;
     }
 
-    router.push(nextPath.startsWith("/delegado") || nextPath === "/equipo" ? nextPath : "/delegado");
+    router.push(nextPath.startsWith("/delegado") ? nextPath : "/delegado");
     setIsSubmitting(false);
   }
 

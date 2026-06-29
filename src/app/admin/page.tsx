@@ -1,5 +1,4 @@
-import { AdminDashboard } from "@/components/admin-dashboard";
-import { AdminShell } from "@/components/shell";
+import { AdminDashboard } from "@/features/admin/components/AdminDashboard";
 import { getPublicCompetitionData } from "@/lib/supabase-data";
 
 export const dynamic = "force-dynamic";
@@ -7,9 +6,5 @@ export const dynamic = "force-dynamic";
 export default async function AdminPage() {
   const data = await getPublicCompetitionData();
 
-  return (
-    <AdminShell>
-      <AdminDashboard initialData={data} />
-    </AdminShell>
-  );
+  return <AdminDashboard data={data} />;
 }

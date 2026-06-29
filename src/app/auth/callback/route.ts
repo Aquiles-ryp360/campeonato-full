@@ -64,12 +64,12 @@ function redirectToLogin(requestUrl: URL, error: string, nextPath: string) {
 function resolveDestination(role: "admin" | "delegate", nextPath: string) {
   if (
     role === "admin" &&
-    (nextPath.startsWith("/admin") || nextPath.startsWith("/delegado") || nextPath === "/equipo")
+    (nextPath.startsWith("/admin") || nextPath.startsWith("/delegado"))
   ) {
     return nextPath;
   }
 
-  if (role === "delegate" && (nextPath.startsWith("/delegado") || nextPath === "/equipo")) {
+  if (role === "delegate" && nextPath.startsWith("/delegado")) {
     return nextPath;
   }
 
