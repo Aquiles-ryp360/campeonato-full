@@ -184,8 +184,8 @@ export function LoginPanel() {
               </div>
               {supabaseConfigured ? (
                 <p className="mt-3 text-sm leading-6 text-ink/62">
-                  El admin entra con Google solo si su correo existe como admin en
-                  profiles o esta en la lista ADMIN_EMAILS del servidor.
+                  El admin entra con Google solo si su correo esta registrado como
+                  administrador en el sistema.
                 </p>
               ) : (
                 <>
