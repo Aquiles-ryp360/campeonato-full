@@ -61,7 +61,7 @@ function redirectToLogin(requestUrl: URL, error: string, nextPath: string) {
   return NextResponse.redirect(loginUrl);
 }
 
-function resolveDestination(role: "admin" | "delegate", nextPath: string) {
+function resolveDestination(role: "admin" | "delegate" | "referee", nextPath: string) {
   if (
     role === "admin" &&
     (nextPath.startsWith("/admin") || nextPath.startsWith("/delegado"))
@@ -73,7 +73,11 @@ function resolveDestination(role: "admin" | "delegate", nextPath: string) {
     return nextPath;
   }
 
-  return role === "admin" ? "/admin" : "/delegado";
+  if (role === "referee" && nextPath.startsWith("/arbitro")) {
+    return nextPath;
+  }
+
+  return role === "admin" ? "/admin" : role === "referee" ? "/arbitro" : "/delegado";
 }
 
 function sanitizeNextPath(value: string | null) {

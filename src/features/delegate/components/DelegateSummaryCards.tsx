@@ -21,7 +21,7 @@ export function DelegateSummaryCards({
   return (
     <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
       <Metric label="Estado" value={teamStatusLabel(team.status)} icon={ShieldCheck} />
-      <Metric label="Pago" value={team.paymentStatus === "verified" ? "Validado" : "En revision"} icon={CreditCard} tone="amber" />
+      <Metric label="Pago" value={team.paymentStatus === "approved" ? "Validado" : "En revision"} icon={CreditCard} tone="amber" />
       <Metric label="Jugadores" value={`${players.length}/${event.maxPlayers}`} icon={UsersRound} tone="blue" />
       <Metric
         label="Proximo partido"

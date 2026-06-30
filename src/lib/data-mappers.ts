@@ -223,6 +223,8 @@ export type EventRow = {
   allow_byes?: boolean | null;
   penalties_enabled?: boolean | null;
   fixture_compact_preview?: boolean | null;
+  auto_approve_after_payment?: boolean | null;
+  auto_validate_referee_results?: boolean | null;
   schedule_config?: TournamentEvent["scheduleConfig"] | null;
 };
 
@@ -251,6 +253,7 @@ export type TeamRow = {
   primary_color: string | null;
   secondary_color: string | null;
   status: Team["status"];
+  payment_status?: PaymentStatus | null;
   created_at?: string | null;
   registration_code?: EmbeddedRegistrationCode | EmbeddedRegistrationCode[];
 };
@@ -446,6 +449,8 @@ export function mapEvent(row: EventRow): TournamentEvent {
     allowByes: row.allow_byes ?? undefined,
     penaltiesEnabled: row.penalties_enabled ?? undefined,
     fixtureCompactPreview: row.fixture_compact_preview ?? undefined,
+    autoApproveAfterPayment: row.auto_approve_after_payment ?? undefined,
+    autoValidateRefereeResults: row.auto_validate_referee_results ?? undefined,
     scheduleConfig: row.schedule_config ?? undefined
   };
 }
@@ -476,7 +481,7 @@ export function mapTeam(row: TeamRow): Team {
     academicCareer: row.academic_career ?? undefined,
     paymentMethod: embeddedCode?.method ?? "yape",
     registrationCode: embeddedCode?.code ?? "Codigo no visible",
-    paymentStatus: paymentStatusFromCode(embeddedCode?.status),
+    paymentStatus: row.payment_status ?? paymentStatusFromCode(embeddedCode?.status),
     status: row.status,
     primaryColor: row.primary_color ?? colors.primary,
     secondaryColor: row.secondary_color ?? colors.secondary,
@@ -604,7 +609,7 @@ function firstNested<T>(value: T | T[] | null | undefined) {
 }
 
 function paymentStatusFromCode(status?: RegistrationCode["status"]): PaymentStatus {
-  if (status === "used") return "verified";
+  if (status === "used") return "review";
   if (status === "revoked") return "rejected";
   return "pending";
 }

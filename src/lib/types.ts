@@ -9,11 +9,20 @@ export type EventStatus = "draft" | "registration" | "in_progress" | "finished";
 
 export type PaymentMethod = "yape" | "plin";
 
-export type PaymentStatus = "pending" | "verified" | "rejected";
+export type PaymentStatus = "pending" | "review" | "approved" | "rejected";
 
 export type TeamStatus = "pending_payment" | "registered" | "observed" | "approved";
 
-export type MatchStatus = "scheduled" | "finished" | "walkover" | "postponed";
+export type MatchStatus =
+  | "scheduled"
+  | "in_progress"
+  | "submitted"
+  | "validated"
+  | "disputed"
+  | "cancelled"
+  | "finished"
+  | "walkover"
+  | "postponed";
 
 export type PlayerRole = "starter" | "substitute";
 
@@ -109,6 +118,8 @@ export interface TournamentEvent {
   allowByes?: boolean;
   penaltiesEnabled?: boolean;
   fixtureCompactPreview?: boolean;
+  autoApproveAfterPayment?: boolean;
+  autoValidateRefereeResults?: boolean;
   scheduleConfig?: {
     startTime: string;
     matchDurationMinutes: number;
@@ -137,6 +148,84 @@ export interface Team {
   primaryColor: string;
   secondaryColor: string;
   createdAt?: string;
+}
+
+export type AuthRole = "admin" | "delegate" | "referee";
+
+export interface TeamPayment {
+  id: string;
+  teamId: string;
+  eventId: string;
+  amount: number;
+  method: PaymentMethod;
+  operationCode?: string;
+  receiptUrl?: string;
+  status: PaymentStatus;
+  reviewedBy?: string;
+  reviewedAt?: string;
+  rejectionReason?: string;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface Referee {
+  id: string;
+  userId?: string;
+  fullName: string;
+  email: string;
+  phone?: string;
+  active: boolean;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface MatchResult {
+  id: string;
+  matchId: string;
+  submittedBy?: string;
+  validatedBy?: string;
+  homeScore?: number;
+  awayScore?: number;
+  homeSets?: number;
+  awaySets?: number;
+  status: "submitted" | "validated" | "disputed";
+  observations?: string;
+  submittedAt?: string;
+  validatedAt?: string;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface MatchEvent {
+  id: string;
+  matchId: string;
+  teamId?: string;
+  playerId?: string;
+  eventType:
+    | "goal"
+    | "yellow_card"
+    | "red_card"
+    | "own_goal"
+    | "penalty_goal"
+    | "penalty_missed"
+    | "injury"
+    | "incident";
+  minute?: number;
+  value?: number;
+  notes?: string;
+  createdBy?: string;
+  createdAt?: string;
+}
+
+export interface VolleyballSet {
+  id: string;
+  matchId: string;
+  setNumber: number;
+  homePoints: number;
+  awayPoints: number;
+  winnerTeamId?: string;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 export interface RegistrationCode {

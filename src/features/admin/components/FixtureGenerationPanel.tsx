@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Lock, RefreshCw, Send, Shuffle, Snowflake } from "lucide-react";
+import { CalendarCog, Lock, RefreshCw, Send, Snowflake } from "lucide-react";
 import { toast } from "sonner";
 import type { CompetitionData } from "@/lib/data-mappers";
 import { generateKnockoutBracket } from "@/lib/domain/bracket-generator";
@@ -19,6 +19,7 @@ import { fixtureStatusLabel } from "@/lib/utils";
 export function FixtureGenerationPanel({ data }: { data: CompetitionData }) {
   const router = useRouter();
   const [isDrawing, setIsDrawing] = useState(false);
+  const [referees, setReferees] = useState<Array<{ id: string; full_name: string; active: boolean }>>([]);
   const selectedEvent = useMemo(
     () =>
       data.events.find((event) => event.sport === "futbol" || event.name.toLowerCase().includes("futbol 11")) ??
@@ -47,7 +48,7 @@ export function FixtureGenerationPanel({ data }: { data: CompetitionData }) {
     [data.teams, selectedCategory, selectedEvent]
   );
   const drawableTeams = useMemo(
-    () => eventTeams.filter((team) => team.status === "approved"),
+    () => eventTeams.filter((team) => team.status === "approved" && team.paymentStatus === "approved"),
     [eventTeams]
   );
   const eventMatches = useMemo(
@@ -101,6 +102,13 @@ export function FixtureGenerationPanel({ data }: { data: CompetitionData }) {
     setCategoryId(eventCategories[0]?.id ?? "");
   }, [eventCategories]);
 
+  useEffect(() => {
+    fetch("/api/admin/referees")
+      .then((response) => response.json())
+      .then((payload) => setReferees(payload.ok ? payload.referees : []))
+      .catch(() => setReferees([]));
+  }, []);
+
   async function drawFixture() {
     if (!selectedEvent) return;
 
@@ -122,25 +130,40 @@ export function FixtureGenerationPanel({ data }: { data: CompetitionData }) {
         | null;
 
       if (!response.ok || !payload?.ok) {
-        toast.error(payload && !payload.ok ? payload.error : "No se pudo guardar el sorteo.");
+        toast.error(payload && !payload.ok ? payload.error : "No se pudo guardar la programacion.");
         return;
       }
 
-      toast.success(`Sorteo guardado: ${payload.matchCount} partidos generados.`);
+      toast.success(`Programacion guardada: ${payload.matchCount} partidos generados.`);
       router.refresh();
     } catch {
-      toast.error("No se pudo conectar con el servidor para sortear.");
+      toast.error("No se pudo conectar con el servidor para programar.");
     } finally {
       setIsDrawing(false);
     }
+  }
+
+  async function assignReferee(matchId: string, refereeId: string) {
+    if (!refereeId) return;
+    const response = await fetch(`/api/admin/matches/${matchId}/referees`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ refereeId })
+    });
+    const payload = await response.json().catch(() => null);
+    if (!response.ok || !payload?.ok) {
+      toast.error(payload?.error ?? "No se pudo asignar el arbitro.");
+      return;
+    }
+    toast.success("Arbitro asignado.");
   }
 
   return (
     <div className="space-y-6">
       <Card className="p-5">
         <SectionHeader
-          title="Sorteo de llaves"
-          description="Solo el administrador genera las llaves. Delegados y publico solo ven el resultado guardado."
+          title="Programacion automatica"
+          description="Genera partidos por campeonato, deporte, categoria, cancha asignada y horario disponible."
           action={<Badge tone={conflicts.length > 0 ? "amber" : "green"}>{conflicts.length} conflictos</Badge>}
         />
         {selectedEvent ? (
@@ -159,7 +182,7 @@ export function FixtureGenerationPanel({ data }: { data: CompetitionData }) {
             value={selectedCategory?.id ?? ""}
             onChange={(event) => setCategoryId(event.target.value)}
             disabled={eventCategories.length === 0}
-            aria-label="Categoria de sorteo"
+            aria-label="Categoria de programacion"
           >
             <option value="">Todas las categorias</option>
             {eventCategories.map((category) => (
@@ -175,11 +198,11 @@ export function FixtureGenerationPanel({ data }: { data: CompetitionData }) {
               drawableTeams.length < 2 ||
               isDrawing ||
               selectedEvent.fixtureStatus === "locked" ||
-              eventMatches.some((match) => match.status === "finished")
+              eventMatches.some((match) => match.status === "validated" || match.status === "finished")
             }
           >
-            {isDrawing ? <RefreshCw className="h-4 w-4 animate-spin" /> : <Shuffle className="h-4 w-4" />}
-            {hasOfficialDraw ? "Volver a sortear" : "Sortear llaves"}
+            {isDrawing ? <RefreshCw className="h-4 w-4 animate-spin" /> : <CalendarCog className="h-4 w-4" />}
+            {hasOfficialDraw ? "Regenerar programacion" : "Generar programacion"}
           </Button>
           <Button variant="secondary" disabled={!selectedEvent || selectedEvent.fixtureStatus !== "draft_auto"}>
             <Snowflake className="h-4 w-4" />
@@ -195,7 +218,7 @@ export function FixtureGenerationPanel({ data }: { data: CompetitionData }) {
           </Button>
           <span className="text-sm text-ink/60">
             {hasOfficialDraw
-              ? "Llaves visibles para delegados y publico."
+              ? "Programacion visible para delegados y publico."
               : `${previewSchedule?.slots.length ?? 0} slots de vista previa antes de guardar.`}
           </span>
         </div>
@@ -209,7 +232,7 @@ export function FixtureGenerationPanel({ data }: { data: CompetitionData }) {
                     <span className="h-3 w-3 rounded-sm" style={{ backgroundColor: team.primaryColor }} />
                     <p className="truncate text-sm font-bold text-ink">{team.name}</p>
                   </div>
-                  <p className="mt-1 text-xs text-ink/55">{team.status}</p>
+                  <p className="mt-1 text-xs text-ink/55">{team.status} · pago {team.paymentStatus}</p>
                 </div>
               ))
             ) : (
@@ -237,6 +260,28 @@ export function FixtureGenerationPanel({ data }: { data: CompetitionData }) {
         initialEventId={selectedEvent?.id}
         initialCategoryId={selectedCategory?.id}
       />
+      {eventMatches.length > 0 ? (
+        <Card className="p-5">
+          <SectionHeader title="Asignar arbitros" description="Asigna arbitro principal a partidos generados." />
+          <div className="mt-4 grid gap-3">
+            {eventMatches.map((match) => (
+              <div key={match.id} className="grid gap-3 rounded-md border border-ink/10 bg-white p-3 md:grid-cols-[1fr_260px] md:items-center">
+                <p className="text-sm font-semibold text-ink">{match.label ?? `Partido ${match.round}`} · {match.court}</p>
+                <select
+                  className="min-h-10 rounded-md border border-ink/10 bg-white px-3 py-2 text-sm font-semibold text-ink"
+                  defaultValue=""
+                  onChange={(event) => void assignReferee(match.id, event.target.value)}
+                >
+                  <option value="">Asignar arbitro</option>
+                  {referees.filter((referee) => referee.active).map((referee) => (
+                    <option key={referee.id} value={referee.id}>{referee.full_name}</option>
+                  ))}
+                </select>
+              </div>
+            ))}
+          </div>
+        </Card>
+      ) : null}
     </div>
   );
 }

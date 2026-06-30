@@ -19,6 +19,7 @@ type TeamReviewRow = {
   event_id: string;
   name: string;
   status: TeamStatus;
+  payment_status: "pending" | "review" | "approved" | "rejected" | "verified";
   registration_code_id: string | null;
   delegate_name: string;
   delegate_phone: string | null;
@@ -140,7 +141,7 @@ async function findTeam(
 ) {
   const { data, error } = await supabase
     .from("teams")
-    .select("id, event_id, name, status, registration_code_id, delegate_name, delegate_phone, delegate_email")
+    .select("id, event_id, name, status, payment_status, registration_code_id, delegate_name, delegate_phone, delegate_email")
     .eq("id", teamId)
     .maybeSingle<TeamReviewRow>();
 
@@ -155,6 +156,11 @@ async function assertTeamCanBeApproved(
   team: TeamReviewRow
 ) {
   const event = await findEvent(supabase, team.event_id);
+
+  if (team.payment_status !== "approved" && team.payment_status !== "verified") {
+    throw new AdminRouteError("No se puede aprobar: el pago debe estar aprobado.", 409);
+  }
+
   const eventTeams = await findEventTeams(supabase, team.event_id);
   const players = await findEventPlayers(supabase, eventTeams.map((item) => item.id));
   const teamPlayers = players.filter((player) => player.team_id === team.id);

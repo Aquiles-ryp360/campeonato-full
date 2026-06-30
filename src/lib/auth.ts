@@ -1,4 +1,4 @@
-export type AuthRole = "admin" | "delegate";
+export type AuthRole = "admin" | "delegate" | "referee";
 
 export interface AuthSession {
   role: AuthRole;
@@ -24,6 +24,11 @@ export const demoAdminCredentials = {
 export const demoDelegateCredentials = {
   username: "delegado",
   password: "delegado123"
+};
+
+export const demoRefereeCredentials = {
+  username: "arbitro",
+  password: "arbitro123"
 };
 
 export function createSession(role: AuthRole, username: string, displayName: string): AuthSession {
@@ -64,6 +69,7 @@ export function clearStoredSession() {
 export function canAccess(session: AuthSession | null, requiredRole: AuthRole) {
   if (!session) return false;
   if (session.role === "admin") return true;
+  if (requiredRole === "referee") return session.role === "referee";
   return requiredRole === "delegate" && session.role === "delegate";
 }
 
@@ -80,6 +86,13 @@ export function loginWithCredentials(usernameInput: string, passwordInput: strin
     password === demoDelegateCredentials.password
   ) {
     return createSession("delegate", username, "Delegado demo");
+  }
+
+  if (
+    username === demoRefereeCredentials.username &&
+    password === demoRefereeCredentials.password
+  ) {
+    return createSession("referee", username, "Arbitro demo");
   }
 
   return null;

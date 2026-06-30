@@ -166,7 +166,7 @@ function createTeams(): Team[] {
     academicCareer: name,
     paymentMethod: index % 2 === 0 ? "yape" : "plin",
     registrationCode: `FUTSAL-2026-${String(index + 1).padStart(3, "0")}`,
-    paymentStatus: "verified",
+    paymentStatus: "approved",
     status: "approved",
     primaryColor: color,
     secondaryColor: "#f8fafc",

@@ -17,14 +17,18 @@ const requiredTables = [
   "registration_codes",
   "matches",
   "profiles",
-  "event_categories"
+  "event_categories",
+  "event_venues",
+  "team_payments",
+  "referees",
+  "match_referees",
+  "match_results",
+  "match_events",
+  "volleyball_sets"
 ];
 
 for (const table of requiredTables) {
-  const tablePattern =
-    table === "event_categories"
-      ? new RegExp(`create\\s+table(?:\\s+if\\s+not\\s+exists)?\\s+public\\.${table}\\b`)
-      : new RegExp(`create\\s+table\\s+public\\.${table}\\b`);
+  const tablePattern = new RegExp(`create\\s+table(?:\\s+if\\s+not\\s+exists)?\\s+public\\.${table}\\b`);
   assert.match(migrationSql, tablePattern, `Missing table public.${table}`);
   assert.match(
     migrationSql,
@@ -49,5 +53,12 @@ assert.match(migrationSql, /admin_registration_codes_all/, "Admin registration c
 assert.match(migrationSql, /admin_competition_all_matches/, "Admin matches policy missing");
 assert.match(migrationSql, /admin_event_categories_all/, "Admin categories policy missing");
 assert.match(migrationSql, /delegate_update_own_teams/, "Delegate team update policy missing");
+assert.match(migrationSql, /add\s+value\s+if\s+not\s+exists\s+'referee'/, "referee role enum value missing");
+assert.match(migrationSql, /auto_approve_after_payment/, "auto approval setting missing");
+assert.match(migrationSql, /auto_validate_referee_results/, "auto result validation setting missing");
+assert.match(migrationSql, /payment_status\s+public\.payment_status/, "teams.payment_status missing");
+assert.match(migrationSql, /team_payments_admin/, "Admin payments policy missing");
+assert.match(migrationSql, /referees_admin/, "Admin referees policy missing");
+assert.match(migrationSql, /match_results_admin/, "Admin result policy missing");
 
 console.log("Schema verification passed.");

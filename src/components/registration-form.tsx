@@ -93,6 +93,9 @@ export function RegistrationForm({
   const [delegatePhone, setDelegatePhone] = useState("");
   const [delegateEmail, setDelegateEmail] = useState("");
   const [paymentMethod, setPaymentMethod] = useState<"yape" | "plin">("yape");
+  const [operationCode, setOperationCode] = useState("");
+  const [receiptUrl, setReceiptUrl] = useState("");
+  const [payerName, setPayerName] = useState("");
   const [registrationCode, setRegistrationCode] = useState("");
   const [lastReceipt, setLastReceipt] = useState<RegistrationReceipt | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -224,6 +227,9 @@ export function RegistrationForm({
           delegatePhone,
           delegateEmail,
           paymentMethod,
+          operationCode,
+          receiptUrl,
+          payerName,
           registrationCode,
           players: completedPlayers
         })
@@ -434,6 +440,32 @@ export function RegistrationForm({
             </div>
             <div className="mt-4">
               <Badge tone="amber">El admin carga lotes de codigos y cada codigo se usa una vez</Badge>
+            </div>
+            <div className="mt-4 grid gap-3 md:grid-cols-3">
+              <Field label="Codigo de operacion">
+                <input
+                  className={inputClass}
+                  value={operationCode}
+                  onChange={(event) => setOperationCode(event.target.value)}
+                  placeholder="Operacion Yape/Plin"
+                />
+              </Field>
+              <Field label="Comprobante">
+                <input
+                  className={inputClass}
+                  value={receiptUrl}
+                  onChange={(event) => setReceiptUrl(event.target.value)}
+                  placeholder="URL del comprobante"
+                />
+              </Field>
+              <Field label="Responsable">
+                <input
+                  className={inputClass}
+                  value={payerName}
+                  onChange={(event) => setPayerName(event.target.value)}
+                  placeholder="Nombre de quien pago"
+                />
+              </Field>
             </div>
           </div>
         </Card>

@@ -48,6 +48,8 @@ const championshipSchema = z.object({
   transitionMinutes: z.number().int().min(0),
   minimumRestMinutes: z.number().int().min(0),
   allowCompactPreview: z.boolean(),
+  autoApproveAfterPayment: z.boolean().optional().default(false),
+  autoValidateRefereeResults: z.boolean().optional().default(false),
   selectedCourts: z.array(z.string().trim().min(1)).min(1, "Selecciona al menos una cancha."),
   basesText: z.string().trim().optional()
 }).refine((value) => value.maxPlayers >= value.minPlayers, {
@@ -165,6 +167,11 @@ async function saveChampionship(
     });
   }
 
+  await saveEventVenues(supabase, event.id, input.selectedCourts).catch((error: unknown) => {
+    if (isMissingColumnOrTableError(error)) return;
+    throw error;
+  });
+
   await ensureRegistrationCodes(supabase, {
     eventId: event.id,
     slug: event.slug,
@@ -216,6 +223,8 @@ async function saveExpandedEvent(
     allow_byes: input.allowByes,
     penalties_enabled: input.penaltiesEnabled,
     fixture_compact_preview: input.allowCompactPreview,
+    auto_approve_after_payment: input.autoApproveAfterPayment,
+    auto_validate_referee_results: input.autoValidateRefereeResults,
     schedule_config: {
       startTime: input.startTime,
       matchDurationMinutes: input.matchDurationMinutes,
@@ -250,6 +259,26 @@ async function saveExpandedEvent(
 
   if (error) throw error;
   return data;
+}
+
+async function saveEventVenues(
+  supabase: ReturnType<typeof createSupabaseAdminClient>,
+  eventId: string,
+  venueIds: string[]
+) {
+  const { error: deleteError } = await supabase.from("event_venues").delete().eq("event_id", eventId);
+  if (deleteError) throw deleteError;
+
+  if (venueIds.length === 0) return;
+
+  const { error } = await supabase.from("event_venues").insert(
+    Array.from(new Set(venueIds)).map((venueId) => ({
+      event_id: eventId,
+      venue_id: venueId
+    }))
+  );
+
+  if (error) throw error;
 }
 
 async function saveLegacyEvent(

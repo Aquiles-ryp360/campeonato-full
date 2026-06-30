@@ -91,7 +91,7 @@ export function calculateStandings(
     });
 
   matches
-    .filter((match) => match.eventId === event.id && match.status === "finished")
+    .filter((match) => match.eventId === event.id && (match.status === "validated" || match.status === "finished"))
     .forEach((match) => {
       const home = rows.get(match.homeTeamId);
       const away = rows.get(match.awayTeamId);

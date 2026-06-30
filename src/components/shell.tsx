@@ -10,7 +10,8 @@ import {
   UserPlus,
   UsersRound,
   BookOpen,
-  Calendar
+  Calendar,
+  CreditCard
 } from "lucide-react";
 import { AuthGate, MobileSessionAction, SessionActions } from "./auth-gate";
 
@@ -24,7 +25,7 @@ type ShellNavItem = ShellNavLink;
 
 const publicNav: ShellNavItem[] = [
   { href: "/", label: "Inicio", icon: Trophy },
-  { href: "/c/default/fixture", label: "Fixture del dia", icon: Calendar },
+  { href: "/c/default/fixture", label: "Programacion", icon: Calendar },
   { href: "/c/default/bases", label: "Bases", icon: BookOpen },
   { href: "/c/default/registro", label: "Inscribir equipo", icon: UserPlus }
 ];
@@ -33,7 +34,9 @@ const adminNav: ShellNavItem[] = [
   { href: "/admin", label: "Resumen", icon: LayoutDashboard },
   { href: "/admin/campeonatos", label: "Campeonatos", icon: Trophy },
   { href: "/admin/equipos", label: "Inscripciones", icon: UsersRound },
-  { href: "/admin/fixture", label: "Fixture", icon: Calendar },
+  { href: "/admin/pagos", label: "Pagos", icon: CreditCard },
+  { href: "/admin/fixture", label: "Programacion", icon: Calendar },
+  { href: "/admin/arbitros", label: "Arbitros", icon: ShieldCheck },
   { href: "/admin/resultados", label: "Resultados", icon: BarChart3 },
   { href: "/admin/configuracion", label: "Configuracion", icon: Settings2 }
 ];
@@ -44,6 +47,12 @@ const delegateNav: ShellNavItem[] = [
   { href: "/delegado/plantel", label: "Plantel", icon: UsersRound },
   { href: "/delegado/partidos", label: "Mis partidos", icon: Calendar },
   { href: "/delegado/avisos", label: "Avisos y bases", icon: FileText }
+];
+
+const refereeNav: ShellNavItem[] = [
+  { href: "/arbitro", label: "Resumen", icon: LayoutDashboard },
+  { href: "/arbitro/partidos", label: "Partidos", icon: Calendar },
+  { href: "/arbitro/historial", label: "Historial", icon: BarChart3 }
 ];
 
 function Header({
@@ -151,7 +160,7 @@ export function PublicShell({ children }: { children: ReactNode }) {
   return (
     <ShellFrame
       nav={publicNav}
-      eyebrow="Fixture, bases e inscripciones"
+      eyebrow="Programacion, bases e inscripciones"
       showMobileSessionAction
     >
       {children}
@@ -181,6 +190,19 @@ export function DelegateShell({ children }: { children: ReactNode }) {
       showPanelLink={false}
     >
       <AuthGate role="delegate">{children}</AuthGate>
+    </ShellFrame>
+  );
+}
+
+export function RefereeShell({ children }: { children: ReactNode }) {
+  return (
+    <ShellFrame
+      nav={refereeNav}
+      eyebrow="Panel arbitro"
+      showMobileSessionAction
+      showPanelLink={false}
+    >
+      <AuthGate role="referee">{children}</AuthGate>
     </ShellFrame>
   );
 }

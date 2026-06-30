@@ -73,7 +73,7 @@ export function AuthGate({
         if (
           profileError ||
           !profile ||
-          (profile.role !== "admin" && profile.role !== "delegate")
+          (profile.role !== "admin" && profile.role !== "delegate" && profile.role !== "referee")
         ) {
           await supabase.auth.signOut();
           clearStoredSession();
@@ -143,7 +143,7 @@ export function AuthGate({
             <div>
               <p className="text-xl font-bold text-ink">Acceso restringido</p>
               <p className="mt-1 max-w-2xl text-sm leading-6 text-ink/65">
-                Inicia sesion como {role === "admin" ? "administrador" : "delegado"} para
+                Inicia sesion como {role === "admin" ? "administrador" : role === "referee" ? "arbitro" : "delegado"} para
                 ver este panel.
               </p>
             </div>
@@ -222,8 +222,8 @@ export function SessionActions({ showPanelLink = true }: { showPanelLink?: boole
     );
   }
 
-  const panelHref = session.role === "admin" ? "/admin" : "/delegado";
-  const panelLabel = session.role === "admin" ? "Admin" : "Mi equipo";
+  const panelHref = session.role === "admin" ? "/admin" : session.role === "referee" ? "/arbitro" : "/delegado";
+  const panelLabel = session.role === "admin" ? "Admin" : session.role === "referee" ? "Arbitro" : "Mi equipo";
   const PanelIcon = session.role === "admin" ? LayoutDashboard : ShieldCheck;
 
   return (
@@ -286,8 +286,8 @@ export function MobileSessionAction() {
     };
   }, []);
 
-  const href = session ? (session.role === "admin" ? "/admin" : "/delegado") : "/login";
-  const label = session ? (session.role === "admin" ? "Admin" : "Equipo") : "Ingresar";
+  const href = session ? (session.role === "admin" ? "/admin" : session.role === "referee" ? "/arbitro" : "/delegado") : "/login";
+  const label = session ? (session.role === "admin" ? "Admin" : session.role === "referee" ? "Arbitro" : "Equipo") : "Ingresar";
   const Icon = session ? (session.role === "admin" ? LayoutDashboard : ShieldCheck) : LogIn;
 
   return (

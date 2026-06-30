@@ -9,6 +9,13 @@ import { canEditRegistration, isAdmin } from "../src/lib/domain/permissions";
 import { isRegistrationOpen, rosterLimitState } from "../src/lib/domain/registration-rules";
 import { buildDuplicateRosterAlerts, buildTeamApprovalReviews } from "../src/lib/domain/team-review";
 import {
+  assertCanGenerateSchedule,
+  canApproveTeamAfterPayment,
+  footballStats,
+  teamsEligibleForSchedule,
+  volleyballStats
+} from "../src/lib/domain/automated-flow";
+import {
   filterMatchesByCategory,
   filterTeamsByCategory,
   findCategoryBySlug,
@@ -58,6 +65,9 @@ testApprovalRules();
 testDuplicateDetection();
 testCategoryFilters();
 testFixtureUsesApprovedTeamsOnly();
+testPaymentApprovalRules();
+testAutomaticScheduleRules();
+testResultStatsRules();
 testRolePermissions();
 testDelegatePanelApprovalGate();
 
@@ -183,6 +193,43 @@ function testFixtureUsesApprovedTeamsOnly() {
   assert.equal(bracket.matches.some((match) => match.homeTeamId === "team-2" || match.awayTeamId === "team-2"), false);
 }
 
+function testPaymentApprovalRules() {
+  const pendingTeam = { ...teams[0], paymentStatus: "pending" as const };
+  const approvedTeam = { ...teams[0], paymentStatus: "approved" as const };
+
+  assert.equal(canApproveTeamAfterPayment({ event, teams: [pendingTeam], players: validPlayers, team: pendingTeam }).ok, false);
+  assert.equal(canApproveTeamAfterPayment({ event, teams: [approvedTeam], players: validPlayers, team: approvedTeam }).ok, true);
+}
+
+function testAutomaticScheduleRules() {
+  assert.equal(teamsEligibleForSchedule(teams).length, 2);
+  assert.equal(assertCanGenerateSchedule({ assignedVenueCount: 0, activeSlotCount: 1, existingMatches: [] }), "Debes asignar canchas al campeonato antes de generar la programacion.");
+  assert.equal(assertCanGenerateSchedule({ assignedVenueCount: 1, activeSlotCount: 0, existingMatches: [] }), "Debes configurar horarios disponibles antes de generar la programacion.");
+  assert.equal(assertCanGenerateSchedule({ assignedVenueCount: 1, activeSlotCount: 1, existingMatches: [{ ...generateMatch("m1", event.id, "team-1", "team-4"), status: "validated" }] }), "No se puede regenerar la programacion porque ya existen resultados validados.");
+}
+
+function testResultStatsRules() {
+  const match = { ...generateMatch("m2", event.id, "team-1", "team-4"), status: "validated" as const, homeScore: 2, awayScore: 1 };
+  const stats = footballStats({
+    teams,
+    matches: [match],
+    events: [
+      { id: "goal-1", matchId: match.id, playerId: "p1", eventType: "goal" },
+      { id: "card-1", matchId: match.id, playerId: "p1", eventType: "yellow_card" }
+    ]
+  });
+  assert.equal(stats.standingsMatches.length, 1);
+  assert.equal(stats.scorers[0]?.count, 1);
+  assert.equal(stats.yellowCards[0]?.count, 1);
+
+  const volley = volleyballStats({
+    matches: [match],
+    sets: [{ id: "s1", matchId: match.id, setNumber: 1, homePoints: 25, awayPoints: 20 }]
+  });
+  assert.equal(volley.officialMatches, 1);
+  assert.equal(volley.totalPoints, 45);
+}
+
 function testRolePermissions() {
   const adminSession = session("admin", "admin@test.local");
   const delegateSession = session("delegate", teams[0].delegateEmail);
@@ -220,7 +267,7 @@ function team(id: string, name: string, status: Team["status"]): Team {
     delegateEmail: `${id}@test.local`,
     paymentMethod: "yape",
     registrationCode: `${id}-code`,
-    paymentStatus: "verified",
+    paymentStatus: "approved",
     status,
     primaryColor: "#111111",
     secondaryColor: "#ffffff"

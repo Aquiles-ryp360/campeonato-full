@@ -8,7 +8,7 @@ const defaultAdminEmails = ["renzomamanigalindo@gmail.com"];
 
 type ProfileRow = {
   id: string;
-  role: "admin" | "delegate" | "viewer";
+  role: "admin" | "delegate" | "referee" | "viewer";
   full_name: string | null;
   phone: string | null;
 };
@@ -24,6 +24,14 @@ type DelegateTeamRow = {
   delegate_phone: string | null;
   delegate_email: string | null;
   status: "pending_payment" | "registered" | "observed" | "approved";
+};
+
+type RefereeRow = {
+  id: string;
+  full_name: string;
+  email: string;
+  phone: string | null;
+  active: boolean;
 };
 
 type OAuthAccessResult =
@@ -66,6 +74,23 @@ export async function resolveOAuthAccess(user: User): Promise<OAuthAccessResult>
     };
   }
 
+  const referee = await findRefereeByEmail(supabase, email);
+  if (referee?.active) {
+    await upsertProfile(supabase, {
+      id: user.id,
+      role: "referee",
+      fullName: referee.full_name || displayName,
+      phone: referee.phone
+    });
+    await supabase.from("referees").update({ user_id: user.id, updated_at: new Date().toISOString() }).eq("id", referee.id);
+    return {
+      ok: true,
+      role: "referee",
+      email,
+      displayName: referee.full_name || displayName
+    };
+  }
+
   const teams = await findDelegateTeamsByEmail(supabase, email);
   const approvedTeam = teams.find((item) => item.status === "approved") ?? null;
   const team = approvedTeam ?? teams[0] ?? null;
@@ -94,6 +119,23 @@ export async function resolveOAuthAccess(user: User): Promise<OAuthAccessResult>
     email,
     displayName: delegateName
   };
+}
+
+async function findRefereeByEmail(
+  supabase: ReturnType<typeof createSupabaseAdminClient>,
+  email: string
+) {
+  const { data, error } = await supabase
+    .from("referees")
+    .select("id, full_name, email, phone, active")
+    .eq("email", email)
+    .maybeSingle<RefereeRow>();
+
+  if (error && error.code !== "PGRST116") {
+    throw new Error(`Could not load referee: ${error.message}`);
+  }
+
+  return data;
 }
 
 function getUserDisplayName(user: User) {

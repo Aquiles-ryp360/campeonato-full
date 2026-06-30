@@ -12,7 +12,9 @@ export const runtime = "nodejs";
 const drawFixtureSchema = z.object({
   eventId: z.string().uuid("Selecciona un campeonato valido."),
   categoryId: z.string().uuid("Selecciona una categoria.").optional(),
-  randomSeed: z.string().trim().optional()
+  randomSeed: z.string().trim().optional(),
+  allowPaymentOverride: z.boolean().optional().default(false),
+  overrideValidatedResults: z.boolean().optional().default(false)
 });
 
 type DrawFixtureInput = z.infer<typeof drawFixtureSchema>;
@@ -42,6 +44,7 @@ type TeamDrawRow = {
   category_id: string | null;
   name: string;
   status: "pending_payment" | "registered" | "observed" | "approved";
+  payment_status: "pending" | "review" | "approved" | "rejected" | "verified";
   created_at: string | null;
 };
 
@@ -53,7 +56,7 @@ type VenueDrawRow = {
 
 type ExistingMatchRow = {
   id: string;
-  status: "scheduled" | "finished" | "walkover" | "postponed";
+  status: "scheduled" | "in_progress" | "submitted" | "validated" | "disputed" | "cancelled" | "finished" | "walkover" | "postponed";
 };
 
 class AdminRouteError extends Error {
@@ -76,7 +79,7 @@ export async function POST(request: Request) {
 
   const parsed = drawFixtureSchema.safeParse(body);
   if (!parsed.success) {
-    return jsonError(parsed.error.errors[0]?.message ?? "Datos invalidos para el sorteo.", 400);
+    return jsonError(parsed.error.errors[0]?.message ?? "Datos invalidos para generar la programacion.", 400);
   }
 
   try {
@@ -94,7 +97,7 @@ export async function POST(request: Request) {
   try {
     supabase = createSupabaseAdminClient();
   } catch {
-    return jsonError("El servidor no tiene configurado Supabase para guardar el sorteo.", 500);
+    return jsonError("El servidor no tiene configurado Supabase para guardar la programacion.", 500);
   }
 
   try {
@@ -105,8 +108,8 @@ export async function POST(request: Request) {
       return jsonError(error.message, error.status);
     }
 
-    console.error("Unexpected admin draw error", error);
-    return jsonError("No se pudo guardar el sorteo. Intentalo otra vez.", 500);
+    console.error("Unexpected admin schedule error", error);
+    return jsonError("No se pudo guardar la programacion. Intentalo otra vez.", 500);
   }
 }
 
@@ -125,7 +128,7 @@ async function assertAdminRequest() {
     .maybeSingle<{ role: string }>();
 
   if (profileError || profile?.role !== "admin") {
-    throw new AdminRouteError("Solo el administrador puede sortear las llaves.", 403);
+    throw new AdminRouteError("Solo el administrador puede generar la programacion.", 403);
   }
 }
 
@@ -134,25 +137,42 @@ async function drawAndPersistFixture(
   input: DrawFixtureInput
 ) {
   const event = await findEvent(supabase, input.eventId);
-  const teams = await findDrawableTeams(supabase, event.id, input.categoryId);
+  const teams = await findDrawableTeams(supabase, event.id, input.categoryId, input.allowPaymentOverride);
 
   if (teams.length < 2) {
-    throw new AdminRouteError("Se necesitan al menos 2 equipos inscritos para sortear.", 400);
+    throw new AdminRouteError("Se necesitan al menos 2 equipos aprobados y con pago aprobado para programar.", 400);
   }
 
   const existingMatches = await findEventMatches(supabase, event.id);
-  if (existingMatches.some((match) => match.status === "finished")) {
-    throw new AdminRouteError("No se puede volver a sortear porque ya existen resultados registrados.", 409);
+  if (!input.overrideValidatedResults && existingMatches.some((match) => match.status === "validated" || match.status === "finished")) {
+    throw new AdminRouteError("No se puede regenerar la programacion porque ya existen resultados validados.", 409);
   }
 
-  const venues = await findVenues(supabase);
+  const venues = await findAssignedVenues(supabase, event.id);
+  if (venues.length === 0) {
+    throw new AdminRouteError("Debes asignar canchas al campeonato antes de generar la programacion.", 400);
+  }
+
+  const timeSlots = await findActiveTimeSlotCount(supabase);
+  if (timeSlots === 0) {
+    throw new AdminRouteError("Debes configurar horarios disponibles antes de generar la programacion.", 400);
+  }
+
+  if (input.allowPaymentOverride || input.overrideValidatedResults) {
+    await auditScheduleOverride(supabase, {
+      eventId: event.id,
+      allowPaymentOverride: input.allowPaymentOverride,
+      overrideValidatedResults: input.overrideValidatedResults
+    });
+  }
+
   const seed = input.randomSeed || `${event.id}-${Date.now()}`;
   const bracket = generateKnockoutBracket({
     eventId: event.id,
     teams,
     matches: [],
     thirdPlace: event.third_place ?? true,
-    seedingMode: "random",
+    seedingMode: event.seeding_mode ?? "registration_order",
     randomSeed: seed,
     fixtureStatus: "published"
   });
@@ -161,7 +181,7 @@ async function drawAndPersistFixture(
     startTime: event.schedule_config?.startTime ?? "09:00",
     matchDurationMinutes: event.schedule_config?.matchDurationMinutes ?? 90,
     transitionMinutes: event.schedule_config?.transitionMinutes ?? 10,
-    courts: event.schedule_config?.courts ?? venues.map((venue) => venue.name),
+    courts: venues.map((venue) => venue.name),
     minimumRestMinutes: event.schedule_config?.minimumRestMinutes ?? event.minimum_rest_minutes ?? 120,
     respectRoundDependencies: true,
     allowCompactPreview: event.schedule_config?.allowCompactPreview ?? event.fixture_compact_preview ?? true
@@ -169,9 +189,11 @@ async function drawAndPersistFixture(
   const matches = assignStableMatchIds(schedule.matches, seed);
   const venueByName = new Map(venues.map((venue) => [venue.name, venue]));
 
-  const { error: deleteError } = await supabase.from("matches").delete().eq("event_id", event.id);
+  let deleteQuery = supabase.from("matches").delete().eq("event_id", event.id);
+  if (input.categoryId) deleteQuery = deleteQuery.eq("category_id", input.categoryId);
+  const { error: deleteError } = await deleteQuery;
   if (deleteError) {
-    throw new AdminRouteError("No se pudieron limpiar las llaves anteriores.", 500);
+    throw new AdminRouteError("No se pudo limpiar la programacion anterior.", 500);
   }
 
   const { error: insertError } = await supabase.from("matches").insert(
@@ -198,12 +220,12 @@ async function drawAndPersistFixture(
       status: match.status,
       fixture_status: "published",
       is_fixture_preliminary: false,
-      notes: match.notes ?? "Llave generada por sorteo del administrador."
+      notes: match.notes ?? "Programacion automatica generada por el administrador."
     }))
   );
 
   if (insertError) {
-    throw new AdminRouteError("No se pudieron guardar los partidos sorteados.", 500);
+    throw new AdminRouteError("No se pudieron guardar los partidos programados.", 500);
   }
 
   const { error: eventUpdateError } = await supabase
@@ -215,7 +237,7 @@ async function drawAndPersistFixture(
     .eq("id", event.id);
 
   if (eventUpdateError) {
-    throw new AdminRouteError("Se guardaron las llaves, pero no se pudo actualizar el estado del fixture.", 500);
+    throw new AdminRouteError("Se guardaron los partidos, pero no se pudo actualizar el estado de la programacion.", 500);
   }
 
   return {
@@ -251,13 +273,18 @@ async function findEvent(
 async function findDrawableTeams(
   supabase: ReturnType<typeof createSupabaseAdminClient>,
   eventId: string,
-  categoryId?: string
+  categoryId?: string,
+  allowPaymentOverride = false
 ): Promise<Team[]> {
   let query = supabase
     .from("teams")
-    .select("id, event_id, category_id, name, status, created_at")
+    .select("id, event_id, category_id, name, status, payment_status, created_at")
     .eq("event_id", eventId)
     .eq("status", "approved");
+
+  if (!allowPaymentOverride) {
+    query = query.eq("payment_status", "approved");
+  }
 
   if (categoryId) {
     query = query.eq("category_id", categoryId);
@@ -279,7 +306,7 @@ async function findDrawableTeams(
     delegateEmail: "",
     paymentMethod: "yape",
     registrationCode: "",
-    paymentStatus: "verified",
+    paymentStatus: team.payment_status === "verified" ? "approved" : team.payment_status,
     status: team.status,
     primaryColor: "#2f6f4e",
     secondaryColor: "#f8fafc",
@@ -303,21 +330,45 @@ async function findEventMatches(
   return (data ?? []) as ExistingMatchRow[];
 }
 
-async function findVenues(supabase: ReturnType<typeof createSupabaseAdminClient>) {
+async function findAssignedVenues(supabase: ReturnType<typeof createSupabaseAdminClient>, eventId: string) {
   const { data, error } = await supabase
-    .from("venues")
-    .select("id, name, active")
-    .eq("active", true)
-    .order("name", { ascending: true });
+    .from("event_venues")
+    .select("venues(id, name, active)")
+    .eq("event_id", eventId);
 
   if (error) {
-    throw new AdminRouteError("No se pudieron cargar las canchas.", 500);
+    throw new AdminRouteError("No se pudieron cargar las canchas asignadas.", 500);
   }
 
-  const venues = (data ?? []) as VenueDrawRow[];
-  return venues.length > 0
-    ? venues
-    : [{ id: "", name: "Cancha por definir", active: true }];
+  return ((data ?? []) as Array<{ venues: VenueDrawRow | VenueDrawRow[] | null }>)
+    .flatMap((row) => (Array.isArray(row.venues) ? row.venues : row.venues ? [row.venues] : []))
+    .filter((venue) => venue.active)
+    .sort((a, b) => a.name.localeCompare(b.name));
+}
+
+async function findActiveTimeSlotCount(supabase: ReturnType<typeof createSupabaseAdminClient>) {
+  const { count, error } = await supabase
+    .from("time_slots")
+    .select("id", { count: "exact", head: true })
+    .eq("active", true);
+
+  if (error) {
+    throw new AdminRouteError("No se pudieron validar los horarios disponibles.", 500);
+  }
+
+  return count ?? 0;
+}
+
+async function auditScheduleOverride(
+  supabase: ReturnType<typeof createSupabaseAdminClient>,
+  payload: { eventId: string; allowPaymentOverride: boolean; overrideValidatedResults: boolean }
+) {
+  await supabase.from("audit_logs").insert({
+    action: "regeneracion_programacion",
+    entity_table: "events",
+    entity_id: payload.eventId,
+    payload
+  });
 }
 
 function assignStableMatchIds(matches: ReturnType<typeof generateOneDaySchedule>["matches"], seed: string) {

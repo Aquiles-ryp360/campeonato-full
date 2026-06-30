@@ -59,7 +59,7 @@ export function getChampionshipPublicContext(
   const teams = filterTeamsByCategory(eventTeams, selectedCategory?.id);
   const teamIds = new Set(teams.map((team) => team.id));
   const eventMatches = data.matches.filter((match) => match.eventId === event.id);
-  const matches = filterMatchesByCategory(eventMatches, eventTeams, selectedCategory?.id);
+  const matches = filterMatchesByCategory(eventMatches, eventTeams, selectedCategory?.id).filter(isPublicMatchVisible);
   const eventGroups = data.groups.filter((group) => group.eventId === event.id);
   const groupIds = new Set(eventGroups.map((group) => group.id));
   const groupTeams = data.groupTeams.filter(
@@ -102,8 +102,12 @@ export function getFixtureContext(data: CompetitionData) {
     events: getPublicEvents(data),
     teams: data.teams,
     players: data.players,
-    matches: data.matches,
+    matches: data.matches.filter(isPublicMatchVisible),
     categories: data.categories,
     venues: data.venues
   };
+}
+
+function isPublicMatchVisible(match: CompetitionData["matches"][number]) {
+  return match.status === "scheduled" || match.status === "in_progress" || match.status === "validated" || match.status === "finished";
 }

@@ -22,6 +22,9 @@ const registrationSchema = z.object({
   delegatePhone: z.string().trim().min(6, "Ingresa el celular del delegado."),
   delegateEmail: z.string().trim().email("Ingresa un correo valido.").toLowerCase(),
   paymentMethod: z.enum(["yape", "plin"]),
+  operationCode: z.string().trim().optional().default(""),
+  receiptUrl: z.string().trim().optional().default(""),
+  payerName: z.string().trim().optional().default(""),
   registrationCode: z.string().trim().min(3, "Ingresa el codigo unico."),
   players: z.array(playerSchema).min(1, "Registra al menos un jugador.")
 });
@@ -34,6 +37,7 @@ type EventRow = {
   status: "draft" | "registration" | "in_progress" | "finished";
   min_players: number;
   max_players: number;
+  registration_fee: number | string;
 };
 
 type CategoryRow = {
@@ -166,6 +170,7 @@ async function registerDelegateTeam(
         delegate_phone: input.delegatePhone,
         delegate_email: input.delegateEmail,
         registration_code_id: registrationCode.id,
+        payment_status: input.operationCode || input.receiptUrl ? "review" : "pending",
         status: "registered"
       })
       .select("id")
@@ -176,6 +181,17 @@ async function registerDelegateTeam(
     }
 
     createdTeamId = team.id;
+
+    await createTeamPayment(supabase, {
+      teamId: team.id,
+      eventId: event.id,
+      amount: Number(event.registration_fee),
+      method: input.paymentMethod,
+      operationCode: input.operationCode,
+      receiptUrl: input.receiptUrl,
+      payerName: input.payerName,
+      status: input.operationCode || input.receiptUrl ? "review" : "pending"
+    });
 
     const { error: playersError } = await supabase.from("players").insert(
       input.players.map((player) => ({
@@ -244,7 +260,7 @@ async function findEvent(
 ) {
   const query = supabase
     .from("events")
-    .select("id, name, status, min_players, max_players")
+    .select("id, name, status, min_players, max_players, registration_fee")
     .limit(1);
   const response = isUuid(eventId)
     ? await query.eq("id", eventId).maybeSingle<EventRow>()
@@ -255,6 +271,36 @@ async function findEvent(
   }
 
   return response.data;
+}
+
+async function createTeamPayment(
+  supabase: ReturnType<typeof createSupabaseAdminClient>,
+  input: {
+    teamId: string;
+    eventId: string;
+    amount: number;
+    method: "yape" | "plin";
+    operationCode: string;
+    receiptUrl: string;
+    payerName: string;
+    status: "pending" | "review";
+  }
+) {
+  const { error } = await supabase.from("team_payments").insert({
+    team_id: input.teamId,
+    event_id: input.eventId,
+    amount: input.amount,
+    method: input.method,
+    operation_code: input.operationCode || null,
+    receipt_url: input.receiptUrl || null,
+    payer_name: input.payerName || null,
+    status: input.status,
+    rejection_reason: null
+  });
+
+  if (error) {
+    throw new PublicRouteError("No se pudo registrar el pago del equipo.", 500);
+  }
 }
 
 async function findRegistrationCode(

@@ -63,6 +63,7 @@ const publicTeamColumns = `
   primary_color,
   secondary_color,
   status,
+  payment_status,
   created_at
 `;
 

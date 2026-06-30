@@ -179,7 +179,7 @@ function createFootballTeam(id: string, name: string, career: string, color: str
     academicCareer: career,
     paymentMethod: "yape",
     registrationCode: "FUTBOL-GH",
-    paymentStatus: "verified",
+    paymentStatus: "approved",
     status: "approved",
     primaryColor: color,
     secondaryColor: "#f8fafc"
