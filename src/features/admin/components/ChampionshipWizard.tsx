@@ -540,7 +540,7 @@ export function ChampionshipWizard({
                 ) : (
                   Array.from({ length: maxCourts }, (_, index) => index + 1).map((count) => (
                     <option key={count} value={count}>
-                      {count}
+                      {count} {count === 1 ? "cancha" : "canchas"}
                     </option>
                   ))
                 )}
