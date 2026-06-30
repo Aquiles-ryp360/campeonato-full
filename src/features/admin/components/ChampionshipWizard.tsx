@@ -529,20 +529,30 @@ export function ChampionshipWizard({
               />
             </Field>
             <Field label="Numero de canchas">
-              <input
+              <select
                 className={inputClass}
-                type="number"
-                min={maxCourts > 0 ? 1 : 0}
-                max={maxCourts}
                 value={draft.courtCount}
                 disabled={maxCourts === 0}
                 onChange={(event) => updateCourtCount(numberFromInput(event.target.value, 0))}
-              />
+              >
+                {maxCourts === 0 ? (
+                  <option value={0}>Sin canchas activas</option>
+                ) : (
+                  Array.from({ length: maxCourts }, (_, index) => index + 1).map((count) => (
+                    <option key={count} value={count}>
+                      {count}
+                    </option>
+                  ))
+                )}
+              </select>
             </Field>
             <div className="md:col-span-2">
               <p className="text-sm font-bold text-ink">Seleccionar canchas</p>
               {maxCourts > 0 ? (
                 <div className="mt-3 grid gap-3 md:grid-cols-3">
+                  <p className="md:col-span-3 text-sm text-ink/60">
+                    Hay {maxCourts} cancha(s) activas. Elige {draft.courtCount} para este campeonato.
+                  </p>
                   {Array.from({ length: draft.courtCount }, (_, index) => {
                     const selectedId = draft.selectedCourtIds[index] ?? "";
                     const usedIds = draft.selectedCourtIds.filter((_, usedIndex) => usedIndex !== index);

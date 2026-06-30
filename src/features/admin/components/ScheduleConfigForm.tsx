@@ -71,15 +71,22 @@ export function ScheduleConfigForm({ venues = [] }: { venues?: Venue[] }) {
           <input className={inputClass} type="number" defaultValue={0} />
         </Field>
         <Field label="Numero de canchas">
-          <input
+          <select
             className={inputClass}
-            type="number"
-            min={maxCourts > 0 ? 1 : 0}
-            max={maxCourts}
             value={courtCount}
             disabled={maxCourts === 0}
             onChange={(event) => updateCourtCount(Number(event.target.value))}
-          />
+          >
+            {maxCourts === 0 ? (
+              <option value={0}>Sin canchas activas</option>
+            ) : (
+              Array.from({ length: maxCourts }, (_, index) => index + 1).map((count) => (
+                <option key={count} value={count}>
+                  {count}
+                </option>
+              ))
+            )}
+          </select>
         </Field>
         <Field label="Fixture compacto preliminar">
           <select className={inputClass} defaultValue="yes">
