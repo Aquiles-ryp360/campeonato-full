@@ -9,7 +9,7 @@ export interface AuthSession {
 
 export interface DelegateAccess {
   email: string;
-  provider: "google";
+  provider: "magic_link" | "google";
   loginUrl: string;
 }
 

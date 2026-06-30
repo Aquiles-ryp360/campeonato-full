@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { sendDelegateAccessEmail } from "@/lib/mail";
 import { createSupabaseAdminClient } from "@/lib/supabase-admin";
 
 export const runtime = "nodejs";
@@ -17,6 +16,7 @@ const playerSchema = z.object({
 
 const registrationSchema = z.object({
   eventId: z.string().trim().min(1, "Selecciona un campeonato."),
+  categoryId: z.string().uuid("Selecciona una categoria."),
   teamName: z.string().trim().min(2, "Ingresa el nombre del equipo."),
   delegateName: z.string().trim().min(2, "Ingresa el nombre del delegado."),
   delegatePhone: z.string().trim().min(6, "Ingresa el celular del delegado."),
@@ -34,6 +34,15 @@ type EventRow = {
   status: "draft" | "registration" | "in_progress" | "finished";
   min_players: number;
   max_players: number;
+};
+
+type CategoryRow = {
+  id: string;
+  event_id: string;
+  name: string;
+  slug: string;
+  published: boolean;
+  active: boolean;
 };
 
 type RegistrationCodeRow = {
@@ -116,6 +125,11 @@ async function registerDelegateTeam(
     );
   }
 
+  const category = await findCategory(supabase, event.id, input.categoryId);
+  if (!category) {
+    throw new PublicRouteError("La categoria seleccionada no existe o no esta habilitada.", 404);
+  }
+
   const registrationCode = await findRegistrationCode(
     supabase,
     event.id,
@@ -139,13 +153,14 @@ async function registerDelegateTeam(
 
   let createdTeamId: string | null = null;
   let registrationCodeMarkedUsed = false;
-  let emailSent = false;
+  const emailSent = false;
 
   try {
     const { data: team, error: teamError } = await supabase
       .from("teams")
       .insert({
         event_id: event.id,
+        category_id: category.id,
         name: input.teamName,
         delegate_name: input.delegateName,
         delegate_phone: input.delegatePhone,
@@ -197,25 +212,18 @@ async function registerDelegateTeam(
 
     registrationCodeMarkedUsed = true;
 
-    try {
-      await sendDelegateAccessEmail({
-        to: input.delegateEmail,
-        delegateName: input.delegateName,
-        teamName: input.teamName,
-        eventName: event.name
-      });
-      emailSent = true;
-    } catch (emailError) {
-      console.error("Delegate access email failed", emailError);
-    }
-
     return {
       ok: true,
       teamId: createdTeamId,
       emailSent,
+      category: {
+        id: category.id,
+        name: category.name,
+        slug: category.slug
+      },
       delegateAccess: {
         email: input.delegateEmail,
-        provider: "google",
+        provider: "magic_link",
         loginUrl: "/login"
       }
     };
@@ -263,6 +271,29 @@ async function findRegistrationCode(
 
   if (error) {
     throw new PublicRouteError("No se pudo validar el codigo de inscripcion.", 500);
+  }
+
+  return data;
+}
+
+async function findCategory(
+  supabase: ReturnType<typeof createSupabaseAdminClient>,
+  eventId: string,
+  categoryId: string
+) {
+  const { data, error } = await supabase
+    .from("event_categories")
+    .select("id, event_id, name, slug, published, active")
+    .eq("id", categoryId)
+    .eq("event_id", eventId)
+    .maybeSingle<CategoryRow>();
+
+  if (error) {
+    throw new PublicRouteError("No se pudo validar la categoria seleccionada.", 500);
+  }
+
+  if (!data || !data.published || !data.active) {
+    return null;
   }
 
   return data;

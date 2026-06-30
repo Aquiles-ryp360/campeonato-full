@@ -1,11 +1,11 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Download, FileText, Plus, Smartphone, Trash2, UserPlus } from "lucide-react";
 import type { jsPDF as JsPDFDocument } from "jspdf";
 import { toast } from "sonner";
 import type { DelegateAccess } from "@/lib/auth";
-import type { PlayerRole, TournamentEvent } from "@/lib/types";
+import type { Category, PlayerRole, SportKey, TournamentEvent } from "@/lib/types";
 import { formatDateTime, formatMoney, playerRoleLabel, sportLabel } from "@/lib/utils";
 import { Badge, Button, Card, Field, SectionHeader, inputClass } from "./ui";
 
@@ -36,6 +36,7 @@ const playerRoleOptions: Array<{ value: PlayerRole; label: string }> = [
 
 interface RegistrationReceipt {
   event: TournamentEvent;
+  categoryName: string;
   teamName: string;
   delegateName: string;
   delegatePhone: string;
@@ -52,6 +53,11 @@ type RegisterDelegateResponse =
       ok: true;
       teamId: string;
       emailSent: boolean;
+      category: {
+        id: string;
+        name: string;
+        slug: string;
+      };
       delegateAccess: DelegateAccess;
     }
   | {
@@ -61,17 +67,27 @@ type RegisterDelegateResponse =
 
 export function RegistrationForm({
   events,
-  initialEventId
+  categories,
+  initialEventId,
+  initialCategoryId
 }: {
   events: TournamentEvent[];
+  categories: Category[];
   initialEventId?: string;
+  initialCategoryId?: string;
 }) {
   const openEvents = useMemo(
     () => events.filter((event) => event.status === "registration" || event.status === "draft"),
     [events]
   );
+  const availableSports = useMemo(
+    () => Array.from(new Set(openEvents.map((event) => event.sport))),
+    [openEvents]
+  );
   const initialOpenEvent = openEvents.find((event) => event.id === initialEventId) ?? openEvents[0];
+  const [sport, setSport] = useState<SportKey>(initialOpenEvent?.sport ?? "futbol");
   const [eventId, setEventId] = useState(initialOpenEvent?.id ?? "");
+  const [categoryId, setCategoryId] = useState(initialCategoryId ?? "");
   const [teamName, setTeamName] = useState("");
   const [delegateName, setDelegateName] = useState("");
   const [delegatePhone, setDelegatePhone] = useState("");
@@ -86,10 +102,54 @@ export function RegistrationForm({
     { ...emptyPlayer }
   ]);
 
-  const event = useMemo(
-    () => openEvents.find((current) => current.id === eventId) ?? openEvents[0] ?? null,
-    [eventId, openEvents]
+  const eventsForSport = useMemo(
+    () => openEvents.filter((event) => event.sport === sport),
+    [openEvents, sport]
   );
+  const event = useMemo(
+    () =>
+      eventsForSport.find((current) => current.id === eventId) ??
+      openEvents.find((current) => current.id === initialEventId) ??
+      openEvents[0] ??
+      null,
+    [eventId, eventsForSport, initialEventId, openEvents]
+  );
+  const selectableCategories = useMemo(
+    () =>
+      categories
+        .filter((category) => category.eventId === event?.id && category.active && category.published)
+        .sort((a, b) => a.sortOrder - b.sortOrder || a.name.localeCompare(b.name)),
+    [categories, event?.id]
+  );
+  const selectedCategory =
+    selectableCategories.find((category) => category.id === categoryId) ?? selectableCategories[0] ?? null;
+
+  useEffect(() => {
+    if (!eventsForSport.some((current) => current.id === eventId)) {
+      const nextEvent = eventsForSport[0] ?? openEvents[0] ?? null;
+      if (nextEvent) {
+        setEventId(nextEvent.id);
+        setSport(nextEvent.sport);
+      }
+    }
+  }, [eventId, eventsForSport, openEvents]);
+
+  useEffect(() => {
+    if (event?.sport && event.sport !== sport) {
+      setSport(event.sport);
+    }
+  }, [event?.sport, sport]);
+
+  useEffect(() => {
+    if (selectableCategories.length === 0) {
+      setCategoryId("");
+      return;
+    }
+
+    if (!selectableCategories.some((category) => category.id === categoryId)) {
+      setCategoryId(selectableCategories[0].id);
+    }
+  }, [categoryId, selectableCategories]);
 
   function updatePlayer(index: number, field: keyof PlayerFormRow, value: string) {
     setPlayers((current) =>
@@ -134,6 +194,11 @@ export function RegistrationForm({
       return;
     }
 
+    if (!selectedCategory) {
+      toast.error("Selecciona una categoria disponible.");
+      return;
+    }
+
     if (completedPlayers.length < event.minPlayers) {
       toast.error(`Este campeonato pide minimo ${event.minPlayers} jugadores.`);
       return;
@@ -153,6 +218,7 @@ export function RegistrationForm({
         },
         body: JSON.stringify({
           eventId,
+          categoryId: selectedCategory.id,
           teamName,
           delegateName,
           delegatePhone,
@@ -179,6 +245,7 @@ export function RegistrationForm({
       const generatedAt = new Date().toISOString();
       const receipt: RegistrationReceipt = {
         event,
+        categoryName: selectedCategory.name,
         teamName,
         delegateName,
         delegatePhone,
@@ -196,7 +263,7 @@ export function RegistrationForm({
         toast.success(
           payload.emailSent
             ? "Inscripcion registrada. Correo enviado y constancia PDF descargada."
-            : "Inscripcion registrada. Se descargo la constancia PDF."
+            : "Inscripcion registrada. El acceso se enviara cuando administracion apruebe el equipo."
         );
       } catch {
         toast.error("La inscripcion quedo registrada, pero no se pudo descargar el PDF.");
@@ -231,15 +298,55 @@ export function RegistrationForm({
           />
 
           <div className="mt-5 grid gap-4 sm:grid-cols-2">
+            <Field label="Deporte">
+              <select
+                className={inputClass}
+                value={sport}
+                onChange={(changeEvent) => {
+                  const nextSport = changeEvent.target.value as SportKey;
+                  setSport(nextSport);
+                  const nextEvent = openEvents.find((current) => current.sport === nextSport);
+                  if (nextEvent) {
+                    setEventId(nextEvent.id);
+                  }
+                }}
+              >
+                {availableSports.map((currentSport) => (
+                  <option key={currentSport} value={currentSport}>
+                    {sportLabel(currentSport)}
+                  </option>
+                ))}
+              </select>
+            </Field>
             <Field label="Campeonato">
               <select
                 className={inputClass}
                 value={eventId}
-                onChange={(changeEvent) => setEventId(changeEvent.target.value)}
+                onChange={(changeEvent) => {
+                  const nextEvent = openEvents.find((current) => current.id === changeEvent.target.value);
+                  setEventId(changeEvent.target.value);
+                  if (nextEvent) {
+                    setSport(nextEvent.sport);
+                  }
+                }}
               >
-                {openEvents.map((current) => (
+                {eventsForSport.map((current) => (
                   <option key={current.id} value={current.id}>
                     {current.name} - {sportLabel(current.sport)}
+                  </option>
+                ))}
+              </select>
+            </Field>
+            <Field label="Categoria">
+              <select
+                className={inputClass}
+                value={selectedCategory?.id ?? ""}
+                onChange={(changeEvent) => setCategoryId(changeEvent.target.value)}
+                disabled={selectableCategories.length === 0}
+              >
+                {selectableCategories.map((category) => (
+                  <option key={category.id} value={category.id}>
+                    {category.name}
                   </option>
                 ))}
               </select>
@@ -454,11 +561,11 @@ export function RegistrationForm({
                 </p>
                 <div className="mt-3 grid gap-2 text-sm text-ink/70 sm:grid-cols-2">
                   <p>
-                    Correo de acceso:{" "}
+                    Correo del delegado:{" "}
                     <strong className="text-ink">{lastReceipt.delegateAccess.email}</strong>
                   </p>
                   <p>
-                    Ingreso: <strong className="text-ink">Entrar con Google</strong>
+                    Ingreso: <strong className="text-ink">Enlace al aprobar</strong>
                   </p>
                 </div>
               </div>
@@ -517,7 +624,7 @@ async function generateRegistrationReceiptPdf(receipt: RegistrationReceipt) {
   doc.setFont("helvetica", "normal");
   doc.setFontSize(9);
   doc.text(
-    `${sportLabel(receipt.event.sport)} · ${receipt.event.category} · ${formatMoney(receipt.event.registrationFee)}`,
+    `${sportLabel(receipt.event.sport)} · ${receipt.categoryName} · ${formatMoney(receipt.event.registrationFee)}`,
     margin,
     51
   );
@@ -540,9 +647,9 @@ async function generateRegistrationReceiptPdf(receipt: RegistrationReceipt) {
     ["Cierre", formatDateTime(receipt.event.registrationOpenUntil)]
   ]);
 
-  drawInfoBox(doc, margin, 102, contentWidth, "Acceso del delegado", [
+  drawInfoBox(doc, margin, 102, contentWidth, "Revision y acceso del delegado", [
     ["Correo", receipt.delegateAccess.email],
-    ["Ingreso", "Entrar con Google"],
+    ["Ingreso", "Enlace magico despues de aprobacion"],
     ["Panel", receipt.delegateAccess.loginUrl]
   ]);
 

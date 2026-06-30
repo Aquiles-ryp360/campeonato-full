@@ -10,6 +10,7 @@ import type {
   TournamentEvent,
   Sport,
   CompetitionFormat,
+  Category,
   TournamentBases,
   Venue,
   TimeSlot,
@@ -23,6 +24,7 @@ export interface CompetitionData {
   teams: Team[];
   players: Player[];
   matches: Match[];
+  categories: Category[];
   registrationCodes: RegistrationCode[];
   sports: Sport[];
   competitionFormats: CompetitionFormat[];
@@ -39,6 +41,7 @@ export const emptyCompetitionData: CompetitionData = {
   teams: [],
   players: [],
   matches: [],
+  categories: [],
   registrationCodes: [],
   sports: [],
   competitionFormats: [],
@@ -51,6 +54,7 @@ export const emptyCompetitionData: CompetitionData = {
 };
 
 export function applyCatalogLabels(data: CompetitionData): CompetitionData {
+  const categoriesById = new Map(data.categories.map((category) => [category.id, category]));
   return {
     ...data,
     events: data.events.map((event) => {
@@ -61,6 +65,14 @@ export function applyCatalogLabels(data: CompetitionData): CompetitionData {
         ...event,
         sport: sport ? normalizeSportKey(sport.name) : event.sport,
         format: format ? normalizeFormatKey(format.key) : event.format
+      };
+    }),
+    teams: data.teams.map((team) => {
+      const category = team.categoryId ? categoriesById.get(team.categoryId) : null;
+      return {
+        ...team,
+        categoryName: category?.name ?? team.categoryName,
+        categorySlug: category?.slug ?? team.categorySlug
       };
     }),
     matches: data.matches.map((match) => {
@@ -89,6 +101,19 @@ export type CompetitionFormatRow = {
   description: string | null;
   active: boolean;
   created_at?: string;
+};
+
+export type CategoryRow = {
+  id: string;
+  event_id: string;
+  name: string;
+  slug: string;
+  description: string | null;
+  published: boolean;
+  active: boolean;
+  sort_order: number;
+  created_at?: string;
+  updated_at?: string;
 };
 
 export type TournamentBasesRow = {
@@ -217,6 +242,7 @@ type EmbeddedRegistrationCode =
 export type TeamRow = {
   id: string;
   event_id: string;
+  category_id?: string | null;
   name: string;
   delegate_name: string;
   delegate_phone: string;
@@ -245,6 +271,7 @@ export type PlayerRow = {
 export type MatchRow = {
   id: string;
   event_id: string;
+  category_id?: string | null;
   round: number;
   stage?: Match["stage"] | null;
   group_id?: string | null;
@@ -292,6 +319,21 @@ export function mapCompetitionFormat(row: CompetitionFormatRow): CompetitionForm
     description: row.description ?? undefined,
     active: row.active,
     createdAt: row.created_at
+  };
+}
+
+export function mapCategory(row: CategoryRow): Category {
+  return {
+    id: row.id,
+    eventId: row.event_id,
+    name: row.name,
+    slug: row.slug,
+    description: row.description ?? undefined,
+    published: row.published,
+    active: row.active,
+    sortOrder: row.sort_order,
+    createdAt: row.created_at,
+    updatedAt: row.updated_at
   };
 }
 
@@ -426,6 +468,7 @@ export function mapTeam(row: TeamRow): Team {
   return {
     id: row.id,
     eventId: row.event_id,
+    categoryId: row.category_id ?? undefined,
     name: row.name,
     delegateName: row.delegate_name,
     delegatePhone: row.delegate_phone,
@@ -460,6 +503,7 @@ export function mapMatch(row: MatchRow): Match {
   return {
     id: row.id,
     eventId: row.event_id,
+    categoryId: row.category_id ?? undefined,
     round: row.round,
     stage: row.stage ?? "group_stage",
     groupId: row.group_id ?? undefined,

@@ -44,7 +44,7 @@ export function TeamDetailsModal({
               <Badge tone="blue">{event.name}</Badge>
             </div>
             <h2 className="mt-3 text-2xl font-bold text-ink">{team.name}</h2>
-            <p className="mt-1 text-sm text-ink/60">{event.category}</p>
+            <p className="mt-1 text-sm text-ink/60">{team.categoryName ?? event.category}</p>
           </div>
           <button
             type="button"

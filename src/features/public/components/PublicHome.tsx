@@ -12,17 +12,20 @@ import { FormatRenderer } from "./FormatRenderer";
 
 export function PublicHome({
   data,
-  initialChampionship
+  initialChampionship,
+  initialCategoryId
 }: {
   data: CompetitionData;
   initialChampionship?: string;
+  initialCategoryId?: string;
 }) {
-  const initial = getChampionshipPublicContext(data, initialChampionship);
+  const initial = getChampionshipPublicContext(data, initialChampionship, initialCategoryId);
   const [eventId, setEventId] = useState(initial.event?.id ?? "");
+  const [categoryId, setCategoryId] = useState(initial.selectedCategory?.id ?? "");
   const [selectedTeamId, setSelectedTeamId] = useState<string | null>(null);
   const context = useMemo(
-    () => getChampionshipPublicContext(data, eventId || initialChampionship),
-    [data, eventId, initialChampionship]
+    () => getChampionshipPublicContext(data, eventId || initialChampionship, categoryId),
+    [categoryId, data, eventId, initialChampionship]
   );
 
   if (!context.event) {
@@ -46,10 +49,17 @@ export function PublicHome({
       <ChampionshipHero
         event={context.event}
         events={context.events}
+        categories={context.categories}
+        selectedCategoryId={context.selectedCategory?.id ?? categoryId}
         teamCount={context.teams.length}
         courts={courts}
         onChangeEvent={(nextEventId) => {
           setEventId(nextEventId);
+          setCategoryId("");
+          setSelectedTeamId(null);
+        }}
+        onChangeCategory={(nextCategoryId) => {
+          setCategoryId(nextCategoryId);
           setSelectedTeamId(null);
         }}
       />

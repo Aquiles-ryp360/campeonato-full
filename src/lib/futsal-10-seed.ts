@@ -1,5 +1,5 @@
 import type { CompetitionData } from "./data-mappers";
-import type { Player, RegistrationCode, Team, TournamentBases, TournamentEvent, Venue } from "./types";
+import type { Category, Player, RegistrationCode, Team, TournamentBases, TournamentEvent, Venue } from "./types";
 import { generateKnockoutMatches } from "./domain/bracket-generator";
 import { generateOneDaySchedule } from "./domain/schedule-generator";
 
@@ -47,6 +47,19 @@ export const futsal10Event: TournamentEvent = {
 export const futsal10Venues: Venue[] = [
   { id: "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbba1", name: "Cancha A", location: "Complejo deportivo", active: true },
   { id: "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbb2", name: "Cancha B", location: "Complejo deportivo", active: true }
+];
+
+export const futsal10Categories: Category[] = [
+  {
+    id: "category-futsal-varones",
+    eventId: futsal10Event.id,
+    name: "Varones",
+    slug: "varones",
+    description: "Categoria unica del campeonato de prueba.",
+    published: true,
+    active: true,
+    sortOrder: 1
+  }
 ];
 
 const teamSeedData = [
@@ -118,6 +131,7 @@ export function buildFutsal10Seed(): CompetitionData {
     teams,
     players,
     matches: schedule.matches,
+    categories: futsal10Categories,
     registrationCodes: createRegistrationCodes(teams),
     sports: [
       { id: "sport-futsal", name: "Futsal", playersPerTeam: 5, matchDuration: 20, active: true }
@@ -144,6 +158,7 @@ function createTeams(): Team[] {
   return teamSeedData.map(([id, name, delegateName, delegateEmail, delegatePhone, color], index) => ({
     id,
     eventId: futsal10Event.id,
+    categoryId: futsal10Categories[0].id,
     name,
     delegateName,
     delegatePhone,

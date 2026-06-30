@@ -23,6 +23,7 @@ type DelegateTeamRow = {
   delegate_name: string;
   delegate_phone: string | null;
   delegate_email: string | null;
+  status: "pending_payment" | "registered" | "observed" | "approved";
 };
 
 type OAuthAccessResult =
@@ -34,7 +35,7 @@ type OAuthAccessResult =
     }
   | {
       ok: false;
-      reason: "missing_email" | "not_authorized" | "not_registered";
+      reason: "missing_email" | "not_authorized" | "not_registered" | "registration_pending";
     };
 
 export async function resolveOAuthAccess(user: User): Promise<OAuthAccessResult> {
@@ -65,18 +66,11 @@ export async function resolveOAuthAccess(user: User): Promise<OAuthAccessResult>
     };
   }
 
-  const team = await findDelegateTeamByEmail(supabase, email);
+  const teams = await findDelegateTeamsByEmail(supabase, email);
+  const approvedTeam = teams.find((item) => item.status === "approved") ?? null;
+  const team = approvedTeam ?? teams[0] ?? null;
 
   if (!team) {
-    if (profile?.role === "delegate") {
-      return {
-        ok: true,
-        role: "delegate",
-        email,
-        displayName
-      };
-    }
-
     return { ok: false, reason: "not_registered" };
   }
 
@@ -89,6 +83,10 @@ export async function resolveOAuthAccess(user: User): Promise<OAuthAccessResult>
     phone: team.delegate_phone
   });
   await linkDelegateTeams(supabase, user.id, email);
+
+  if (!approvedTeam) {
+    return { ok: false, reason: "registration_pending" };
+  }
 
   return {
     ok: true,
@@ -139,23 +137,22 @@ async function getAdminEmail(
   return data;
 }
 
-async function findDelegateTeamByEmail(
+async function findDelegateTeamsByEmail(
   supabase: ReturnType<typeof createSupabaseAdminClient>,
   email: string
 ) {
   const { data, error } = await supabase
     .from("teams")
-    .select("id, delegate_name, delegate_phone, delegate_email")
+    .select("id, delegate_name, delegate_phone, delegate_email, status")
     .eq("delegate_email", email)
     .order("created_at", { ascending: false })
-    .limit(1)
-    .maybeSingle<DelegateTeamRow>();
+    .returns<DelegateTeamRow[]>();
 
   if (error) {
     throw new Error(`Could not load delegate team: ${error.message}`);
   }
 
-  return data;
+  return data ?? [];
 }
 
 async function upsertProfile(

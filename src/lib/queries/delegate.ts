@@ -1,10 +1,9 @@
 import type { CompetitionData } from "../data-mappers";
+import { getApprovedDelegateTeams, normalizeDelegateEmail } from "../domain/delegate-access";
 
 export function getDelegateTeams(data: CompetitionData, delegateEmail?: string | null) {
-  const normalized = delegateEmail?.toLowerCase() ?? "";
-  const teams = normalized
-    ? data.teams.filter((team) => team.delegateEmail.toLowerCase() === normalized)
-    : [];
+  const normalized = normalizeDelegateEmail(delegateEmail);
+  const teams = getApprovedDelegateTeams(data.teams, normalized);
 
   if (teams.length > 0) return teams;
   if (normalized === "delegado") return data.teams.slice(0, 1);

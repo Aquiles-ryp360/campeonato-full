@@ -11,6 +11,7 @@ export const runtime = "nodejs";
 
 const drawFixtureSchema = z.object({
   eventId: z.string().uuid("Selecciona un campeonato valido."),
+  categoryId: z.string().uuid("Selecciona una categoria.").optional(),
   randomSeed: z.string().trim().optional()
 });
 
@@ -38,6 +39,7 @@ type EventDrawRow = {
 type TeamDrawRow = {
   id: string;
   event_id: string;
+  category_id: string | null;
   name: string;
   status: "pending_payment" | "registered" | "observed" | "approved";
   created_at: string | null;
@@ -132,7 +134,7 @@ async function drawAndPersistFixture(
   input: DrawFixtureInput
 ) {
   const event = await findEvent(supabase, input.eventId);
-  const teams = await findDrawableTeams(supabase, event.id);
+  const teams = await findDrawableTeams(supabase, event.id, input.categoryId);
 
   if (teams.length < 2) {
     throw new AdminRouteError("Se necesitan al menos 2 equipos inscritos para sortear.", 400);
@@ -183,6 +185,7 @@ async function drawAndPersistFixture(
       label: match.label ?? null,
       home_team_id: match.homeTeamId || null,
       away_team_id: match.awayTeamId || null,
+      category_id: input.categoryId ?? teams[0]?.categoryId ?? null,
       home_placeholder: match.homePlaceholder ?? null,
       away_placeholder: match.awayPlaceholder ?? null,
       home_source_match_id: match.homeSourceMatchId ?? null,
@@ -247,14 +250,20 @@ async function findEvent(
 
 async function findDrawableTeams(
   supabase: ReturnType<typeof createSupabaseAdminClient>,
-  eventId: string
+  eventId: string,
+  categoryId?: string
 ): Promise<Team[]> {
-  const { data, error } = await supabase
+  let query = supabase
     .from("teams")
-    .select("id, event_id, name, status, created_at")
+    .select("id, event_id, category_id, name, status, created_at")
     .eq("event_id", eventId)
-    .eq("status", "approved")
-    .order("created_at", { ascending: true });
+    .eq("status", "approved");
+
+  if (categoryId) {
+    query = query.eq("category_id", categoryId);
+  }
+
+  const { data, error } = await query.order("created_at", { ascending: true });
 
   if (error) {
     throw new AdminRouteError("No se pudieron cargar los equipos inscritos.", 500);
@@ -263,6 +272,7 @@ async function findDrawableTeams(
   return ((data ?? []) as TeamDrawRow[]).map((team) => ({
     id: team.id,
     eventId: team.event_id,
+    categoryId: team.category_id ?? undefined,
     name: team.name,
     delegateName: "",
     delegatePhone: "",

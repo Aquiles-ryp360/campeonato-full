@@ -11,6 +11,19 @@ const championshipSchema = z.object({
   name: z.string().trim().min(3, "Ingresa el nombre del campeonato."),
   sport: z.enum(["futsal", "voley", "futbol"]),
   category: z.string().trim().min(1, "Ingresa la categoria o rama."),
+  categories: z
+    .array(
+      z.object({
+        id: z.string().uuid().optional(),
+        name: z.string().trim().min(1, "Ingresa el nombre de la categoria."),
+        slug: z.string().trim().optional(),
+        description: z.string().trim().optional().default(""),
+        published: z.boolean().default(true),
+        active: z.boolean().default(true),
+        sortOrder: z.number().int().min(1).default(1)
+      })
+    )
+    .default([]),
   eventDate: z.string().trim().min(1, "Selecciona la fecha del evento."),
   status: z.enum(["draft", "registration", "in_progress", "finished"]),
   description: z.string().trim().optional(),
@@ -137,17 +150,26 @@ async function saveChampionship(
   input: ChampionshipInput
 ) {
   const slug = await uniqueEventSlug(supabase, slugify(input.name), input.eventId);
-  const expandedResult = await saveExpandedEvent(supabase, input, slug).catch((error: unknown) => {
+  const categories = normalizeCategoryPayload(input);
+  const primaryCategoryName = categories[0]?.name ?? input.category;
+  const expandedResult = await saveExpandedEvent(supabase, input, slug, primaryCategoryName).catch((error: unknown) => {
     if (isMissingColumnOrTableError(error)) return null;
     throw error;
   });
-  const event = expandedResult ?? await saveLegacyEvent(supabase, input, slug);
+  const event = expandedResult ?? await saveLegacyEvent(supabase, input, slug, primaryCategoryName);
+
+  if (categories.length > 0) {
+    await saveEventCategories(supabase, event.id, categories).catch((error: unknown) => {
+      if (isMissingColumnOrTableError(error)) return;
+      throw error;
+    });
+  }
 
   await ensureRegistrationCodes(supabase, {
     eventId: event.id,
     slug: event.slug,
     sport: input.sport,
-    category: input.category,
+    category: primaryCategoryName,
     amount: input.registrationFee,
     paymentMethods: input.paymentMethods,
     targetCount: input.registrationCodeBatch
@@ -164,7 +186,8 @@ async function saveChampionship(
 async function saveExpandedEvent(
   supabase: ReturnType<typeof createSupabaseAdminClient>,
   input: ChampionshipInput,
-  slug: string
+  slug: string,
+  primaryCategoryName: string
 ) {
   const sportId = await findOrCreateSport(supabase, input.sport);
   const formatId = await findOrCreateFormat(supabase, input.format);
@@ -172,7 +195,7 @@ async function saveExpandedEvent(
     name: input.name,
     slug,
     sport_id: sportId,
-    category: input.category,
+    category: primaryCategoryName,
     format_id: formatId,
     status: input.status,
     registration_fee: input.registrationFee,
@@ -232,13 +255,14 @@ async function saveExpandedEvent(
 async function saveLegacyEvent(
   supabase: ReturnType<typeof createSupabaseAdminClient>,
   input: ChampionshipInput,
-  slug: string
+  slug: string,
+  primaryCategoryName: string
 ) {
   const payload = {
     name: input.name,
     slug,
     sport: input.sport,
-    category: input.category,
+    category: primaryCategoryName,
     format: input.format,
     status: input.status,
     registration_fee: input.registrationFee,
@@ -276,6 +300,135 @@ async function saveLegacyEvent(
 
   if (error) throw new AdminRouteError("No se pudo crear el campeonato.", 500);
   return data;
+}
+
+type CategorySaveRow = {
+  id: string;
+  event_id: string;
+  name: string;
+  slug: string;
+  description: string | null;
+  published: boolean;
+  active: boolean;
+  sort_order: number;
+};
+
+function normalizeCategoryPayload(input: ChampionshipInput) {
+  if (input.categories.length > 0) {
+    return input.categories.map((category, index) => ({
+      id: category.id,
+      name: category.name,
+      slug: category.slug || slugify(category.name),
+      description: category.description || "",
+      published: category.published,
+      active: category.active,
+      sortOrder: category.sortOrder || index + 1
+    }));
+  }
+
+  if (input.eventId) {
+    return [];
+  }
+
+  return [
+    {
+      name: input.category,
+      slug: slugify(input.category),
+      description: "",
+      published: true,
+      active: true,
+      sortOrder: 1
+    }
+  ];
+}
+
+async function saveEventCategories(
+  supabase: ReturnType<typeof createSupabaseAdminClient>,
+  eventId: string,
+  categories: Array<{
+    id?: string;
+    name: string;
+    slug: string;
+    description: string;
+    published: boolean;
+    active: boolean;
+    sortOrder: number;
+  }>
+) {
+  const { data: existing, error } = await supabase
+    .from("event_categories")
+    .select("id, event_id, name, slug, description, published, active, sort_order")
+    .eq("event_id", eventId);
+
+  if (error) throw error;
+
+  const existingRows = (existing ?? []) as CategorySaveRow[];
+  const existingById = new Map(existingRows.map((row) => [row.id, row]));
+  const nextIds = new Set<string>();
+  const now = new Date().toISOString();
+
+  for (const category of categories) {
+    const payload = {
+      event_id: eventId,
+      name: category.name,
+      slug: category.slug,
+      description: category.description || null,
+      published: category.published,
+      active: category.active,
+      sort_order: category.sortOrder,
+      updated_at: now
+    };
+
+    if (category.id && existingById.has(category.id)) {
+      const { error: updateError } = await supabase.from("event_categories").update(payload).eq("id", category.id);
+      if (updateError) throw updateError;
+      nextIds.add(category.id);
+      continue;
+    }
+
+    const { data: inserted, error: insertError } = await supabase
+      .from("event_categories")
+      .insert(payload)
+      .select("id")
+      .single<{ id: string }>();
+
+    if (insertError) throw insertError;
+    nextIds.add(inserted.id);
+  }
+
+  const removedCategories = existingRows.filter((row) => !nextIds.has(row.id));
+  for (const category of removedCategories) {
+    const { data: linkedTeams, error: teamError } = await supabase
+      .from("teams")
+      .select("id")
+      .eq("category_id", category.id)
+      .limit(1);
+
+    if (teamError) throw teamError;
+    if ((linkedTeams ?? []).length > 0) {
+      throw new AdminRouteError(
+        `No se puede eliminar la categoria ${category.name} porque ya tiene equipos inscritos.`,
+        409
+      );
+    }
+
+    const { data: linkedMatches, error: matchError } = await supabase
+      .from("matches")
+      .select("id")
+      .eq("category_id", category.id)
+      .limit(1);
+
+    if (matchError) throw matchError;
+    if ((linkedMatches ?? []).length > 0) {
+      throw new AdminRouteError(
+        `No se puede eliminar la categoria ${category.name} porque ya tiene partidos asociados.`,
+        409
+      );
+    }
+
+    const { error: deleteError } = await supabase.from("event_categories").delete().eq("id", category.id);
+    if (deleteError) throw deleteError;
+  }
 }
 
 async function findOrCreateSport(

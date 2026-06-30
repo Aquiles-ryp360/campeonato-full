@@ -1,8 +1,20 @@
 import assert from "node:assert/strict";
 import { generateKnockoutBracket } from "../src/lib/domain/bracket-generator";
+import {
+  canAccessDelegatePanel,
+  getApprovedDelegateTeams,
+  getPendingDelegateTeams
+} from "../src/lib/domain/delegate-access";
 import { canEditRegistration, isAdmin } from "../src/lib/domain/permissions";
 import { isRegistrationOpen, rosterLimitState } from "../src/lib/domain/registration-rules";
 import { buildDuplicateRosterAlerts, buildTeamApprovalReviews } from "../src/lib/domain/team-review";
+import {
+  filterMatchesByCategory,
+  filterTeamsByCategory,
+  findCategoryBySlug,
+  getSelectableEventCategories
+} from "../src/lib/domain/categories";
+import type { CompetitionData } from "../src/lib/data-mappers";
 import type { Player, Team, TournamentEvent } from "../src/lib/types";
 
 const event: TournamentEvent = {
@@ -44,8 +56,10 @@ const validPlayers: Player[] = [
 testRegistrationRules();
 testApprovalRules();
 testDuplicateDetection();
+testCategoryFilters();
 testFixtureUsesApprovedTeamsOnly();
 testRolePermissions();
+testDelegatePanelApprovalGate();
 
 console.log("Smoke tests passed.");
 
@@ -91,6 +105,71 @@ function testDuplicateDetection() {
   );
 }
 
+function testCategoryFilters() {
+  const categories = [
+    {
+      id: "cat-1",
+      eventId: event.id,
+      name: "Libre",
+      slug: "libre",
+      published: true,
+      active: true,
+      sortOrder: 1
+    },
+    {
+      id: "cat-2",
+      eventId: event.id,
+      name: "Master",
+      slug: "master",
+      published: false,
+      active: true,
+      sortOrder: 2
+    },
+    {
+      id: "cat-3",
+      eventId: event.id,
+      name: "Femenino",
+      slug: "femenino",
+      published: true,
+      active: false,
+      sortOrder: 3
+    }
+  ];
+  const categoryTeams: Team[] = [
+    { ...team("team-cat-1", "Libre", "approved"), categoryId: "cat-1" },
+    { ...team("team-cat-2", "Master", "approved"), categoryId: "cat-2" }
+  ];
+  const categoryMatches = [
+    { ...generateMatch("match-cat-1", event.id, "team-cat-1", "team-cat-1"), categoryId: "cat-1" },
+    { ...generateMatch("match-cat-2", event.id, "team-cat-2", "team-cat-2"), categoryId: "cat-2" }
+  ];
+  const selectable = getSelectableEventCategories(
+    {
+      events: [event],
+      teams: categoryTeams,
+      players: [],
+      matches: categoryMatches,
+      categories,
+      registrationCodes: [],
+      sports: [],
+      competitionFormats: [],
+      venues: [],
+      timeSlots: [],
+      groups: [],
+      groupTeams: [],
+      groupStandings: [],
+      tournamentBases: []
+    } as CompetitionData,
+    event.id
+  );
+
+  assert.equal(selectable.length, 1);
+  assert.equal(selectable[0]?.name, "Libre");
+  assert.equal(findCategoryBySlug(categories as never, "missing"), null);
+  assert.equal(filterTeamsByCategory(categoryTeams, "cat-1").length, 1);
+  assert.equal(filterMatchesByCategory(categoryMatches as never, categoryTeams, "cat-1").length, 1);
+}
+
 function testFixtureUsesApprovedTeamsOnly() {
   const approvedTeams = teams.filter((item) => item.status === "approved");
   const bracket = generateKnockoutBracket({
@@ -112,6 +191,14 @@ function testRolePermissions() {
   assert.equal(isAdmin(delegateSession), false);
   assert.equal(canEditRegistration({ ...event, status: "finished" }, teams[0], delegateSession), false);
   assert.equal(canEditRegistration(event, teams[0], delegateSession), true);
+}
+
+function testDelegatePanelApprovalGate() {
+  assert.equal(canAccessDelegatePanel(teams, teams[0].delegateEmail), true);
+  assert.equal(canAccessDelegatePanel(teams, teams[1].delegateEmail), false);
+  assert.equal(canAccessDelegatePanel(teams, teams[2].delegateEmail), false);
+  assert.equal(getApprovedDelegateTeams(teams, teams[0].delegateEmail).length, 1);
+  assert.equal(getPendingDelegateTeams(teams, teams[1].delegateEmail).length, 1);
 }
 
 function session(role: "admin" | "delegate", username: string) {
@@ -151,5 +238,19 @@ function player(id: string, teamId: string, dni: string, studentCode: string): P
     enrollmentFile: `${id}.pdf`,
     semester: "I",
     lineupRole: "starter"
+  };
+}
+
+function generateMatch(id: string, eventId: string, homeTeamId: string, awayTeamId: string) {
+  return {
+    id,
+    eventId,
+    round: 1,
+    stage: "final" as const,
+    homeTeamId,
+    awayTeamId,
+    scheduledAt: "2030-01-01T00:00:00.000Z",
+    court: "Cancha",
+    status: "scheduled" as const
   };
 }

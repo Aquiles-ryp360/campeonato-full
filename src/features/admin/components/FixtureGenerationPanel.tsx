@@ -1,11 +1,12 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Lock, RefreshCw, Send, Shuffle, Snowflake } from "lucide-react";
 import { toast } from "sonner";
 import type { CompetitionData } from "@/lib/data-mappers";
 import { generateKnockoutBracket } from "@/lib/domain/bracket-generator";
+import { filterMatchesByCategory } from "@/lib/domain/categories";
 import { generateOneDaySchedule } from "@/lib/domain/schedule-generator";
 import {
   canPublishFixture,
@@ -25,17 +26,40 @@ export function FixtureGenerationPanel({ data }: { data: CompetitionData }) {
       null,
     [data.events]
   );
+  const eventCategories = useMemo(
+    () =>
+      data.categories
+        .filter((category) => category.eventId === selectedEvent?.id && category.active && category.published)
+        .sort((a, b) => a.sortOrder - b.sortOrder || a.name.localeCompare(b.name)),
+    [data.categories, selectedEvent?.id]
+  );
+  const [categoryId, setCategoryId] = useState("");
+  const selectedCategory = eventCategories.find((category) => category.id === categoryId) ?? eventCategories[0] ?? null;
   const eventTeams = useMemo(
-    () => (selectedEvent ? data.teams.filter((team) => team.eventId === selectedEvent.id) : []),
-    [data.teams, selectedEvent]
+    () =>
+      selectedEvent
+        ? data.teams.filter(
+            (team) =>
+              team.eventId === selectedEvent.id &&
+              (selectedCategory ? team.categoryId === selectedCategory.id : true)
+          )
+        : [],
+    [data.teams, selectedCategory, selectedEvent]
   );
   const drawableTeams = useMemo(
     () => eventTeams.filter((team) => team.status === "approved"),
     [eventTeams]
   );
   const eventMatches = useMemo(
-    () => (selectedEvent ? data.matches.filter((match) => match.eventId === selectedEvent.id) : []),
-    [data.matches, selectedEvent]
+    () =>
+      selectedEvent
+        ? filterMatchesByCategory(
+            data.matches.filter((match) => match.eventId === selectedEvent.id),
+            data.teams.filter((team) => team.eventId === selectedEvent.id),
+            selectedCategory?.id
+          )
+        : [],
+    [data.matches, data.teams, selectedCategory?.id, selectedEvent]
   );
   const hasOfficialDraw = eventMatches.some((match) => match.stage !== "group_stage");
   const bracket = useMemo(
@@ -73,6 +97,10 @@ export function FixtureGenerationPanel({ data }: { data: CompetitionData }) {
     events: data.events
   });
 
+  useEffect(() => {
+    setCategoryId(eventCategories[0]?.id ?? "");
+  }, [eventCategories]);
+
   async function drawFixture() {
     if (!selectedEvent) return;
 
@@ -84,7 +112,8 @@ export function FixtureGenerationPanel({ data }: { data: CompetitionData }) {
           "Content-Type": "application/json"
         },
         body: JSON.stringify({
-          eventId: selectedEvent.id
+          eventId: selectedEvent.id,
+          categoryId: selectedCategory?.id
         })
       });
       const payload = (await response.json().catch(() => null)) as
@@ -120,10 +149,25 @@ export function FixtureGenerationPanel({ data }: { data: CompetitionData }) {
             <Info label="Inicio" value={selectedEvent.scheduleConfig?.startTime ?? "09:00"} />
             <Info label="Duracion" value={`${selectedEvent.scheduleConfig?.matchDurationMinutes ?? 20} min`} />
             <Info label="Canchas" value={(selectedEvent.scheduleConfig?.courts ?? data.venues.map((venue) => venue.name)).join(", ")} />
+            <Info label="Categoria" value={selectedCategory?.name ?? "Todas"} />
             <Info label="Partidos" value={hasOfficialDraw ? `${eventMatches.length}` : "Pendiente"} />
           </div>
         ) : null}
         <div className="mt-5 flex flex-wrap items-center gap-3">
+          <select
+            className="min-h-10 rounded-md border border-ink/10 bg-white px-3 py-2 text-sm font-semibold text-ink"
+            value={selectedCategory?.id ?? ""}
+            onChange={(event) => setCategoryId(event.target.value)}
+            disabled={eventCategories.length === 0}
+            aria-label="Categoria de sorteo"
+          >
+            <option value="">Todas las categorias</option>
+            {eventCategories.map((category) => (
+              <option key={category.id} value={category.id}>
+                {category.name}
+              </option>
+            ))}
+          </select>
           <Button
             onClick={drawFixture}
             disabled={
@@ -185,10 +229,13 @@ export function FixtureGenerationPanel({ data }: { data: CompetitionData }) {
       </Card>
       <DaySchedule
         events={data.events}
+        categories={data.categories}
         teams={data.teams}
         players={data.players}
         matches={data.matches}
         venues={data.venues}
+        initialEventId={selectedEvent?.id}
+        initialCategoryId={selectedCategory?.id}
       />
     </div>
   );

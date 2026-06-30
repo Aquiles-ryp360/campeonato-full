@@ -1,9 +1,10 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Filter } from "lucide-react";
-import type { Match, Player, Team, TournamentEvent, Venue } from "@/lib/types";
+import type { Category, Match, Player, Team, TournamentEvent, Venue } from "@/lib/types";
 import { conflictsForMatch, detectScheduleConflicts } from "@/lib/domain/conflict-detector";
+import { filterMatchesByCategory } from "@/lib/domain/categories";
 import { Card, Field, SectionHeader, inputClass } from "@/components/ui";
 import { TeamDetailsModal } from "@/features/public/components/TeamDetailsModal";
 import { MatchDetailsModal } from "@/features/public/components/MatchDetailsModal";
@@ -12,20 +13,25 @@ import { CourtTimeline } from "./CourtTimeline";
 
 export function DaySchedule({
   events,
+  categories,
   teams,
   players,
   matches,
   venues,
-  initialEventId
+  initialEventId,
+  initialCategoryId
 }: {
   events: TournamentEvent[];
+  categories: Category[];
   teams: Team[];
   players: Player[];
   matches: Match[];
   venues: Venue[];
   initialEventId?: string;
+  initialCategoryId?: string;
 }) {
   const [eventId, setEventId] = useState(initialEventId ?? "all");
+  const [categoryId, setCategoryId] = useState(initialCategoryId ?? "all");
   const [court, setCourt] = useState("all");
   const [teamId, setTeamId] = useState("all");
   const [status, setStatus] = useState("all");
@@ -33,9 +39,30 @@ export function DaySchedule({
   const [selectedTeam, setSelectedTeam] = useState<Team | null>(null);
   const [selectedMatch, setSelectedMatch] = useState<Match | null>(null);
 
+  const selectedEventCategories = useMemo(
+    () =>
+      categories
+        .filter(
+          (category) =>
+            (eventId === "all" || category.eventId === eventId) &&
+            category.active &&
+            category.published
+        )
+        .sort((a, b) => a.sortOrder - b.sortOrder || a.name.localeCompare(b.name)),
+    [categories, eventId]
+  );
   const filteredMatches = useMemo(() => {
-    return matches
-      .filter((match) => eventId === "all" || match.eventId === eventId)
+    const eventMatches = matches.filter((match) => eventId === "all" || match.eventId === eventId);
+    const teamMatches =
+      categoryId === "all"
+        ? eventMatches
+        : filterMatchesByCategory(
+            eventMatches,
+            teams.filter((team) => eventId === "all" || team.eventId === eventId),
+            categoryId
+          );
+
+    return teamMatches
       .filter((match) => court === "all" || match.court === court)
       .filter(
         (match) =>
@@ -43,7 +70,7 @@ export function DaySchedule({
       )
       .filter((match) => status === "all" || match.status === status)
       .sort((a, b) => a.scheduledAt.localeCompare(b.scheduledAt));
-  }, [court, eventId, matches, status, teamId]);
+  }, [categoryId, court, eventId, matches, status, teamId, teams]);
 
   const conflicts = useMemo(
     () => detectScheduleConflicts({ matches, teams, players, events }),
@@ -51,6 +78,12 @@ export function DaySchedule({
   );
   const courts = Array.from(new Set(matches.map((match) => match.court))).sort();
   const selectedEvent = events.find((event) => event.id === selectedTeam?.eventId) ?? null;
+
+  useEffect(() => {
+    if (!selectedEventCategories.some((category) => category.id === categoryId)) {
+      setCategoryId(selectedEventCategories[0]?.id ?? "all");
+    }
+  }, [categoryId, selectedEventCategories]);
 
   return (
     <div className="space-y-6 pb-20 md:pb-0">
@@ -67,6 +100,20 @@ export function DaySchedule({
               {events.map((event) => (
                 <option key={event.id} value={event.id}>
                   {event.name}
+                </option>
+              ))}
+            </select>
+          </Field>
+          <Field label="Categoria">
+            <select
+              className={inputClass}
+              value={categoryId}
+              onChange={(event) => setCategoryId(event.target.value)}
+            >
+              <option value="all">Todas</option>
+              {selectedEventCategories.map((category) => (
+                <option key={category.id} value={category.id}>
+                  {category.name}
                 </option>
               ))}
             </select>

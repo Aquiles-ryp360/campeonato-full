@@ -13,6 +13,10 @@ import {
 } from "lucide-react";
 import type { AuthRole, AuthSession } from "@/lib/auth";
 import {
+  DelegateAccessNotice,
+  type DelegateAccessNoticeReason
+} from "@/features/delegate/components/DelegateAccessNotice";
+import {
   canAccess,
   clearStoredSession,
   createSession,
@@ -32,11 +36,16 @@ export function AuthGate({
 }) {
   const pathname = usePathname();
   const [session, setSession] = useState<AuthSession | null>(null);
+  const [delegateNotice, setDelegateNotice] = useState<{
+    reason: DelegateAccessNoticeReason;
+    email: string | null;
+  } | null>(null);
   const [ready, setReady] = useState(false);
 
   useEffect(() => {
     async function loadSession() {
       const storedSession = getStoredSession();
+      setDelegateNotice(null);
 
       if (!hasSupabaseEnv()) {
         setSession(storedSession);
@@ -79,6 +88,25 @@ export function AuthGate({
           profile.full_name ?? userData.user.email ?? "Usuario"
         );
 
+        if (role === "delegate" && profile.role === "delegate") {
+          const delegateAccess = await getDelegatePanelAccess(
+            supabase,
+            userData.user.id,
+            userData.user.email ?? null
+          );
+
+          if (!delegateAccess.ok) {
+            storeSession(verifiedSession);
+            setSession(verifiedSession);
+            setDelegateNotice({
+              reason: delegateAccess.reason,
+              email: delegateAccess.email
+            });
+            setReady(true);
+            return;
+          }
+        }
+
         storeSession(verifiedSession);
         setSession(verifiedSession);
       } catch {
@@ -90,7 +118,7 @@ export function AuthGate({
     }
 
     void loadSession();
-  }, []);
+  }, [role]);
 
   if (!ready) {
     return (
@@ -98,6 +126,10 @@ export function AuthGate({
         <p className="text-sm font-semibold text-ink/60">Validando acceso...</p>
       </Card>
     );
+  }
+
+  if (delegateNotice) {
+    return <DelegateAccessNotice reason={delegateNotice.reason} email={delegateNotice.email} />;
   }
 
   if (!canAccess(session, role)) {
@@ -126,6 +158,36 @@ export function AuthGate({
   }
 
   return <>{children}</>;
+}
+
+async function getDelegatePanelAccess(
+  supabase: ReturnType<typeof createSupabaseBrowserClient>,
+  userId: string,
+  email: string | null
+): Promise<
+  | { ok: true; email: string | null }
+  | { ok: false; email: string | null; reason: DelegateAccessNoticeReason }
+> {
+  const normalizedEmail = email?.trim().toLowerCase() ?? null;
+  const query = supabase.from("teams").select("id, status");
+  const response = normalizedEmail
+    ? await query.or(`delegate_user_id.eq.${userId},delegate_email.eq.${normalizedEmail}`)
+    : await query.eq("delegate_user_id", userId);
+
+  if (response.error) {
+    return { ok: false, email: normalizedEmail, reason: "not_delegate" };
+  }
+
+  const teams = (response.data ?? []) as Array<{ id: string; status: string }>;
+  if (teams.some((team) => team.status === "approved")) {
+    return { ok: true, email: normalizedEmail };
+  }
+
+  if (teams.length > 0) {
+    return { ok: false, email: normalizedEmail, reason: "pending_review" };
+  }
+
+  return { ok: false, email: normalizedEmail, reason: "not_registered" };
 }
 
 export function SessionActions({ showPanelLink = true }: { showPanelLink?: boolean }) {

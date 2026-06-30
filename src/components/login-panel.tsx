@@ -15,8 +15,9 @@ import { Badge, Button, Card, Field, SectionHeader, inputClass } from "./ui";
 
 const loginErrorMessages: Record<string, string> = {
   missing_email: "Google no devolvio un correo valido.",
-  not_authorized: "Este Gmail no esta autorizado para entrar.",
-  not_registered: "Este Gmail no coincide con ningun delegado inscrito.",
+  not_authorized: "Este correo no esta autorizado para entrar.",
+  not_registered: "Este correo no coincide con ningun delegado inscrito.",
+  registration_pending: "Tu inscripcion continua en revision. El panel se habilitara cuando administracion apruebe tu equipo.",
   oauth_access_failed: "No se pudo validar el acceso con Supabase.",
   oauth_exchange_failed: "No se pudo completar el login con Google.",
   oauth_missing_code: "Google no envio el codigo de acceso.",
@@ -30,8 +31,10 @@ export function LoginPanel() {
   const [nextPath, setNextPath] = useState("/");
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
+  const [magicEmail, setMagicEmail] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isGoogleSubmitting, setIsGoogleSubmitting] = useState(false);
+  const [isMagicSubmitting, setIsMagicSubmitting] = useState(false);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -81,6 +84,52 @@ export function LoginPanel() {
     }
   }
 
+  async function sendMagicLink(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+
+    if (!supabaseConfigured) {
+      toast.error("Supabase no esta configurado.");
+      return;
+    }
+
+    const email = magicEmail.trim().toLowerCase();
+
+    if (!email) {
+      toast.error("Ingresa el correo registrado durante la inscripcion.");
+      return;
+    }
+
+    setIsMagicSubmitting(true);
+
+    try {
+      const callbackUrl = new URL("/auth/callback", window.location.origin);
+      const safeNextPath = sanitizeNextPath(nextPath);
+
+      if (safeNextPath !== "/") {
+        callbackUrl.searchParams.set("next", safeNextPath);
+      }
+
+      const { error } = await createSupabaseBrowserClient().auth.signInWithOtp({
+        email,
+        options: {
+          emailRedirectTo: callbackUrl.toString(),
+          shouldCreateUser: true
+        }
+      });
+
+      if (error) {
+        toast.error("No se pudo enviar el enlace de acceso.");
+        return;
+      }
+
+      toast.success("Enlace enviado. Revisa tu correo para entrar.");
+    } catch {
+      toast.error("No se pudo enviar el enlace de acceso.");
+    } finally {
+      setIsMagicSubmitting(false);
+    }
+  }
+
   function submitDemoLogin(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setIsSubmitting(true);
@@ -118,16 +167,33 @@ export function LoginPanel() {
           title="Iniciar sesion"
           description={
             supabaseConfigured
-              ? "Entra con el mismo correo Google/Gmail usado en la inscripcion."
+              ? "Entra con el mismo correo usado en la inscripcion."
               : "Modo demo local sin Supabase: usa las credenciales de prueba."
           }
         />
 
         {supabaseConfigured ? (
           <div className="mt-5 space-y-4">
+            <form className="space-y-3" onSubmit={sendMagicLink}>
+              <Field label="Correo registrado">
+                <input
+                  className={inputClass}
+                  value={magicEmail}
+                  onChange={(event) => setMagicEmail(event.target.value)}
+                  placeholder="delegado@correo.com"
+                  type="email"
+                  autoComplete="email"
+                />
+              </Field>
+              <Button type="submit" className="w-full" disabled={isMagicSubmitting}>
+                <Mail className="h-4 w-4" />
+                {isMagicSubmitting ? "Enviando enlace..." : "Enviar enlace de acceso"}
+              </Button>
+            </form>
             <Button
               type="button"
               className="w-full"
+              variant="secondary"
               onClick={startGoogleLogin}
               disabled={isGoogleSubmitting}
             >
@@ -135,8 +201,9 @@ export function LoginPanel() {
               {isGoogleSubmitting ? "Abriendo Google..." : "Entrar con Google"}
             </Button>
             <p className="text-sm leading-6 text-ink/62">
-              Si eres delegado, el correo debe coincidir con el correo registrado en la
-              inscripcion. Si eres admin, tu correo debe estar autorizado en Supabase.
+              Si eres delegado, el correo debe coincidir con el registrado en la
+              inscripcion y el equipo debe estar aprobado. Si eres admin, tu correo debe
+              estar autorizado en Supabase.
             </p>
           </div>
         ) : (
@@ -213,8 +280,8 @@ export function LoginPanel() {
               </div>
               {supabaseConfigured ? (
                 <p className="mt-3 text-sm leading-6 text-ink/62">
-                  El delegado usa el mismo correo Google/Gmail que dejo en la inscripcion.
-                  Al coincidir, el sistema vincula su usuario con su equipo.
+                  El delegado usa el mismo correo que dejo en la inscripcion. Al aprobarse
+                  el equipo, el sistema habilita el panel y vincula su usuario con su equipo.
                 </p>
               ) : (
                 <>

@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
+import { sendDelegateAccessEmail } from "@/lib/mail";
 import { createSupabaseAdminClient } from "@/lib/supabase-admin";
 import { createSupabaseRouteClient } from "@/lib/supabase-server";
 import type { TeamStatus } from "@/lib/types";
@@ -19,10 +20,14 @@ type TeamReviewRow = {
   name: string;
   status: TeamStatus;
   registration_code_id: string | null;
+  delegate_name: string;
+  delegate_phone: string | null;
+  delegate_email: string | null;
 };
 
 type EventReviewRow = {
   id: string;
+  name: string;
   min_players: number;
   max_players: number;
 };
@@ -119,9 +124,10 @@ async function reviewTeam(
   }
 
   if (input.action === "approve") {
-    await assertTeamCanBeApproved(supabase, team);
+    const event = await assertTeamCanBeApproved(supabase, team);
     await updateTeamStatus(supabase, team.id, "approved");
-    return { ok: true, status: "approved" };
+    const emailSent = await notifyDelegateApproval(team, event);
+    return { ok: true, status: "approved", emailSent };
   }
 
   await updateTeamStatus(supabase, team.id, "observed");
@@ -134,7 +140,7 @@ async function findTeam(
 ) {
   const { data, error } = await supabase
     .from("teams")
-    .select("id, event_id, name, status, registration_code_id")
+    .select("id, event_id, name, status, registration_code_id, delegate_name, delegate_phone, delegate_email")
     .eq("id", teamId)
     .maybeSingle<TeamReviewRow>();
 
@@ -174,6 +180,8 @@ async function assertTeamCanBeApproved(
       409
     );
   }
+
+  return event;
 }
 
 async function findEvent(
@@ -182,7 +190,7 @@ async function findEvent(
 ) {
   const { data, error } = await supabase
     .from("events")
-    .select("id, min_players, max_players")
+    .select("id, name, min_players, max_players")
     .eq("id", eventId)
     .maybeSingle<EventReviewRow>();
 
@@ -233,6 +241,23 @@ async function updateTeamStatus(
     .eq("id", teamId);
 
   if (error) throw new AdminRouteError("No se pudo actualizar el estado del equipo.", 500);
+}
+
+async function notifyDelegateApproval(team: TeamReviewRow, event: EventReviewRow) {
+  if (!team.delegate_email) return false;
+
+  try {
+    await sendDelegateAccessEmail({
+      to: team.delegate_email,
+      delegateName: team.delegate_name,
+      teamName: team.name,
+      eventName: event.name
+    });
+    return true;
+  } catch (error) {
+    console.error("Delegate approval email failed", error);
+    return false;
+  }
 }
 
 async function deleteTeam(

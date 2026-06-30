@@ -34,9 +34,20 @@ SUPABASE_SERVICE_ROLE_KEY=
 
 La migracion inicial esta en `supabase/migrations/001_initial_schema.sql`.
 
-## Flujos base
+Las migraciones relevantes para la version actual son:
 
-- Publico: fixture, tabla y resultados.
-- Equipo: inscripcion con pago Yape/Plin, jugadores y estado.
-- Admin: crear eventos, configurar formato, aprobar/observar inscripciones, cargar resultados.
-- IA: audio de resultado, transcripcion, JSON revisable y boton para publicar.
+- `012_delegate_approved_access.sql`
+- `013_event_categories.sql`
+
+## Flujo actual
+
+- Publico: campeonato, deporte, categoria, equipos, fixture, tabla, resultados y bases.
+- Delegado: se registra con su correo, elige categoria, carga jugadores y recibe acceso solo cuando el equipo queda `approved`.
+- Admin: crea/edita campeonatos, administra categorias, aprueba u observa equipos y genera llaves por categoria.
+
+## Notas tecnicas
+
+- Las categorias se cargan desde la base de datos, no desde valores hardcodeados en el frontend.
+- El acceso del delegado usa Supabase Auth y Magic Link.
+- `teams.category_id` y `matches.category_id` son obligatorios en el esquema actual.
+- La vista `public.championships` sigue funcionando como compatibilidad con `events`.

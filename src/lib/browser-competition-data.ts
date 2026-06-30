@@ -5,6 +5,7 @@ import {
   mapEvent,
   mapMatch,
   mapPlayer,
+  mapCategory,
   mapRegistrationCode,
   mapTeam,
   mapSport,
@@ -19,6 +20,7 @@ import {
   type EventRow,
   type MatchRow,
   type PlayerRow,
+  type CategoryRow,
   type RegistrationCodeRow,
   type TeamRow,
   type SportRow,
@@ -54,6 +56,7 @@ const legacyEventColumns = `
 const teamColumns = `
   id,
   event_id,
+  category_id,
   name,
   delegate_name,
   delegate_phone,
@@ -150,6 +153,7 @@ export async function fetchBrowserCompetitionData({
     playersResponse,
     matchesResponse,
     codesResponse,
+    categoriesResponse,
     sportsResponse,
     formatsResponse,
     venuesResponse,
@@ -169,6 +173,7 @@ export async function fetchBrowserCompetitionData({
           .select(registrationCodeColumns)
           .order("created_at", { ascending: true })
       : Promise.resolve({ data: [], error: null }),
+    supabase.from("event_categories").select("*").order("sort_order", { ascending: true }),
     supabase.from("sports").select("*").order("name", { ascending: true }),
     supabase.from("competition_formats").select("*").order("name", { ascending: true }),
     supabase.from("venues").select("*").order("name", { ascending: true }),
@@ -184,6 +189,7 @@ export async function fetchBrowserCompetitionData({
       eventsResponse.error,
       teamsResponse.error,
       matchesResponse.error,
+      categoriesResponse.error,
       sportsResponse.error,
       formatsResponse.error,
       venuesResponse.error,
@@ -202,6 +208,7 @@ export async function fetchBrowserCompetitionData({
   if (playersResponse.error) throw new Error("No se pudieron cargar los jugadores.");
   if (matchesResponse.error) throw new Error("No se pudieron cargar los partidos.");
   if (codesResponse.error) throw new Error("No se pudieron cargar los codigos.");
+  if (categoriesResponse.error) throw new Error("No se pudieron cargar las categorias.");
   if (sportsResponse.error) throw new Error("No se pudieron cargar los deportes.");
   if (formatsResponse.error) throw new Error("No se pudieron cargar los formatos.");
   if (venuesResponse.error) throw new Error("No se pudieron cargar las canchas.");
@@ -217,6 +224,10 @@ export async function fetchBrowserCompetitionData({
     players: ((playersResponse.data ?? []) as PlayerRow[]).map(mapPlayer),
     matches: ((matchesResponse.data ?? []) as MatchRow[]).map(mapMatch),
     registrationCodes: ((codesResponse.data ?? []) as RegistrationCodeRow[]).map(mapRegistrationCode),
+    categories:
+      ((categoriesResponse.data ?? []) as CategoryRow[]).length > 0
+        ? ((categoriesResponse.data ?? []) as CategoryRow[]).map(mapCategory)
+        : buildLegacyCategories((eventsResponse.data ?? []) as EventRow[]),
     sports: ((sportsResponse.data ?? []) as SportRow[]).map(mapSport),
     competitionFormats: ((formatsResponse.data ?? []) as CompetitionFormatRow[]).map(mapCompetitionFormat),
     venues: ((venuesResponse.data ?? []) as VenueRow[]).map(mapVenue),
@@ -253,14 +264,24 @@ async function fetchLegacyBrowserCompetitionData(
   if (matchesResponse.error) throw new Error("No se pudieron cargar los partidos.");
   if (codesResponse.error) throw new Error("No se pudieron cargar los codigos.");
 
+  const categories = buildLegacyCategories((eventsResponse.data ?? []) as EventRow[]);
+  const categoryByEventId = new Map(categories.map((category) => [category.eventId, category.id]));
+
   return {
     events: ((eventsResponse.data ?? []) as EventRow[]).map(mapEvent),
-    teams: ((teamsResponse.data ?? []) as unknown as TeamRow[]).map(mapTeam),
+    teams: ((teamsResponse.data ?? []) as unknown as TeamRow[]).map((row) => ({
+      ...mapTeam(row),
+      categoryId: categoryByEventId.get(row.event_id)
+    })),
     players: ((playersResponse.data ?? []) as PlayerRow[]).map(mapPlayer),
-    matches: ((matchesResponse.data ?? []) as MatchRow[]).map(mapMatch),
+    matches: ((matchesResponse.data ?? []) as MatchRow[]).map((row) => ({
+      ...mapMatch(row),
+      categoryId: categoryByEventId.get(row.event_id)
+    })),
     registrationCodes: ((codesResponse.data ?? []) as RegistrationCodeRow[]).map(
       mapRegistrationCode
     ),
+    categories,
     sports: [],
     competitionFormats: [],
     venues: [],
@@ -274,4 +295,29 @@ async function fetchLegacyBrowserCompetitionData(
 
 function hasAnyError(errors: Array<{ message?: string } | null>) {
   return errors.some(Boolean);
+}
+
+function buildLegacyCategories(events: EventRow[]) {
+  return events.map((event, index) => ({
+    id: `legacy-category-${event.id}`,
+    eventId: event.id,
+    name: event.category || "General",
+    slug: slugifyText(event.category || `categoria-${index + 1}`),
+    description: undefined,
+    published: true,
+    active: true,
+    sortOrder: 1,
+    createdAt: undefined,
+    updatedAt: undefined
+  }));
+}
+
+function slugifyText(value: string) {
+  return value
+    .trim()
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
 }

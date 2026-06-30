@@ -68,7 +68,7 @@ export function TeamsReviewTable({ data }: { data: CompetitionData }) {
         })
       });
       const payload = (await response.json().catch(() => null)) as
-        | { ok: true; status?: TeamStatus; deleted?: boolean }
+        | { ok: true; status?: TeamStatus; deleted?: boolean; emailSent?: boolean }
         | { ok: false; error: string }
         | null;
 
@@ -78,7 +78,7 @@ export function TeamsReviewTable({ data }: { data: CompetitionData }) {
       }
 
       applyLocalAction(team, action, payload.status);
-      toast.success(actionSuccessMessage(action));
+      toast.success(actionSuccessMessage(action, payload.emailSent));
       router.refresh();
     } catch {
       toast.error("No se pudo conectar con el servidor para revisar el equipo.");
@@ -160,7 +160,7 @@ export function TeamsReviewTable({ data }: { data: CompetitionData }) {
                   </td>
                   <td className="px-3 py-4 align-top">
                     <p className="font-semibold text-ink">{review.event?.name ?? "Sin campeonato"}</p>
-                    <p className="mt-1 text-xs text-ink/55">{review.event?.category}</p>
+                    <p className="mt-1 text-xs text-ink/55">{team.categoryName ?? review.event?.category}</p>
                   </td>
                   <td className="px-3 py-4 align-top">
                     <p className="font-semibold text-ink">{team.delegateName}</p>
@@ -263,8 +263,12 @@ function teamStatusTone(status: TeamStatus, hasIssues: boolean) {
   return "neutral";
 }
 
-function actionSuccessMessage(action: TeamAction) {
-  if (action === "approve") return "Equipo aprobado.";
+function actionSuccessMessage(action: TeamAction, emailSent?: boolean) {
+  if (action === "approve") {
+    return emailSent
+      ? "Equipo aprobado. Correo de acceso enviado al delegado."
+      : "Equipo aprobado. No se envio correo porque falta configurar SMTP.";
+  }
   if (action === "observe") return "Equipo marcado como observado.";
 
   return "Equipo eliminado.";

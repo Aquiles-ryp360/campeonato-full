@@ -3,6 +3,7 @@ import "server-only";
 import { createClient } from "@supabase/supabase-js";
 import {
   applyCatalogLabels,
+  mapCategory,
   mapEvent,
   mapMatch,
   mapPlayer,
@@ -22,6 +23,7 @@ import {
   type TeamRow,
   type SportRow,
   type CompetitionFormatRow,
+  type CategoryRow,
   type VenueRow,
   type TimeSlotRow,
   type GroupRow,
@@ -52,6 +54,7 @@ const legacyEventColumns = `
 const publicTeamColumns = `
   id,
   event_id,
+  category_id,
   name,
   delegate_name,
   delegate_phone,
@@ -134,6 +137,7 @@ export async function getPublicCompetitionData({
     teamsResponse,
     playersResponse,
     matchesResponse,
+    categoriesResponse,
     sportsResponse,
     formatsResponse,
     venuesResponse,
@@ -147,6 +151,7 @@ export async function getPublicCompetitionData({
     supabase.from("teams").select(publicTeamColumns).order("created_at", { ascending: true }),
     supabase.from("players").select(playerSelect).order("created_at", { ascending: true }),
     supabase.from("matches").select("*").order("scheduled_at", { ascending: true }),
+    supabase.from("event_categories").select("*").order("sort_order", { ascending: true }),
     supabase.from("sports").select("*").order("name", { ascending: true }),
     supabase.from("competition_formats").select("*").order("name", { ascending: true }),
     supabase.from("venues").select("*").order("name", { ascending: true }),
@@ -161,6 +166,7 @@ export async function getPublicCompetitionData({
   logSupabaseError("teams", teamsResponse.error);
   logSupabaseError("players", playersResponse.error);
   logSupabaseError("matches", matchesResponse.error);
+  logSupabaseError("categories", categoriesResponse.error);
   logSupabaseError("sports", sportsResponse.error);
   logSupabaseError("competition_formats", formatsResponse.error);
   logSupabaseError("venues", venuesResponse.error);
@@ -175,6 +181,7 @@ export async function getPublicCompetitionData({
       eventsResponse.error,
       teamsResponse.error,
       matchesResponse.error,
+      categoriesResponse.error,
       sportsResponse.error,
       formatsResponse.error,
       venuesResponse.error,
@@ -193,6 +200,7 @@ export async function getPublicCompetitionData({
     teams: ((teamsResponse.data ?? []) as TeamRow[]).map(mapTeam),
     players: mapPlayerRows((playersResponse.data ?? []) as unknown as PublicPlayerRow[], includePrivatePlayerFields),
     matches: ((matchesResponse.data ?? []) as MatchRow[]).map(mapMatch),
+    categories: ((categoriesResponse.data ?? []) as CategoryRow[]).map(mapCategory),
     registrationCodes: [],
     sports: ((sportsResponse.data ?? []) as SportRow[]).map(mapSport),
     competitionFormats: ((formatsResponse.data ?? []) as CompetitionFormatRow[]).map(mapCompetitionFormat),
@@ -222,11 +230,21 @@ async function getLegacyPublicCompetitionData(
   logSupabaseError("legacy players", playersResponse.error);
   logSupabaseError("legacy matches", matchesResponse.error);
 
+  const categories = buildLegacyCategories((eventsResponse.data ?? []) as EventRow[]);
+  const categoryByEventId = new Map(categories.map((category) => [category.eventId, category.id]));
+
   return {
     events: ((eventsResponse.data ?? []) as EventRow[]).map(mapEvent),
-    teams: ((teamsResponse.data ?? []) as TeamRow[]).map(mapTeam),
+    teams: ((teamsResponse.data ?? []) as TeamRow[]).map((row) => ({
+      ...mapTeam(row),
+      categoryId: categoryByEventId.get(row.event_id)
+    })),
     players: mapPlayerRows((playersResponse.data ?? []) as unknown as PublicPlayerRow[], includePrivatePlayerFields),
-    matches: ((matchesResponse.data ?? []) as MatchRow[]).map(mapMatch),
+    matches: ((matchesResponse.data ?? []) as MatchRow[]).map((row) => ({
+      ...mapMatch(row),
+      categoryId: categoryByEventId.get(row.event_id)
+    })),
+    categories,
     registrationCodes: [],
     sports: [],
     competitionFormats: [],
@@ -286,4 +304,29 @@ function hasAnyError(errors: Array<{ message?: string } | null>) {
 function logSupabaseError(label: string, error: { message?: string } | null) {
   if (!error) return;
   console.error(`Supabase ${label} query failed: ${error.message ?? "unknown error"}`);
+}
+
+function buildLegacyCategories(events: EventRow[]) {
+  return events.map((event, index) => ({
+    id: `legacy-category-${event.id}`,
+    eventId: event.id,
+    name: event.category || "General",
+    slug: slugifyText(event.category || `categoria-${index + 1}`),
+    description: undefined,
+    published: true,
+    active: true,
+    sortOrder: 1,
+    createdAt: undefined,
+    updatedAt: undefined
+  }));
+}
+
+function slugifyText(value: string) {
+  return value
+    .trim()
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
 }

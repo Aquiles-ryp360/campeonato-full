@@ -48,6 +48,19 @@ export interface CompetitionFormat {
   createdAt?: string;
 }
 
+export interface Category {
+  id: string;
+  eventId: string;
+  name: string;
+  slug: string;
+  description?: string;
+  published: boolean;
+  active: boolean;
+  sortOrder: number;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
 export interface TournamentBases {
   id: string;
   championshipName: string;
@@ -109,6 +122,9 @@ export interface TournamentEvent {
 export interface Team {
   id: string;
   eventId: string;
+  categoryId?: string;
+  categoryName?: string;
+  categorySlug?: string;
   name: string;
   delegateName: string;
   delegatePhone: string;
@@ -195,6 +211,7 @@ export interface GroupStanding {
 export interface Match {
   id: string;
   eventId: string;
+  categoryId?: string;
   round: number;
   stage: MatchStage;
   groupId?: string;

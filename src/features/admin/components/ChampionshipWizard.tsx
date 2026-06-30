@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { AlertTriangle, CheckCircle2, Eye, Loader2, Rocket } from "lucide-react";
+import { AlertTriangle, CheckCircle2, Eye, Loader2, Plus, Rocket, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import type {
   EventStatus,
@@ -55,13 +55,21 @@ type ChampionshipDraft = {
   publishRegistration: boolean;
 };
 
+type CategoryDraft = {
+  id: string;
+  name: string;
+  description: string;
+  published: boolean;
+  active: boolean;
+  sortOrder: number;
+};
+
 const sportDefaults: Record<
   SportKey,
-  Pick<ChampionshipDraft, "name" | "category" | "matchDurationMinutes" | "minPlayers" | "maxPlayers" | "maxTeams">
+  Pick<ChampionshipDraft, "name" | "matchDurationMinutes" | "minPlayers" | "maxPlayers" | "maxTeams">
 > = {
   futbol: {
     name: "Campeonato Futbol 11 Varones",
-    category: "Varones",
     matchDurationMinutes: 90,
     minPlayers: 11,
     maxPlayers: 18,
@@ -69,7 +77,6 @@ const sportDefaults: Record<
   },
   futsal: {
     name: "Campeonato Futsal Varones",
-    category: "Varones",
     matchDurationMinutes: 40,
     minPlayers: 8,
     maxPlayers: 12,
@@ -77,7 +84,6 @@ const sportDefaults: Record<
   },
   voley: {
     name: "Campeonato Voley Mixto",
-    category: "Mixto",
     matchDurationMinutes: 40,
     minPlayers: 6,
     maxPlayers: 10,
@@ -95,6 +101,9 @@ export function ChampionshipWizard({
   const router = useRouter();
   const activeVenues = useMemo(() => data.venues.filter((venue) => venue.active), [data.venues]);
   const [draft, setDraft] = useState(() => buildInitialDraft(initialEvent, activeVenues));
+  const [categoryDrafts, setCategoryDrafts] = useState<CategoryDraft[]>(
+    () => buildInitialCategories(initialEvent, data.categories)
+  );
   const [isPublishing, setIsPublishing] = useState(false);
   const maxCourts = activeVenues.length;
   const selectedVenueNames = useMemo(
@@ -106,14 +115,14 @@ export function ChampionshipWizard({
   );
   const slug = championshipSlug({ id: initialEvent?.id ?? "nuevo", name: draft.name });
   const publishErrors = useMemo(
-    () => getPublishErrors(draft, selectedVenueNames.length, maxCourts),
-    [draft, maxCourts, selectedVenueNames.length]
+    () => getPublishErrors(draft, categoryDrafts, selectedVenueNames.length, maxCourts),
+    [categoryDrafts, draft, maxCourts, selectedVenueNames.length]
   );
   const readyItems = useMemo(
     () => [
       {
         label: "Datos principales",
-        done: Boolean(draft.name.trim() && draft.category.trim() && draft.eventDate)
+        done: Boolean(draft.name.trim() && categoryDrafts.some((category) => category.name.trim()) && draft.eventDate)
       },
       {
         label: "Inscripcion",
@@ -132,7 +141,7 @@ export function ChampionshipWizard({
         done: draft.publishPublicPage || draft.publishRegistration
       }
     ],
-    [draft, maxCourts, selectedVenueNames.length]
+    [categoryDrafts, draft, maxCourts, selectedVenueNames.length]
   );
   const estimatedSlots = useMemo(() => {
     const availableMinutes = minutesBetween(draft.startTime, draft.endTime);
@@ -147,6 +156,13 @@ export function ChampionshipWizard({
     setDraft((current) => normalizeCourtSelection(current, activeVenues));
   }, [activeVenues]);
 
+  useEffect(() => {
+    const firstCategory = categoryDrafts.find((category) => category.name.trim()) ?? categoryDrafts[0];
+    if (firstCategory && draft.category !== firstCategory.name) {
+      setDraft((current) => ({ ...current, category: firstCategory.name }));
+    }
+  }, [categoryDrafts, draft.category]);
+
   function updateDraft<K extends keyof ChampionshipDraft>(key: K, value: ChampionshipDraft[K]) {
     setDraft((current) => ({ ...current, [key]: value }));
   }
@@ -157,12 +173,37 @@ export function ChampionshipWizard({
       ...current,
       sport: nextSport,
       name: current.name === sportDefaults[current.sport].name ? defaults.name : current.name,
-      category: current.category === sportDefaults[current.sport].category ? defaults.category : current.category,
       maxTeams: defaults.maxTeams,
       minPlayers: defaults.minPlayers,
       maxPlayers: defaults.maxPlayers,
       matchDurationMinutes: defaults.matchDurationMinutes
     }));
+  }
+
+  function updateCategory(index: number, field: keyof CategoryDraft, value: string | boolean | number) {
+    setCategoryDrafts((current) =>
+      current.map((category, categoryIndex) =>
+        categoryIndex === index ? { ...category, [field]: value } : category
+      )
+    );
+  }
+
+  function addCategory() {
+    setCategoryDrafts((current) => [
+      ...current,
+      {
+        id: crypto.randomUUID(),
+        name: "",
+        description: "",
+        published: true,
+        active: true,
+        sortOrder: current.length + 1
+      }
+    ]);
+  }
+
+  function removeCategory(index: number) {
+    setCategoryDrafts((current) => (current.length > 1 ? current.filter((_, currentIndex) => currentIndex !== index) : current));
   }
 
   function updateCourtCount(value: number) {
@@ -209,6 +250,7 @@ export function ChampionshipWizard({
 
     setIsPublishing(true);
     try {
+      const primaryCategoryName = categoryDrafts.find((category) => category.name.trim())?.name || draft.category;
       const response = await fetch("/api/admin/championships", {
         method: "POST",
         headers: {
@@ -218,7 +260,16 @@ export function ChampionshipWizard({
           eventId: initialEvent?.id,
           name: draft.name,
           sport: draft.sport,
-          category: draft.category,
+          category: primaryCategoryName,
+          categories: categoryDrafts.map((category, index) => ({
+            id: category.id,
+            name: category.name,
+            slug: slugify(category.name),
+            description: category.description,
+            published: category.published,
+            active: category.active,
+            sortOrder: category.sortOrder || index + 1
+          })),
           eventDate: draft.eventDate,
           status: draft.publishRegistration ? "registration" : draft.status,
           description: draft.description,
@@ -292,9 +343,66 @@ export function ChampionshipWizard({
                 <option value="voley">Voley</option>
               </select>
             </Field>
-            <Field label="Categoria / rama">
-              <input className={inputClass} value={draft.category} onChange={(event) => updateDraft("category", event.target.value)} />
-            </Field>
+            <div className="md:col-span-2">
+              <div className="flex items-center justify-between gap-3">
+                <p className="text-sm font-bold text-ink">Categorias</p>
+                <Button type="button" variant="secondary" onClick={addCategory}>
+                  <Plus className="h-4 w-4" />
+                  Agregar categoria
+                </Button>
+              </div>
+              <div className="mt-3 space-y-3">
+                {categoryDrafts.map((category, index) => (
+                  <div key={category.id} className="rounded-md border border-ink/10 bg-white p-4">
+                    <div className="grid gap-3 md:grid-cols-2">
+                      <Field label={`Categoria ${index + 1}`}>
+                        <input
+                          className={inputClass}
+                          value={category.name}
+                          onChange={(event) => updateCategory(index, "name", event.target.value)}
+                          placeholder="Libre"
+                        />
+                      </Field>
+                      <Field label="Descripcion">
+                        <input
+                          className={inputClass}
+                          value={category.description}
+                          onChange={(event) => updateCategory(index, "description", event.target.value)}
+                          placeholder="Opcional"
+                        />
+                      </Field>
+                    </div>
+                    <div className="mt-3 grid gap-3 md:grid-cols-3">
+                      <Field label="Orden">
+                        <input
+                          className={inputClass}
+                          type="number"
+                          min={1}
+                          value={category.sortOrder}
+                          onChange={(event) => updateCategory(index, "sortOrder", numberFromInput(event.target.value, index + 1))}
+                        />
+                      </Field>
+                      <ToggleRow
+                        label="Publicada"
+                        checked={category.published}
+                        onChange={() => updateCategory(index, "published", !category.published)}
+                      />
+                      <ToggleRow
+                        label="Activa"
+                        checked={category.active}
+                        onChange={() => updateCategory(index, "active", !category.active)}
+                      />
+                    </div>
+                    <div className="mt-3 flex justify-end">
+                      <Button type="button" variant="secondary" onClick={() => removeCategory(index)} disabled={categoryDrafts.length <= 1}>
+                        <Trash2 className="h-4 w-4" />
+                        Eliminar
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
             <Field label="Fecha del evento">
               <input className={inputClass} type="date" value={draft.eventDate} onChange={(event) => updateDraft("eventDate", event.target.value)} />
             </Field>
@@ -500,7 +608,10 @@ export function ChampionshipWizard({
             <div className="mt-4 space-y-3 text-sm">
               <SummaryRow label="Nombre" value={draft.name || "Sin nombre"} />
               <SummaryRow label="Publico" value={`/c/${slug}`} />
-              <SummaryRow label="Deporte" value={`${sportLabel(draft.sport)} - ${draft.category || "Sin categoria"}`} />
+              <SummaryRow
+                label="Deporte"
+                value={`${sportLabel(draft.sport)} - ${categoryDrafts.map((category) => category.name).filter(Boolean).join(", ") || "Sin categoria"}`}
+              />
               <SummaryRow label="Estado" value={eventStatusLabel(draft.status)} />
               <SummaryRow label="Formato" value={tournamentFormatLabel(draft.format)} />
               <SummaryRow label="Inscripcion" value={`${formatMoney(draft.registrationFee)} hasta ${draft.registrationOpenUntil || "sin fecha"}`} />
@@ -581,7 +692,7 @@ function buildInitialDraft(event: TournamentEvent | null, activeVenues: Competit
   return {
     name: event?.name ?? defaults.name,
     sport,
-    category: event?.category ?? defaults.category,
+    category: event?.category ?? "",
     eventDate: event?.eventDate ? toDateInput(event.eventDate) : todayDateInput(),
     status: event?.status ?? "registration",
     description: event?.rulesSummary ?? "Inscripcion abierta para equipos de la carrera.",
@@ -616,6 +727,34 @@ function buildInitialDraft(event: TournamentEvent | null, activeVenues: Competit
   };
 }
 
+function buildInitialCategories(
+  event: TournamentEvent | null,
+  categories: CompetitionData["categories"]
+): CategoryDraft[] {
+  const existing = event ? categories.filter((category) => category.eventId === event.id) : [];
+  if (existing.length > 0) {
+    return existing.map((category, index) => ({
+      id: category.id,
+      name: category.name,
+      description: category.description ?? "",
+      published: category.published,
+      active: category.active,
+      sortOrder: category.sortOrder || index + 1
+    }));
+  }
+
+  return [
+    {
+      id: crypto.randomUUID(),
+      name: event?.category ?? "",
+      description: "",
+      published: true,
+      active: true,
+      sortOrder: 1
+    }
+  ];
+}
+
 function normalizeCourtSelection(draft: ChampionshipDraft, activeVenues: CompetitionData["venues"]) {
   const maxCourts = activeVenues.length;
   if (maxCourts === 0) {
@@ -648,10 +787,21 @@ function getDefaultCourtIds(event: TournamentEvent | null, activeVenues: Competi
   return activeVenues.slice(0, Math.min(2, Math.max(1, activeVenues.length))).map((venue) => venue.id);
 }
 
-function getPublishErrors(draft: ChampionshipDraft, selectedCourtCount: number, maxCourts: number) {
+function getPublishErrors(
+  draft: ChampionshipDraft,
+  categories: CategoryDraft[],
+  selectedCourtCount: number,
+  maxCourts: number
+) {
   const errors: string[] = [];
   if (!draft.name.trim()) errors.push("Ingresa el nombre del campeonato.");
-  if (!draft.category.trim()) errors.push("Ingresa la categoria o rama.");
+  if (!categories.some((category) => category.name.trim())) errors.push("Ingresa al menos una categoria.");
+  const normalizedNames = categories
+    .map((category) => category.name.trim().toLowerCase())
+    .filter(Boolean);
+  if (new Set(normalizedNames).size !== normalizedNames.length) {
+    errors.push("No repitas el nombre de una categoria.");
+  }
   if (!draft.eventDate) errors.push("Selecciona la fecha del evento.");
   if (draft.maxTeams < 2) errors.push("El campeonato necesita al menos 2 equipos.");
   if (draft.minPlayers < 1) errors.push("El minimo de jugadores debe ser mayor a 0.");
@@ -723,4 +873,14 @@ function toDateTimeLocal(value: string) {
 
   const offsetMs = date.getTimezoneOffset() * 60 * 1000;
   return new Date(date.getTime() - offsetMs).toISOString().slice(0, 16);
+}
+
+function slugify(value: string) {
+  return value
+    .trim()
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
 }

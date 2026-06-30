@@ -122,7 +122,7 @@ async function generateRosterPdf({
     ["Estado", teamStatusLabel(team.status)]
   ]);
   drawInfoBox(doc, margin + contentWidth / 2 + 3, 43, contentWidth / 2 - 3, "Campeonato", [
-    ["Categoria", event.category],
+    ["Categoria", team.categoryName ?? event.category],
     ["Jugadores", `${players.length}/${event.maxPlayers}`],
     ["Codigo", team.registrationCode],
     ["Generado", generatedDate]

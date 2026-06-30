@@ -1,7 +1,7 @@
 "use client";
 
 import { CalendarDays, FileText, UserPlus, UsersRound } from "lucide-react";
-import type { TournamentEvent } from "@/lib/types";
+import type { Category, TournamentEvent } from "@/lib/types";
 import { eventStatusLabel, fixtureStatusLabel } from "@/lib/utils";
 import {
   championshipSlug,
@@ -11,19 +11,26 @@ import {
 } from "@/lib/domain/tournament-format";
 import { Badge, Button } from "@/components/ui";
 import { ChampionshipSwitcher } from "./ChampionshipSwitcher";
+import { CategorySwitcher } from "./CategorySwitcher";
 
 export function ChampionshipHero({
   event,
   events,
+  categories,
+  selectedCategoryId,
   teamCount,
   courts,
-  onChangeEvent
+  onChangeEvent,
+  onChangeCategory
 }: {
   event: TournamentEvent;
   events: TournamentEvent[];
+  categories: Category[];
+  selectedCategoryId: string;
   teamCount: number;
   courts: string[];
   onChangeEvent: (eventId: string) => void;
+  onChangeCategory: (categoryId: string) => void;
 }) {
   const slug = championshipSlug(event);
 
@@ -40,7 +47,10 @@ export function ChampionshipHero({
         <div className="min-w-0">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
             <h1 className="text-3xl font-bold sm:text-5xl">{event.name}</h1>
-            <ChampionshipSwitcher events={events} value={event.id} onChange={onChangeEvent} />
+            <div className="flex flex-wrap gap-2">
+              <ChampionshipSwitcher events={events} value={event.id} onChange={onChangeEvent} />
+              <CategorySwitcher categories={categories} value={selectedCategoryId} onChange={onChangeCategory} />
+            </div>
           </div>
           <p className="mt-3 max-w-3xl text-sm leading-6 text-white/72">
             {event.rulesSummary || "Campeonato deportivo configurable con fixture, bases e inscripciones."}

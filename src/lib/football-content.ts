@@ -1,5 +1,5 @@
 import type { CompetitionData } from "./data-mappers";
-import type { Match, Team, TournamentBases, TournamentEvent, Venue } from "./types";
+import type { Category, Match, Team, TournamentBases, TournamentEvent, Venue } from "./types";
 
 export const footballEventId = "11111111-1111-4111-8111-111111111111";
 export const footballVenueId = "22222222-2222-4222-8222-222222222222";
@@ -66,6 +66,19 @@ export const footballVenue: Venue = {
   active: true
 };
 
+export const footballCategories: Category[] = [
+  {
+    id: "category-football-varones",
+    eventId: footballEventId,
+    name: "Varones",
+    slug: "varones",
+    description: "Categoria principal de futbol 11.",
+    published: true,
+    active: true,
+    sortOrder: 1
+  }
+];
+
 export const footballTeams: Team[] = [
   createFootballTeam("33333333-3333-4333-8333-333333333331", "Sistemas FC", "Ingenieria de Sistemas", "#2563eb"),
   createFootballTeam("33333333-3333-4333-8333-333333333332", "Industrial United", "Ingenieria Industrial", "#dc2626"),
@@ -102,6 +115,7 @@ export function withRepositoryFootballDefaults(data: CompetitionData): Competiti
     events: hasFootballEvent ? data.events : [...data.events, event],
     teams: teams.length > 0 ? data.teams : [...data.teams, ...fallbackTeams],
     matches: data.matches,
+    categories: data.categories.length > 0 ? data.categories : footballCategories,
     venues: hasFootballVenue ? data.venues : [...data.venues, footballVenue],
     tournamentBases: data.tournamentBases.some((base) => base.id === footballBases.id)
       ? data.tournamentBases
@@ -157,6 +171,7 @@ function createFootballTeam(id: string, name: string, career: string, color: str
   return {
     id,
     eventId: footballEventId,
+    categoryId: footballCategories[0].id,
     name,
     delegateName: "Delegado por confirmar",
     delegatePhone: "000 000 000",
