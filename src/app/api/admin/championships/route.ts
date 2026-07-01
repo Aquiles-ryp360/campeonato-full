@@ -1,3 +1,4 @@
+import { randomInt } from "crypto";
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { createSupabaseAdminClient } from "@/lib/supabase-admin";
@@ -77,6 +78,8 @@ type FormatCatalogRow = {
 type RegistrationCodeRow = {
   code: string;
 };
+
+const codeAlphabet = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
 
 class AdminRouteError extends Error {
   constructor(
@@ -175,8 +178,6 @@ async function saveChampionship(
   await ensureRegistrationCodes(supabase, {
     eventId: event.id,
     slug: event.slug,
-    sport: input.sport,
-    category: primaryCategoryName,
     amount: input.registrationFee,
     paymentMethods: input.paymentMethods,
     targetCount: input.registrationCodeBatch
@@ -518,16 +519,12 @@ async function ensureRegistrationCodes(
   {
     eventId,
     slug,
-    sport,
-    category,
     amount,
     paymentMethods,
     targetCount
   }: {
     eventId: string;
     slug: string;
-    sport: SportKey;
-    category: string;
     amount: number;
     paymentMethods: PaymentMethod[];
     targetCount: number;
@@ -543,16 +540,16 @@ async function ensureRegistrationCodes(
   if (error) throw new AdminRouteError("Se creo el campeonato, pero no se pudieron revisar los codigos.", 500);
 
   const existingCodes = new Set(((data ?? []) as RegistrationCodeRow[]).map((row) => row.code));
-  const desiredRows = Array.from({ length: targetCount }, (_, index) => {
-    const code = `${registrationCodePrefix(sport, category, slug)}-${String(index + 1).padStart(3, "0")}`;
+  const missingCount = Math.max(targetCount - existingCodes.size, 0);
+  const desiredRows = Array.from({ length: missingCount }, (_, index) => {
     return {
       event_id: eventId,
       method: paymentMethods[index % paymentMethods.length],
-      code,
+      code: uniqueRegistrationCode(slug, existingCodes),
       amount,
       status: "available"
     };
-  }).filter((row) => !existingCodes.has(row.code));
+  });
 
   if (desiredRows.length === 0) return;
 
@@ -659,12 +656,24 @@ function normalizeText(value: string) {
     .trim();
 }
 
-function registrationCodePrefix(sport: SportKey, category: string, slug: string) {
-  const sportPrefix = sport === "futbol" ? "F11" : sport === "voley" ? "VOL" : "FUT";
-  const categoryPrefix = slugify(category).slice(0, 3).toUpperCase() || "GEN";
+function registrationCodePrefix(slug: string) {
   const slugPrefix = slugify(slug).slice(0, 3).toUpperCase() || "CMP";
 
-  return `${sportPrefix}-${categoryPrefix || slugPrefix}`;
+  return `CMP-${slugPrefix}`;
+}
+
+function uniqueRegistrationCode(slug: string, existingCodes: Set<string>) {
+  let code = "";
+  do {
+    code = `${registrationCodePrefix(slug)}-${randomCodeChunk()}-${randomCodeChunk()}`;
+  } while (existingCodes.has(code));
+
+  existingCodes.add(code);
+  return code;
+}
+
+function randomCodeChunk() {
+  return Array.from({ length: 4 }, () => codeAlphabet[randomInt(codeAlphabet.length)]).join("");
 }
 
 function dateInputToIso(value: string) {

@@ -3,6 +3,7 @@ import type { ComponentType, ReactNode } from "react";
 import {
   BarChart3,
   FileText,
+  KeyRound,
   LayoutDashboard,
   ShieldCheck,
   Settings2,
@@ -35,6 +36,7 @@ const adminNav: ShellNavItem[] = [
   { href: "/admin/campeonatos", label: "Campeonatos", icon: Trophy },
   { href: "/admin/equipos", label: "Inscripciones", icon: UsersRound },
   { href: "/admin/pagos", label: "Pagos", icon: CreditCard },
+  { href: "/admin/codigos", label: "Codigos", icon: KeyRound },
   { href: "/admin/fixture", label: "Programacion", icon: Calendar },
   { href: "/admin/arbitros", label: "Arbitros", icon: ShieldCheck },
   { href: "/admin/resultados", label: "Resultados", icon: BarChart3 },

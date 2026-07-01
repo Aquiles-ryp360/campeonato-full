@@ -7,6 +7,7 @@ import {
   mapEvent,
   mapMatch,
   mapPlayer,
+  mapRegistrationCode,
   mapTeam,
   mapSport,
   mapCompetitionFormat,
@@ -20,6 +21,7 @@ import {
   type EventRow,
   type MatchRow,
   type PlayerRow,
+  type RegistrationCodeRow,
   type TeamRow,
   type SportRow,
   type CompetitionFormatRow,
@@ -80,6 +82,15 @@ const legacyPublicTeamColumns = `
   created_at
 `;
 
+const registrationCodeColumns = `
+  id,
+  event_id,
+  code,
+  method,
+  status,
+  used_by_team_id
+`;
+
 const privatePlayerColumns = `
   id,
   team_id,
@@ -138,6 +149,7 @@ export async function getPublicCompetitionData({
     teamsResponse,
     playersResponse,
     matchesResponse,
+    codesResponse,
     categoriesResponse,
     sportsResponse,
     formatsResponse,
@@ -152,6 +164,9 @@ export async function getPublicCompetitionData({
     supabase.from("teams").select(publicTeamColumns).order("created_at", { ascending: true }),
     supabase.from("players").select(playerSelect).order("created_at", { ascending: true }),
     supabase.from("matches").select("*").order("scheduled_at", { ascending: true }),
+    includePrivatePlayerFields
+      ? supabase.from("registration_codes").select(registrationCodeColumns).order("created_at", { ascending: true })
+      : Promise.resolve({ data: [], error: null }),
     supabase.from("event_categories").select("*").order("sort_order", { ascending: true }),
     supabase.from("sports").select("*").order("name", { ascending: true }),
     supabase.from("competition_formats").select("*").order("name", { ascending: true }),
@@ -167,6 +182,7 @@ export async function getPublicCompetitionData({
   logSupabaseError("teams", teamsResponse.error);
   logSupabaseError("players", playersResponse.error);
   logSupabaseError("matches", matchesResponse.error);
+  logSupabaseError("registration_codes", codesResponse.error);
   logSupabaseError("categories", categoriesResponse.error);
   logSupabaseError("sports", sportsResponse.error);
   logSupabaseError("competition_formats", formatsResponse.error);
@@ -182,6 +198,7 @@ export async function getPublicCompetitionData({
       eventsResponse.error,
       teamsResponse.error,
       matchesResponse.error,
+      codesResponse.error,
       categoriesResponse.error,
       sportsResponse.error,
       formatsResponse.error,
@@ -202,7 +219,7 @@ export async function getPublicCompetitionData({
     players: mapPlayerRows((playersResponse.data ?? []) as unknown as PublicPlayerRow[], includePrivatePlayerFields),
     matches: ((matchesResponse.data ?? []) as MatchRow[]).map(mapMatch),
     categories: ((categoriesResponse.data ?? []) as CategoryRow[]).map(mapCategory),
-    registrationCodes: [],
+    registrationCodes: ((codesResponse.data ?? []) as RegistrationCodeRow[]).map(mapRegistrationCode),
     sports: ((sportsResponse.data ?? []) as SportRow[]).map(mapSport),
     competitionFormats: ((formatsResponse.data ?? []) as CompetitionFormatRow[]).map(mapCompetitionFormat),
     venues: ((venuesResponse.data ?? []) as VenueRow[]).map(mapVenue),
