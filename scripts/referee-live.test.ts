@@ -11,8 +11,18 @@ import {
   splitPublicLiveMatches,
   summarizePenaltyShootout
 } from "../src/lib/live-match";
+import {
+  canChangeJerseyNumberAfterStart,
+  canDelegateEditBeforeStart,
+  findCrossTeamDuplicate,
+  findDuplicateNormalizedValue,
+  registrationAvailability,
+  validateEnrollmentFileMeta,
+  validateJerseyNumber,
+  validateTeamApproval
+} from "../src/lib/domain/registration-rules";
 import { calculateStandings } from "../src/lib/utils";
-import type { Match, MatchLiveEvent, Team, TournamentEvent } from "../src/lib/types";
+import type { Match, MatchLiveEvent, Player, Team, TournamentEvent } from "../src/lib/types";
 
 const match: Match = {
   id: "match-1",
@@ -251,6 +261,129 @@ test("liveStatusLabel hides technical statuses from public copy", () => {
   assert.equal(liveStatusLabel("in_progress_first_half"), "Primer tiempo");
 });
 
+test("registration only opens while event status is registration and before deadline", () => {
+  const openEvent = registrationEvent({ status: "registration" });
+
+  assert.deepEqual(
+    registrationAvailability({
+      event: openEvent,
+      teamCount: 1,
+      now: new Date("2026-06-30T12:00:00.000Z")
+    }),
+    { open: true, reason: "open" }
+  );
+  assert.equal(
+    registrationAvailability({
+      event: { ...openEvent, status: "draft" },
+      now: new Date("2026-06-30T12:00:00.000Z")
+    }).reason,
+    "not_registration"
+  );
+  assert.equal(
+    registrationAvailability({
+      event: openEvent,
+      now: new Date("2026-07-02T12:00:00.000Z")
+    }).reason,
+    "expired"
+  );
+  assert.equal(
+    registrationAvailability({
+      event: openEvent,
+      teamCount: 8,
+      now: new Date("2026-06-30T12:00:00.000Z")
+    }).reason,
+    "full"
+  );
+});
+
+test("delegate edits are blocked after the event starts", () => {
+  const event = registrationEvent({
+    eventDate: "2026-07-01",
+    scheduleConfig: {
+      startTime: "09:00",
+      matchDurationMinutes: 40,
+      transitionMinutes: 10,
+      courts: ["Cancha 1"],
+      minimumRestMinutes: 0,
+      allowCompactPreview: false
+    }
+  });
+
+  assert.equal(canDelegateEditBeforeStart(event, new Date("2026-07-01T13:30:00.000Z")), true);
+  assert.equal(canDelegateEditBeforeStart(event, new Date("2026-07-01T15:30:00.000Z")), false);
+});
+
+test("registration rejects invalid enrollment files and duplicate identities", () => {
+  assert.equal(validateEnrollmentFileMeta({ type: "application/pdf", size: 1024 }), null);
+  assert.equal(
+    validateEnrollmentFileMeta({ type: "text/plain", size: 1024 }),
+    "Solo se permite PDF, JPG o PNG para la ficha de matricula."
+  );
+  assert.equal(
+    validateEnrollmentFileMeta({ type: "image/png", size: 5 * 1024 * 1024 + 1 }),
+    "La ficha de matricula no puede superar 5 MB."
+  );
+  assert.equal(findDuplicateNormalizedValue(["DNI-1", " dni-1 "]), "dni-1");
+});
+
+test("cross-team duplicate DNI and student code are detected inside active teams", () => {
+  const existingTeams = [
+    team("team-1", "Equipo 1"),
+    { ...team("team-2", "Equipo 2"), status: "rejected" as const }
+  ];
+  const existingPlayers: Player[] = [
+    player("p1", "team-1", "111", "A001"),
+    player("p2", "team-2", "222", "A002")
+  ];
+
+  assert.equal(
+    findCrossTeamDuplicate({
+      players: [player("new", "team-new", "111", "B001")],
+      existingPlayers,
+      existingTeams,
+      field: "dni"
+    }),
+    "111"
+  );
+  assert.equal(
+    findCrossTeamDuplicate({
+      players: [player("new", "team-new", "222", "A002")],
+      existingPlayers,
+      existingTeams,
+      field: "studentCode"
+    }),
+    null
+  );
+});
+
+test("admin approval requires payment, roster limits, enrollment files and no duplicates", () => {
+  const event = registrationEvent({ minPlayers: 2, maxPlayers: 4 });
+  const currentTeam = { ...team("team-1", "Equipo 1"), paymentStatus: "pending" as const };
+  const players = [
+    player("p1", "team-1", "111", "A001", { enrollmentFile: "enrollment-files/p1.pdf" }),
+    player("p2", "team-1", "111", "A002", { enrollmentFile: "", semester: "" })
+  ];
+  const issues = validateTeamApproval({
+    event,
+    team: currentTeam,
+    players,
+    allTeams: [currentTeam],
+    allPlayers: players
+  });
+
+  assert.deepEqual(
+    issues,
+    ["payment_pending", "missing_enrollment_file", "missing_semester", "duplicate_dni"]
+  );
+});
+
+test("jersey numbers are 1-99 and can be changed once after start", () => {
+  assert.equal(validateJerseyNumber(10), null);
+  assert.equal(validateJerseyNumber(0), "El numero de camiseta debe estar entre 1 y 99.");
+  assert.equal(canChangeJerseyNumberAfterStart({ jerseyNumberChangeCount: 0 }), true);
+  assert.equal(canChangeJerseyNumberAfterStart({ jerseyNumberChangeCount: 1 }), false);
+});
+
 function penalty(
   id: string,
   teamId: string,
@@ -288,5 +421,53 @@ function team(id: string, name: string): Team {
     status: "approved",
     primaryColor: "#2563eb",
     secondaryColor: "#f8fafc"
+  };
+}
+
+function registrationEvent(
+  overrides: Partial<TournamentEvent> = {}
+): TournamentEvent {
+  return {
+    id: "event-registration",
+    name: "Copa Registro",
+    sportId: "sport-futsal",
+    sport: "futsal",
+    category: "Libre",
+    formatId: "format-league",
+    format: "league",
+    status: "registration",
+    registrationFee: 0,
+    registrationOpenUntil: "2026-07-01T23:59:59.000Z",
+    maxTeams: 8,
+    minPlayers: 1,
+    maxPlayers: 12,
+    pointsWin: 3,
+    pointsDraw: 1,
+    pointsLoss: 0,
+    rulesSummary: "",
+    preventCrossSportConflicts: false,
+    minimumRestMinutes: 0,
+    ...overrides
+  };
+}
+
+function player(
+  id: string,
+  teamId: string,
+  dni: string,
+  studentCode: string,
+  overrides: Partial<Player> = {}
+): Player {
+  return {
+    id,
+    teamId,
+    firstName: "Jugador",
+    lastName: id,
+    dni,
+    studentCode,
+    enrollmentFile: "enrollment-files/ficha.pdf",
+    semester: "2026-I",
+    lineupRole: "starter",
+    ...overrides
   };
 }

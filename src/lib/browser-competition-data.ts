@@ -62,6 +62,8 @@ const teamColumns = `
   primary_color,
   secondary_color,
   status,
+  admin_observation,
+  payment_validated_at,
   created_at
 `;
 
@@ -109,7 +111,23 @@ const playerColumns = `
   semester,
   lineup_role,
   jersey_number,
+  jersey_number_change_count,
+  jersey_number_changed_at,
+  jersey_number_changed_by,
+  position,
   photo_url
+`;
+
+const legacyPlayerColumns = `
+  id,
+  team_id,
+  first_name,
+  last_name,
+  dni,
+  student_code,
+  enrollment_file,
+  semester,
+  lineup_role
 `;
 
 const legacyMatchColumns = `
@@ -184,6 +202,7 @@ export async function fetchBrowserCompetitionData({
     hasAnyError([
       eventsResponse.error,
       teamsResponse.error,
+      playersResponse.error,
       matchesResponse.error,
       sportsResponse.error,
       formatsResponse.error,
@@ -238,7 +257,7 @@ async function fetchLegacyBrowserCompetitionData(
     await Promise.all([
       supabase.from("events").select(legacyEventColumns).order("created_at", { ascending: true }),
       supabase.from("teams").select(teamSelect).order("created_at", { ascending: true }),
-      supabase.from("players").select(playerColumns).order("created_at", { ascending: true }),
+      supabase.from("players").select(legacyPlayerColumns).order("created_at", { ascending: true }),
       supabase.from("matches").select(legacyMatchColumns).order("scheduled_at", { ascending: true }),
       includeRegistrationCodes
         ? supabase

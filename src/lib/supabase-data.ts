@@ -62,6 +62,8 @@ const publicTeamColumns = `
   primary_color,
   secondary_color,
   status,
+  admin_observation,
+  payment_validated_at,
   created_at
 `;
 
@@ -89,7 +91,23 @@ const privatePlayerColumns = `
   semester,
   lineup_role,
   jersey_number,
+  jersey_number_change_count,
+  jersey_number_changed_at,
+  jersey_number_changed_by,
+  position,
   photo_url
+`;
+
+const legacyPrivatePlayerColumns = `
+  id,
+  team_id,
+  first_name,
+  last_name,
+  dni,
+  student_code,
+  enrollment_file,
+  semester,
+  lineup_role
 `;
 
 const publicPlayerColumns = `
@@ -101,7 +119,21 @@ const publicPlayerColumns = `
   semester,
   lineup_role,
   jersey_number,
+  jersey_number_change_count,
+  jersey_number_changed_at,
+  jersey_number_changed_by,
+  position,
   photo_url
+`;
+
+const legacyPublicPlayerColumns = `
+  id,
+  team_id,
+  first_name,
+  last_name,
+  student_code,
+  semester,
+  lineup_role
 `;
 
 const legacyMatchColumns = `
@@ -181,6 +213,7 @@ export async function getPublicCompetitionData({
     hasAnyError([
       eventsResponse.error,
       teamsResponse.error,
+      playersResponse.error,
       matchesResponse.error,
       sportsResponse.error,
       formatsResponse.error,
@@ -217,7 +250,9 @@ async function getLegacyPublicCompetitionData(
   supabase: NonNullable<ReturnType<typeof createPublicSupabaseClient>>,
   includePrivatePlayerFields: boolean
 ): Promise<CompetitionData> {
-  const playerSelect = includePrivatePlayerFields ? privatePlayerColumns : publicPlayerColumns;
+  const playerSelect = includePrivatePlayerFields
+    ? legacyPrivatePlayerColumns
+    : legacyPublicPlayerColumns;
   const [eventsResponse, teamsResponse, playersResponse, matchesResponse] = await Promise.all([
     supabase.from("events").select(legacyEventColumns).order("created_at", { ascending: true }),
     supabase.from("teams").select(legacyPublicTeamColumns).order("created_at", { ascending: true }),

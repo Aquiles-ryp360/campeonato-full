@@ -1,9 +1,11 @@
 "use client";
 
+import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { Save } from "lucide-react";
+import { toast } from "sonner";
 import type { Team, TournamentEvent } from "@/lib/types";
 import { canEditRegistration } from "@/lib/domain/permissions";
-import { isRegistrationOpen } from "@/lib/domain/registration-rules";
 import { Button, Card, Field, SectionHeader, inputClass } from "@/components/ui";
 
 export function DelegateRegistrationForm({
@@ -14,6 +16,47 @@ export function DelegateRegistrationForm({
   team: Team;
 }) {
   const editable = canEditRegistration(event, team);
+  const router = useRouter();
+  const [name, setName] = useState(team.name);
+  const [delegateName, setDelegateName] = useState(team.delegateName);
+  const [delegatePhone, setDelegatePhone] = useState(team.delegatePhone);
+  const [academicCareer, setAcademicCareer] = useState(team.academicCareer ?? "");
+  const [isSaving, setIsSaving] = useState(false);
+
+  async function submitChanges(submitEvent: React.FormEvent<HTMLFormElement>) {
+    submitEvent.preventDefault();
+    if (!editable) return;
+
+    setIsSaving(true);
+    try {
+      const response = await fetch("/api/delegate/team", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          teamId: team.id,
+          name,
+          delegateName,
+          delegatePhone,
+          academicCareer
+        })
+      });
+      const payload = (await response.json().catch(() => null)) as
+        | { ok?: boolean; error?: string }
+        | null;
+
+      if (!response.ok || payload?.ok === false) {
+        toast.error(payload?.error ?? "No se pudo guardar la inscripcion.");
+        return;
+      }
+
+      toast.success("Inscripcion actualizada.");
+      router.refresh();
+    } catch {
+      toast.error("No se pudo guardar la inscripcion.");
+    } finally {
+      setIsSaving(false);
+    }
+  }
 
   return (
     <Card className="p-5">
@@ -25,21 +68,42 @@ export function DelegateRegistrationForm({
             : "La inscripcion esta cerrada o en modo solo lectura."
         }
       />
+      <form onSubmit={submitChanges}>
       <div className="mt-5 grid gap-4 sm:grid-cols-2">
         <Field label="Nombre del equipo">
-          <input className={inputClass} defaultValue={team.name} disabled={!editable} />
+          <input
+            className={inputClass}
+            value={name}
+            onChange={(eventChange) => setName(eventChange.target.value)}
+            disabled={!editable}
+          />
         </Field>
         <Field label="Delegado">
-          <input className={inputClass} defaultValue={team.delegateName} disabled={!editable} />
+          <input
+            className={inputClass}
+            value={delegateName}
+            onChange={(eventChange) => setDelegateName(eventChange.target.value)}
+            disabled={!editable}
+          />
         </Field>
         <Field label="Celular">
-          <input className={inputClass} defaultValue={team.delegatePhone} disabled={!editable} />
+          <input
+            className={inputClass}
+            value={delegatePhone}
+            onChange={(eventChange) => setDelegatePhone(eventChange.target.value)}
+            disabled={!editable}
+          />
         </Field>
         <Field label="Correo">
           <input className={inputClass} defaultValue={team.delegateEmail} disabled />
         </Field>
         <Field label="Carrera / escuela">
-          <input className={inputClass} defaultValue={team.academicCareer ?? ""} disabled={!editable} />
+          <input
+            className={inputClass}
+            value={academicCareer}
+            onChange={(eventChange) => setAcademicCareer(eventChange.target.value)}
+            disabled={!editable}
+          />
         </Field>
         <Field label="Campeonato">
           <input className={inputClass} defaultValue={event.name} disabled />
@@ -58,14 +122,15 @@ export function DelegateRegistrationForm({
         </Field>
       </div>
       <div className="mt-4 rounded-md bg-mist p-4 text-sm text-ink/65">
-        Observaciones del admin: sin observaciones registradas.
+        Observaciones del admin: {team.adminObservation || "sin observaciones registradas."}
       </div>
       <div className="mt-5 flex justify-end">
-        <Button disabled={!editable}>
+        <Button type="submit" disabled={!editable || isSaving}>
           <Save className="h-4 w-4" />
-          {isRegistrationOpen(event) ? "Guardar cambios" : "Solo lectura"}
+          {isSaving ? "Guardando..." : editable ? "Guardar cambios" : "Solo lectura"}
         </Button>
       </div>
+      </form>
     </Card>
   );
 }

@@ -2,6 +2,19 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { sendDelegateAccessEmail } from "@/lib/mail";
 import { createSupabaseAdminClient } from "@/lib/supabase-admin";
+import {
+  findCrossTeamDuplicate,
+  findDuplicateNormalizedValue,
+  registrationAvailability,
+  registrationClosedMessage
+} from "@/lib/domain/registration-rules";
+import {
+  EnrollmentFileError,
+  removeEnrollmentFiles,
+  uploadEnrollmentFile,
+  type UploadedEnrollmentFile
+} from "@/lib/server/enrollment-files";
+import type { Player, Team } from "@/lib/types";
 
 export const runtime = "nodejs";
 
@@ -11,7 +24,7 @@ const playerSchema = z.object({
   dni: z.string().trim().min(1, "Ingresa DNI del jugador."),
   studentCode: z.string().trim().min(1, "Ingresa codigo del jugador."),
   enrollmentFile: z.string().trim().optional().default(""),
-  semester: z.string().trim().optional().default(""),
+  semester: z.string().trim().min(1, "Ingresa ciclo o semestre del jugador."),
   lineupRole: z.enum(["starter", "substitute"]).default("starter")
 });
 
@@ -28,10 +41,17 @@ const registrationSchema = z.object({
 
 type RegistrationInput = z.infer<typeof registrationSchema>;
 
+type ParsedRegistrationRequest = {
+  input: RegistrationInput;
+  enrollmentFiles: File[];
+};
+
 type EventRow = {
   id: string;
   name: string;
   status: "draft" | "registration" | "in_progress" | "finished";
+  registration_open_until: string | null;
+  max_teams: number;
   min_players: number;
   max_players: number;
 };
@@ -41,6 +61,18 @@ type RegistrationCodeRow = {
   method: "yape" | "plin";
   status: "available" | "used" | "revoked";
   used_by_team_id: string | null;
+};
+
+type TeamRow = {
+  id: string;
+  event_id: string;
+  status: Team["status"];
+};
+
+type PlayerRow = {
+  team_id: string;
+  dni: string;
+  student_code: string;
 };
 
 type ExistingProfileRow = {
@@ -58,18 +90,16 @@ class PublicRouteError extends Error {
 }
 
 export async function POST(request: Request) {
-  let body: unknown;
+  let parsedRequest: ParsedRegistrationRequest;
 
   try {
-    body = await request.json();
-  } catch {
-    return jsonError("El cuerpo de la solicitud no es JSON valido.", 400);
-  }
+    parsedRequest = await parseRegistrationRequest(request);
+  } catch (error) {
+    if (error instanceof PublicRouteError) {
+      return jsonError(error.message, error.status);
+    }
 
-  const parsed = registrationSchema.safeParse(body);
-
-  if (!parsed.success) {
-    return jsonError(formatValidationError(parsed.error), 400);
+    return jsonError("Datos de inscripcion invalidos.", 400);
   }
 
   let supabase: ReturnType<typeof createSupabaseAdminClient>;
@@ -81,10 +111,10 @@ export async function POST(request: Request) {
   }
 
   try {
-    const result = await registerDelegateTeam(supabase, parsed.data);
+    const result = await registerDelegateTeam(supabase, parsedRequest);
     return NextResponse.json(result);
   } catch (error) {
-    if (error instanceof PublicRouteError) {
+    if (error instanceof PublicRouteError || error instanceof EnrollmentFileError) {
       return jsonError(error.message, error.status);
     }
 
@@ -93,9 +123,57 @@ export async function POST(request: Request) {
   }
 }
 
+async function parseRegistrationRequest(request: Request): Promise<ParsedRegistrationRequest> {
+  const contentType = request.headers.get("content-type") ?? "";
+
+  if (!contentType.includes("multipart/form-data")) {
+    throw new PublicRouteError("La inscripcion debe enviarse con archivos de matricula.", 400);
+  }
+
+  const formData = await request.formData();
+  const rawPlayers = formData.get("players");
+
+  if (typeof rawPlayers !== "string") {
+    throw new PublicRouteError("Falta la plantilla de jugadores.", 400);
+  }
+
+  let players: unknown;
+  try {
+    players = JSON.parse(rawPlayers);
+  } catch {
+    throw new PublicRouteError("La plantilla de jugadores no es valida.", 400);
+  }
+
+  const body = {
+    eventId: stringFormValue(formData, "eventId"),
+    teamName: stringFormValue(formData, "teamName"),
+    delegateName: stringFormValue(formData, "delegateName"),
+    delegatePhone: stringFormValue(formData, "delegatePhone"),
+    delegateEmail: stringFormValue(formData, "delegateEmail"),
+    paymentMethod: stringFormValue(formData, "paymentMethod"),
+    registrationCode: stringFormValue(formData, "registrationCode"),
+    players
+  };
+
+  const parsed = registrationSchema.safeParse(body);
+  if (!parsed.success) {
+    throw new PublicRouteError(formatValidationError(parsed.error), 400);
+  }
+
+  const enrollmentFiles = parsed.data.players.map((_, index) => {
+    const file = formData.get(`enrollmentFile-${index}`);
+    if (!(file instanceof File) || file.size === 0) {
+      throw new PublicRouteError("Todos los jugadores deben tener ficha de matricula.", 400);
+    }
+    return file;
+  });
+
+  return { input: parsed.data, enrollmentFiles };
+}
+
 async function registerDelegateTeam(
   supabase: ReturnType<typeof createSupabaseAdminClient>,
-  input: RegistrationInput
+  { input, enrollmentFiles }: ParsedRegistrationRequest
 ) {
   const event = await findEvent(supabase, input.eventId);
 
@@ -103,8 +181,18 @@ async function registerDelegateTeam(
     throw new PublicRouteError("El campeonato seleccionado no existe.", 404);
   }
 
-  if (!["draft", "registration"].includes(event.status)) {
-    throw new PublicRouteError("Este campeonato no esta abierto para inscripciones.", 409);
+  const activeTeamCount = await countActiveRegisteredTeams(supabase, event.id);
+  const availability = registrationAvailability({
+    event: {
+      status: event.status,
+      registrationOpenUntil: event.registration_open_until ?? "",
+      maxTeams: event.max_teams
+    },
+    teamCount: activeTeamCount
+  });
+
+  if (!availability.open) {
+    throw new PublicRouteError(registrationClosedMessage(availability.reason), 409);
   }
 
   if (input.players.length < event.min_players) {
@@ -121,10 +209,26 @@ async function registerDelegateTeam(
     );
   }
 
-  const repeatedDni = findDuplicateValue(input.players.map((player) => player.dni));
+  if (input.players.length !== enrollmentFiles.length) {
+    throw new PublicRouteError("Todos los jugadores deben tener ficha de matricula.", 400);
+  }
+
+  const repeatedDni = findDuplicateNormalizedValue(input.players.map((player) => player.dni));
   if (repeatedDni) {
     throw new PublicRouteError(`El DNI ${repeatedDni} esta repetido en la plantilla.`, 400);
   }
+
+  const repeatedStudentCode = findDuplicateNormalizedValue(
+    input.players.map((player) => player.studentCode)
+  );
+  if (repeatedStudentCode) {
+    throw new PublicRouteError(
+      `El codigo ${repeatedStudentCode} esta repetido en la plantilla.`,
+      400
+    );
+  }
+
+  await assertNoCrossTeamDuplicates(supabase, event.id, input.players);
 
   const registrationCode = await findRegistrationCode(
     supabase,
@@ -150,6 +254,7 @@ async function registerDelegateTeam(
   let createdTeamId: string | null = null;
   let registrationCodeMarkedUsed = false;
   let emailSent = false;
+  const uploadedFiles: UploadedEnrollmentFile[] = [];
 
   try {
     const { data: team, error: teamError } = await supabase
@@ -171,15 +276,26 @@ async function registerDelegateTeam(
     }
 
     createdTeamId = team.id;
+    const teamId = team.id;
+
+    for (const [index, player] of input.players.entries()) {
+      const uploaded = await uploadEnrollmentFile(supabase, {
+        eventId: event.id,
+        teamId,
+        file: enrollmentFiles[index],
+        label: `${player.studentCode}-${player.dni}`
+      });
+      uploadedFiles.push(uploaded);
+    }
 
     const { error: playersError } = await supabase.from("players").insert(
-      input.players.map((player) => ({
-        team_id: createdTeamId,
+      input.players.map((player, index) => ({
+        team_id: teamId,
         first_name: player.firstName,
         last_name: player.lastName,
         dni: player.dni,
         student_code: player.studentCode,
-        enrollment_file: player.enrollmentFile,
+        enrollment_file: uploadedFiles[index].dbPath,
         semester: player.semester,
         lineup_role: player.lineupRole
       }))
@@ -213,9 +329,8 @@ async function registerDelegateTeam(
 
     registrationCodeMarkedUsed = true;
 
-    const registeredTeamId = team.id;
     await promoteExistingViewerToDelegate(supabase, {
-      teamId: registeredTeamId,
+      teamId,
       delegateEmail: input.delegateEmail,
       delegateName: input.delegateName,
       delegatePhone: input.delegatePhone
@@ -259,7 +374,8 @@ async function registerDelegateTeam(
     await cleanupRegistration(supabase, {
       teamId: createdTeamId,
       registrationCodeId: registrationCode.id,
-      resetRegistrationCode: registrationCodeMarkedUsed
+      resetRegistrationCode: registrationCodeMarkedUsed,
+      uploadedFiles
     });
 
     throw error;
@@ -352,7 +468,7 @@ async function findEvent(
 ) {
   const query = supabase
     .from("events")
-    .select("id, name, status, min_players, max_players")
+    .select("id, name, status, registration_open_until, max_teams, min_players, max_players")
     .limit(1);
   const response = isUuid(eventId)
     ? await query.eq("id", eventId).maybeSingle<EventRow>()
@@ -384,18 +500,112 @@ async function findRegistrationCode(
   return data;
 }
 
+async function countActiveRegisteredTeams(
+  supabase: ReturnType<typeof createSupabaseAdminClient>,
+  eventId: string
+) {
+  const { count, error } = await supabase
+    .from("teams")
+    .select("id", { count: "exact", head: true })
+    .eq("event_id", eventId)
+    .in("status", ["registered", "observed", "approved"]);
+
+  if (error) {
+    throw new PublicRouteError("No se pudo validar el cupo del campeonato.", 500);
+  }
+
+  return count ?? 0;
+}
+
+async function assertNoCrossTeamDuplicates(
+  supabase: ReturnType<typeof createSupabaseAdminClient>,
+  eventId: string,
+  players: RegistrationInput["players"]
+) {
+  const teams = await findActiveEventTeams(supabase, eventId);
+  const teamIds = teams.map((team) => team.id);
+  if (teamIds.length === 0) return;
+
+  const { data, error } = await supabase
+    .from("players")
+    .select("team_id, dni, student_code")
+    .in("team_id", teamIds);
+
+  if (error) {
+    throw new PublicRouteError("No se pudo validar jugadores ya inscritos.", 500);
+  }
+
+  const existingPlayers: Array<Pick<Player, "teamId" | "dni" | "studentCode">> =
+    (data ?? []).map((player: PlayerRow) => ({
+      teamId: player.team_id,
+      dni: player.dni,
+      studentCode: player.student_code
+    }));
+
+  const duplicateDni = findCrossTeamDuplicate({
+    players,
+    existingPlayers,
+    existingTeams: teams,
+    field: "dni"
+  });
+  if (duplicateDni) {
+    throw new PublicRouteError(
+      `El DNI ${duplicateDni} ya esta inscrito en otro equipo de este campeonato.`,
+      409
+    );
+  }
+
+  const duplicateStudentCode = findCrossTeamDuplicate({
+    players,
+    existingPlayers,
+    existingTeams: teams,
+    field: "studentCode"
+  });
+  if (duplicateStudentCode) {
+    throw new PublicRouteError(
+      `El codigo ${duplicateStudentCode} ya esta inscrito en otro equipo de este campeonato.`,
+      409
+    );
+  }
+}
+
+async function findActiveEventTeams(
+  supabase: ReturnType<typeof createSupabaseAdminClient>,
+  eventId: string
+) {
+  const { data, error } = await supabase
+    .from("teams")
+    .select("id, event_id, status")
+    .eq("event_id", eventId)
+    .in("status", ["registered", "observed", "approved"]);
+
+  if (error) {
+    throw new PublicRouteError("No se pudo validar inscripciones existentes.", 500);
+  }
+
+  return (data ?? []).map((team: TeamRow) => ({
+    id: team.id,
+    eventId: team.event_id,
+    status: team.status
+  }));
+}
+
 async function cleanupRegistration(
   supabase: ReturnType<typeof createSupabaseAdminClient>,
   {
     teamId,
     registrationCodeId,
-    resetRegistrationCode
+    resetRegistrationCode,
+    uploadedFiles
   }: {
     teamId: string | null;
     registrationCodeId: string;
     resetRegistrationCode: boolean;
+    uploadedFiles: UploadedEnrollmentFile[];
   }
 ) {
+  await removeEnrollmentFiles(supabase, uploadedFiles);
+
   if (resetRegistrationCode && teamId) {
     await supabase
       .from("registration_codes")
@@ -410,6 +620,11 @@ async function cleanupRegistration(
   if (teamId) {
     await supabase.from("teams").delete().eq("id", teamId);
   }
+}
+
+function stringFormValue(formData: FormData, key: string) {
+  const value = formData.get(key);
+  return typeof value === "string" ? value : "";
 }
 
 function jsonError(error: string, status: number) {
@@ -434,19 +649,6 @@ function isUuid(value: string) {
   return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(
     value
   );
-}
-
-function findDuplicateValue(values: string[]) {
-  const seen = new Set<string>();
-
-  for (const value of values) {
-    const normalized = value.trim().toLowerCase();
-    if (!normalized) continue;
-    if (seen.has(normalized)) return value.trim();
-    seen.add(normalized);
-  }
-
-  return null;
 }
 
 function playerRosterError(error: { code?: string; message?: string }) {

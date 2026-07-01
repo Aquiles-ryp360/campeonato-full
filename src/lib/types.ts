@@ -11,7 +11,7 @@ export type PaymentMethod = "yape" | "plin";
 
 export type PaymentStatus = "pending" | "verified" | "rejected";
 
-export type TeamStatus = "pending_payment" | "registered" | "observed" | "approved";
+export type TeamStatus = "pending_payment" | "registered" | "observed" | "approved" | "rejected";
 
 export type MatchStatus = "scheduled" | "finished" | "walkover" | "postponed";
 
@@ -175,6 +175,8 @@ export interface Team {
   registrationCode: string;
   paymentStatus: PaymentStatus;
   status: TeamStatus;
+  adminObservation?: string;
+  paymentValidatedAt?: string;
   primaryColor: string;
   secondaryColor: string;
   createdAt?: string;
@@ -200,6 +202,9 @@ export interface Player {
   semester: string;
   lineupRole: PlayerRole;
   jerseyNumber?: number;
+  jerseyNumberChangeCount?: number;
+  jerseyNumberChangedAt?: string;
+  jerseyNumberChangedBy?: string;
   position?: string;
   photoUrl?: string;
 }

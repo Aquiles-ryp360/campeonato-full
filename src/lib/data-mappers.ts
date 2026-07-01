@@ -234,6 +234,8 @@ export type TeamRow = {
   primary_color: string | null;
   secondary_color: string | null;
   status: Team["status"];
+  admin_observation?: string | null;
+  payment_validated_at?: string | null;
   created_at?: string | null;
   registration_code?: EmbeddedRegistrationCode | EmbeddedRegistrationCode[];
 };
@@ -249,6 +251,10 @@ export type PlayerRow = {
   semester: string | null;
   lineup_role: Player["lineupRole"] | null;
   jersey_number?: number | null;
+  jersey_number_change_count?: number | null;
+  jersey_number_changed_at?: string | null;
+  jersey_number_changed_by?: string | null;
+  position?: string | null;
   photo_url?: string | null;
 };
 
@@ -507,8 +513,10 @@ export function mapTeam(row: TeamRow): Team {
     academicCareer: row.academic_career ?? undefined,
     paymentMethod: embeddedCode?.method ?? "yape",
     registrationCode: embeddedCode?.code ?? "Codigo no visible",
-    paymentStatus: paymentStatusFromCode(embeddedCode?.status),
+    paymentStatus: paymentStatusFromTeam(row.payment_validated_at, embeddedCode?.status),
     status: row.status,
+    adminObservation: row.admin_observation ?? undefined,
+    paymentValidatedAt: row.payment_validated_at ?? undefined,
     primaryColor: row.primary_color ?? colors.primary,
     secondaryColor: row.secondary_color ?? colors.secondary,
     createdAt: row.created_at ?? undefined
@@ -527,6 +535,10 @@ export function mapPlayer(row: PlayerRow): Player {
     semester: row.semester ?? "",
     lineupRole: row.lineup_role ?? "starter",
     jerseyNumber: row.jersey_number ?? undefined,
+    jerseyNumberChangeCount: row.jersey_number_change_count ?? undefined,
+    jerseyNumberChangedAt: row.jersey_number_changed_at ?? undefined,
+    jerseyNumberChangedBy: row.jersey_number_changed_by ?? undefined,
+    position: row.position ?? undefined,
     photoUrl: row.photo_url ?? undefined
   };
 }
@@ -700,8 +712,11 @@ function firstNested<T>(value: T | T[] | null | undefined) {
   return value ?? null;
 }
 
-function paymentStatusFromCode(status?: RegistrationCode["status"]): PaymentStatus {
-  if (status === "used") return "verified";
+function paymentStatusFromTeam(
+  paymentValidatedAt?: string | null,
+  status?: RegistrationCode["status"]
+): PaymentStatus {
+  if (paymentValidatedAt) return "verified";
   if (status === "revoked") return "rejected";
   return "pending";
 }

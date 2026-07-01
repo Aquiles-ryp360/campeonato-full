@@ -121,6 +121,55 @@ export async function requireRefereeMatchAccess(
   throw new ServerAccessError("Este partido no esta asignado a tu cuenta.", 403);
 }
 
+export async function requireDelegateTeamAccess(
+  teamId: string,
+  admin: AdminClient = createSupabaseAdminClient()
+) {
+  const user = await getRouteUser();
+  const isAdmin = await isAdminUser(admin, user);
+
+  const { data: team, error } = await admin
+    .from("teams")
+    .select("id, event_id, delegate_user_id, delegate_email")
+    .eq("id", teamId)
+    .maybeSingle<{
+      id: string;
+      event_id: string;
+      delegate_user_id: string | null;
+      delegate_email: string | null;
+    }>();
+
+  if (error) {
+    throw new ServerAccessError(error.message, 500);
+  }
+
+  if (!team) {
+    throw new ServerAccessError("Equipo no encontrado", 404);
+  }
+
+  if (isAdmin || team.delegate_user_id === user.id) {
+    return { user, isAdmin, team };
+  }
+
+  const email = user.email?.trim().toLowerCase();
+  const delegateEmail = team.delegate_email?.trim().toLowerCase();
+
+  if (email && delegateEmail && email === delegateEmail) {
+    await admin
+      .from("teams")
+      .update({
+        delegate_user_id: user.id,
+        updated_at: new Date().toISOString()
+      })
+      .eq("id", teamId)
+      .is("delegate_user_id", null);
+
+    return { user, isAdmin, team };
+  }
+
+  throw new ServerAccessError("Este equipo no esta asignado a tu cuenta.", 403);
+}
+
 async function linkRefereeUser(
   admin: AdminClient,
   matchId: string,

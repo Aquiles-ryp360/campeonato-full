@@ -37,8 +37,13 @@ La migracion inicial esta en `supabase/migrations/001_initial_schema.sql`.
 Para el flujo actual de arbitraje en vivo tambien debe aplicarse:
 
 - `supabase/migrations/012_penalty_resolution_metadata.sql`
+- `supabase/migrations/013_registration_production_hardening.sql`
 
-Esta migracion agrega metadatos de ganador, forma de victoria, estados publicos de resultado y campeon del evento. Debe ejecutarse en Supabase antes de desplegar el flujo nuevo en produccion.
+La migracion `012` agrega metadatos de ganador, forma de victoria, estados publicos de resultado y campeon del evento.
+
+La migracion `013` endurece inscripciones: agrega metadatos de revision/pago en equipos, control de cambio de camiseta en jugadores y crea el bucket privado `enrollment-files` para fichas de matricula PDF/JPG/PNG de hasta 5 MB.
+
+Ambas migraciones deben ejecutarse en Supabase antes de desplegar el flujo nuevo en produccion.
 
 ## Flujos base
 
@@ -46,6 +51,16 @@ Esta migracion agrega metadatos de ganador, forma de victoria, estados publicos 
 - Equipo: inscripcion con pago Yape/Plin, jugadores y estado.
 - Admin: crear eventos, configurar formato, aprobar/observar inscripciones, cargar resultados.
 - IA: audio de resultado, transcripcion, JSON revisable y boton para publicar.
+
+## Inscripciones
+
+Las inscripciones publicas solo se aceptan cuando el campeonato esta en estado `registration`, antes de `registration_open_until` y mientras no se haya alcanzado `max_teams` con equipos activos (`registered`, `observed`, `approved`).
+
+Cada jugador debe cargar ficha de matricula real en Supabase Storage (`enrollment-files`) y registrar semestre/ciclo. El backend valida PDF/JPG/PNG, maximo 5 MB, duplicados por DNI y codigo dentro del equipo y contra equipos activos del mismo campeonato/categoria.
+
+El delegado puede editar equipo y plantel solo mientras la inscripcion esta abierta y antes del inicio del evento. Despues del inicio no puede modificar el plantel; solo puede cambiar el numero de camiseta una vez por jugador, con validacion backend de rango 1-99 y sin duplicados dentro del equipo.
+
+El admin valida pago, observa, rechaza o aprueba equipos desde el panel. La aprobacion bloquea si faltan pago validado, fichas, semestre, cupos o existen duplicados.
 
 ## Arbitraje en vivo
 

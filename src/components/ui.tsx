@@ -36,6 +36,7 @@ export function Button({
   variant = "primary",
   className,
   type = "button",
+  form,
   onClick,
   disabled = false
 }: {
@@ -44,6 +45,7 @@ export function Button({
   variant?: "primary" | "secondary" | "ghost" | "danger";
   className?: string;
   type?: "button" | "submit";
+  form?: string;
   onClick?: () => void;
   disabled?: boolean;
 }) {
@@ -70,7 +72,7 @@ export function Button({
   }
 
   return (
-    <button type={type} className={classes} onClick={onClick} disabled={disabled}>
+    <button type={type} form={form} className={classes} onClick={onClick} disabled={disabled}>
       {children}
     </button>
   );

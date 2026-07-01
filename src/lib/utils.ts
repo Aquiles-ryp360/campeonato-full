@@ -57,7 +57,8 @@ export function teamStatusLabel(status: Team["status"]) {
     pending_payment: "Pago pendiente",
     registered: "Registrado",
     observed: "Observado",
-    approved: "Aprobado"
+    approved: "Aprobado",
+    rejected: "Rechazado"
   };
   return labels[status];
 }

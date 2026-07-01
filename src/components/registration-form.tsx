@@ -5,6 +5,11 @@ import { Download, FileText, Plus, Smartphone, Trash2, UserPlus } from "lucide-r
 import type { jsPDF as JsPDFDocument } from "jspdf";
 import { toast } from "sonner";
 import { sessionChangeEvent, type DelegateAccess } from "@/lib/auth";
+import {
+  findDuplicateNormalizedValue,
+  isRegistrationOpen,
+  validateEnrollmentFileMeta
+} from "@/lib/domain/registration-rules";
 import type { PlayerRole, TournamentEvent } from "@/lib/types";
 import { formatDateTime, formatMoney, playerRoleLabel, sportLabel } from "@/lib/utils";
 import { Badge, Button, Card, Field, SectionHeader, inputClass } from "./ui";
@@ -15,6 +20,7 @@ interface PlayerFormRow {
   dni: string;
   studentCode: string;
   enrollmentFile: string;
+  enrollmentFileObject: File | null;
   semester: string;
   lineupRole: PlayerRole;
 }
@@ -25,6 +31,7 @@ const emptyPlayer: PlayerFormRow = {
   dni: "",
   studentCode: "",
   enrollmentFile: "",
+  enrollmentFileObject: null,
   semester: "",
   lineupRole: "starter"
 };
@@ -67,7 +74,7 @@ export function RegistrationForm({
   initialEventId?: string;
 }) {
   const openEvents = useMemo(
-    () => events.filter((event) => event.status === "registration" || event.status === "draft"),
+    () => events.filter((event) => isRegistrationOpen(event)),
     [events]
   );
   const initialOpenEvent = openEvents.find((event) => event.id === initialEventId) ?? openEvents[0];
@@ -99,6 +106,20 @@ export function RegistrationForm({
     );
   }
 
+  function updatePlayerFile(index: number, file: File | null) {
+    setPlayers((current) =>
+      current.map((player, playerIndex) =>
+        playerIndex === index
+          ? {
+              ...player,
+              enrollmentFile: file?.name ?? "",
+              enrollmentFileObject: file
+            }
+          : player
+      )
+    );
+  }
+
   function removePlayer(index: number) {
     setPlayers((current) => current.filter((_, playerIndex) => playerIndex !== index));
   }
@@ -125,12 +146,35 @@ export function RegistrationForm({
       return;
     }
 
-    const completedPlayers = players.filter(
-      (player) => player.firstName && player.lastName && player.dni && player.studentCode
+    const completedPlayers = players.filter((player) =>
+      Boolean(
+        player.firstName &&
+          player.lastName &&
+          player.dni &&
+          player.studentCode &&
+          player.semester &&
+          player.enrollmentFileObject
+      )
     );
 
     if (!teamName || !delegateName || !delegatePhone || !delegateEmail || !registrationCode) {
       toast.error("Completa equipo, delegado, correo y codigo unico de inscripcion.");
+      return;
+    }
+
+    const playersWithAnyData = players.filter(
+      (player) =>
+        player.firstName ||
+        player.lastName ||
+        player.dni ||
+        player.studentCode ||
+        player.semester ||
+        player.enrollmentFileObject
+    );
+    const incompletePlayer = playersWithAnyData.length !== completedPlayers.length;
+
+    if (incompletePlayer) {
+      toast.error("Todos los jugadores deben tener semestre y ficha de matricula.");
       return;
     }
 
@@ -144,29 +188,64 @@ export function RegistrationForm({
       return;
     }
 
-    const repeatedDni = findDuplicateValue(completedPlayers.map((player) => player.dni));
+    const repeatedDni = findDuplicateNormalizedValue(completedPlayers.map((player) => player.dni));
     if (repeatedDni) {
       toast.error(`El DNI ${repeatedDni} esta repetido en la plantilla.`);
       return;
     }
 
+    const repeatedCode = findDuplicateNormalizedValue(
+      completedPlayers.map((player) => player.studentCode)
+    );
+    if (repeatedCode) {
+      toast.error(`El codigo ${repeatedCode} esta repetido en la plantilla.`);
+      return;
+    }
+
+    for (const player of completedPlayers) {
+      const file = player.enrollmentFileObject;
+      const fileError = file
+        ? validateEnrollmentFileMeta({ type: file.type, size: file.size })
+        : "Todos los jugadores deben tener semestre y ficha de matricula.";
+      if (fileError) {
+        toast.error(fileError);
+        return;
+      }
+    }
+
     setIsSubmitting(true);
     try {
+      const formData = new FormData();
+      formData.append("eventId", eventId);
+      formData.append("teamName", teamName);
+      formData.append("delegateName", delegateName);
+      formData.append("delegatePhone", delegatePhone);
+      formData.append("delegateEmail", delegateEmail);
+      formData.append("paymentMethod", paymentMethod);
+      formData.append("registrationCode", registrationCode);
+      formData.append(
+        "players",
+        JSON.stringify(
+          completedPlayers.map((player) => ({
+            firstName: player.firstName,
+            lastName: player.lastName,
+            dni: player.dni,
+            studentCode: player.studentCode,
+            enrollmentFile: player.enrollmentFile,
+            semester: player.semester,
+            lineupRole: player.lineupRole
+          }))
+        )
+      );
+      completedPlayers.forEach((player, index) => {
+        if (player.enrollmentFileObject) {
+          formData.append(`enrollmentFile-${index}`, player.enrollmentFileObject);
+        }
+      });
+
       const response = await fetch("/api/register-delegate", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({
-          eventId,
-          teamName,
-          delegateName,
-          delegatePhone,
-          delegateEmail,
-          paymentMethod,
-          registrationCode,
-          players: completedPlayers
-        })
+        body: formData
       });
       const payload = (await response.json().catch(() => null)) as RegisterDelegateResponse | null;
 
@@ -342,7 +421,7 @@ export function RegistrationForm({
       <Card className="p-5">
         <SectionHeader
           title="Jugadores"
-          description="DNI, codigo universitario, ficha de matricula y ciclo/semestre. Foto queda opcional para despues."
+          description="DNI, codigo universitario, ficha de matricula y ciclo/semestre."
           action={
             <Button
               type="button"
@@ -404,7 +483,6 @@ export function RegistrationForm({
                 <input
                   className={inputClass}
                   value={player.enrollmentFile}
-                  onChange={(changeEvent) => updatePlayer(index, "enrollmentFile", changeEvent.target.value)}
                   readOnly
                   placeholder="Ficha de matricula"
                   title="Nombre del archivo seleccionado"
@@ -412,13 +490,9 @@ export function RegistrationForm({
                 <input
                   className={inputClass}
                   type="file"
-                  accept="application/pdf,image/*"
+                  accept="application/pdf,image/jpeg,image/png"
                   onChange={(changeEvent) =>
-                    updatePlayer(
-                      index,
-                      "enrollmentFile",
-                      changeEvent.target.files?.[0]?.name ?? ""
-                    )
+                    updatePlayerFile(index, changeEvent.target.files?.[0] ?? null)
                   }
                 />
                 <input
@@ -663,17 +737,4 @@ function slugify(value: string) {
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/^-+|-+$/g, "")
     .slice(0, 40);
-}
-
-function findDuplicateValue(values: string[]) {
-  const seen = new Set<string>();
-
-  for (const value of values) {
-    const normalized = value.trim().toLowerCase();
-    if (!normalized) continue;
-    if (seen.has(normalized)) return value.trim();
-    seen.add(normalized);
-  }
-
-  return null;
 }

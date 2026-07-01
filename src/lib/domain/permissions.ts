@@ -1,6 +1,6 @@
 import type { AuthSession } from "../auth";
 import type { Team, TournamentEvent } from "../types";
-import { isRegistrationOpen } from "./registration-rules";
+import { canDelegateEditBeforeStart, isRegistrationOpen } from "./registration-rules";
 
 export function isAdmin(user: AuthSession | null) {
   return user?.role === "admin";
@@ -14,7 +14,7 @@ export function isDelegateOfTeam(user: AuthSession | null, team: Team) {
 export function canEditRegistration(event: TournamentEvent, team: Team, user?: AuthSession | null) {
   if (isAdmin(user ?? null)) return true;
   if (user && !isDelegateOfTeam(user, team)) return false;
-  return isRegistrationOpen(event);
+  return canDelegateEditBeforeStart(event);
 }
 
 export function canEditRoster(event: TournamentEvent, team: Team, user?: AuthSession | null) {
