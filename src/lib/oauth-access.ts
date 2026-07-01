@@ -34,7 +34,7 @@ type OAuthAccessResult =
     }
   | {
       ok: false;
-      reason: "missing_email" | "not_authorized" | "not_registered";
+      reason: "missing_email" | "not_authorized";
     };
 
 export async function resolveOAuthAccess(user: User): Promise<OAuthAccessResult> {
@@ -68,16 +68,19 @@ export async function resolveOAuthAccess(user: User): Promise<OAuthAccessResult>
   const team = await findDelegateTeamByEmail(supabase, email);
 
   if (!team) {
-    if (profile?.role === "delegate") {
-      return {
-        ok: true,
-        role: "delegate",
-        email,
-        displayName
-      };
-    }
+    await upsertProfile(supabase, {
+      id: user.id,
+      role: "viewer",
+      fullName: displayName,
+      phone: profile?.phone ?? null
+    });
 
-    return { ok: false, reason: "not_registered" };
+    return {
+      ok: true,
+      role: "viewer",
+      email,
+      displayName
+    };
   }
 
   const delegateName = team.delegate_name || displayName;

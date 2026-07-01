@@ -1,4 +1,5 @@
-export type AuthRole = "admin" | "delegate";
+export type AuthRole = "admin" | "delegate" | "viewer";
+export type ProtectedAuthRole = Exclude<AuthRole, "viewer">;
 
 export interface AuthSession {
   role: AuthRole;
@@ -61,7 +62,7 @@ export function clearStoredSession() {
   window.dispatchEvent(new Event(sessionChangeEvent));
 }
 
-export function canAccess(session: AuthSession | null, requiredRole: AuthRole) {
+export function canAccess(session: AuthSession | null, requiredRole: ProtectedAuthRole) {
   if (!session) return false;
   if (session.role === "admin") return true;
   return requiredRole === "delegate" && session.role === "delegate";

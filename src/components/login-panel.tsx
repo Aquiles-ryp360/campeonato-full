@@ -16,7 +16,6 @@ import { Badge, Button, Card, Field, SectionHeader, inputClass } from "./ui";
 const loginErrorMessages: Record<string, string> = {
   missing_email: "Google no devolvio un correo valido.",
   not_authorized: "Este Gmail no esta autorizado para entrar.",
-  not_registered: "Este Gmail no coincide con ningun delegado inscrito.",
   oauth_access_failed: "No se pudo validar el acceso con Supabase.",
   oauth_exchange_failed: "No se pudo completar el login con Google.",
   oauth_missing_code: "Google no envio el codigo de acceso.",
@@ -137,6 +136,7 @@ export function LoginPanel() {
             <p className="text-sm leading-6 text-ink/62">
               Si eres delegado, el correo debe coincidir con el correo registrado en la
               inscripcion. Si eres admin, tu correo debe estar autorizado en Supabase.
+              Otros correos entran como visitante.
             </p>
           </div>
         ) : (

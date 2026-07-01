@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import type { AuthRole } from "@/lib/auth";
 import { resolveOAuthAccess } from "@/lib/oauth-access";
 import { createSupabaseRouteClient } from "@/lib/supabase-server";
 
@@ -61,7 +62,7 @@ function redirectToLogin(requestUrl: URL, error: string, nextPath: string) {
   return NextResponse.redirect(loginUrl);
 }
 
-function resolveDestination(role: "admin" | "delegate", nextPath: string) {
+function resolveDestination(role: AuthRole, nextPath: string) {
   if (
     role === "admin" &&
     (nextPath.startsWith("/admin") || nextPath.startsWith("/delegado"))
@@ -71,6 +72,10 @@ function resolveDestination(role: "admin" | "delegate", nextPath: string) {
 
   if (role === "delegate" && nextPath.startsWith("/delegado")) {
     return nextPath;
+  }
+
+  if (role === "viewer") {
+    return nextPath.startsWith("/admin") || nextPath.startsWith("/delegado") ? "/" : nextPath;
   }
 
   return role === "admin" ? "/admin" : "/delegado";

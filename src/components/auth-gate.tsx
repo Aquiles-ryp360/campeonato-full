@@ -11,7 +11,7 @@ import {
   ShieldCheck,
   UserRound
 } from "lucide-react";
-import type { AuthRole, AuthSession } from "@/lib/auth";
+import type { AuthRole, AuthSession, ProtectedAuthRole } from "@/lib/auth";
 import {
   canAccess,
   clearStoredSession,
@@ -27,7 +27,7 @@ export function AuthGate({
   role,
   children
 }: {
-  role: AuthRole;
+  role: ProtectedAuthRole;
   children: React.ReactNode;
 }) {
   const pathname = usePathname();
@@ -38,49 +38,8 @@ export function AuthGate({
     async function loadSession() {
       const storedSession = getStoredSession();
 
-      if (!hasSupabaseEnv()) {
-        setSession(storedSession);
-        setReady(true);
-        return;
-      }
-
       try {
-        const supabase = createSupabaseBrowserClient();
-        const { data: userData, error: userError } = await supabase.auth.getUser();
-
-        if (userError || !userData.user) {
-          clearStoredSession();
-          setSession(null);
-          setReady(true);
-          return;
-        }
-
-        const { data: profile, error: profileError } = await supabase
-          .from("profiles")
-          .select("role, full_name")
-          .eq("id", userData.user.id)
-          .maybeSingle();
-
-        if (
-          profileError ||
-          !profile ||
-          (profile.role !== "admin" && profile.role !== "delegate")
-        ) {
-          await supabase.auth.signOut();
-          clearStoredSession();
-          setSession(null);
-          setReady(true);
-          return;
-        }
-
-        const verifiedSession = createSession(
-          profile.role,
-          userData.user.email ?? storedSession?.username ?? "usuario",
-          profile.full_name ?? userData.user.email ?? "Usuario"
-        );
-
-        storeSession(verifiedSession);
-        setSession(verifiedSession);
+        setSession(await loadBrowserSession(storedSession));
       } catch {
         clearStoredSession();
         setSession(null);
@@ -116,9 +75,9 @@ export function AuthGate({
               </p>
             </div>
           </div>
-          <Button href={`/login?next=${encodeURIComponent(pathname)}`}>
+          <Button href={session ? "/" : `/login?next=${encodeURIComponent(pathname)}`}>
             <ShieldCheck className="h-4 w-4" />
-            Ir a login
+            {session ? "Ir a vista publica" : "Ir a login"}
           </Button>
         </div>
       </Card>
@@ -129,24 +88,7 @@ export function AuthGate({
 }
 
 export function SessionActions({ showPanelLink = true }: { showPanelLink?: boolean }) {
-  const [session, setSession] = useState<AuthSession | null>(null);
-
-  useEffect(() => {
-    function syncSession() {
-      setSession(getStoredSession());
-    }
-
-    syncSession();
-    window.addEventListener("storage", syncSession);
-    window.addEventListener("focus", syncSession);
-    window.addEventListener(sessionChangeEvent, syncSession);
-
-    return () => {
-      window.removeEventListener("storage", syncSession);
-      window.removeEventListener("focus", syncSession);
-      window.removeEventListener(sessionChangeEvent, syncSession);
-    };
-  }, []);
+  const session = useSyncedSession();
 
   if (!session) {
     return (
@@ -160,9 +102,12 @@ export function SessionActions({ showPanelLink = true }: { showPanelLink?: boole
     );
   }
 
-  const panelHref = session.role === "admin" ? "/admin" : "/delegado";
-  const panelLabel = session.role === "admin" ? "Admin" : "Mi equipo";
-  const PanelIcon = session.role === "admin" ? LayoutDashboard : ShieldCheck;
+  const panelHref =
+    session.role === "admin" ? "/admin" : session.role === "delegate" ? "/delegado" : "/";
+  const panelLabel =
+    session.role === "admin" ? "Admin" : session.role === "delegate" ? "Mi equipo" : "Vista publica";
+  const PanelIcon =
+    session.role === "admin" ? LayoutDashboard : session.role === "delegate" ? ShieldCheck : UserRound;
 
   return (
     <>
@@ -192,7 +137,6 @@ export function SessionActions({ showPanelLink = true }: { showPanelLink?: boole
           }
 
           clearStoredSession();
-          setSession(null);
           window.location.href = "/";
         }}
         className="inline-flex min-h-10 items-center justify-center gap-2 rounded-md bg-mist px-4 py-2 text-sm font-semibold text-ink transition hover:bg-white"
@@ -205,28 +149,29 @@ export function SessionActions({ showPanelLink = true }: { showPanelLink?: boole
 }
 
 export function MobileSessionAction() {
-  const [session, setSession] = useState<AuthSession | null>(null);
+  const session = useSyncedSession();
 
-  useEffect(() => {
-    function syncSession() {
-      setSession(getStoredSession());
-    }
-
-    syncSession();
-    window.addEventListener("storage", syncSession);
-    window.addEventListener("focus", syncSession);
-    window.addEventListener(sessionChangeEvent, syncSession);
-
-    return () => {
-      window.removeEventListener("storage", syncSession);
-      window.removeEventListener("focus", syncSession);
-      window.removeEventListener(sessionChangeEvent, syncSession);
-    };
-  }, []);
-
-  const href = session ? (session.role === "admin" ? "/admin" : "/delegado") : "/login";
-  const label = session ? (session.role === "admin" ? "Admin" : "Equipo") : "Ingresar";
-  const Icon = session ? (session.role === "admin" ? LayoutDashboard : ShieldCheck) : LogIn;
+  const href = session
+    ? session.role === "admin"
+      ? "/admin"
+      : session.role === "delegate"
+        ? "/delegado"
+        : "/"
+    : "/login";
+  const label = session
+    ? session.role === "admin"
+      ? "Admin"
+      : session.role === "delegate"
+        ? "Equipo"
+        : "Cuenta"
+    : "Ingresar";
+  const Icon = session
+    ? session.role === "admin"
+      ? LayoutDashboard
+      : session.role === "delegate"
+        ? ShieldCheck
+        : UserRound
+    : LogIn;
 
   return (
     <Link
@@ -237,4 +182,75 @@ export function MobileSessionAction() {
       {label}
     </Link>
   );
+}
+
+function useSyncedSession() {
+  const [session, setSession] = useState<AuthSession | null>(null);
+
+  useEffect(() => {
+    let mounted = true;
+
+    async function syncSession() {
+      const storedSession = getStoredSession();
+      if (mounted) setSession(storedSession);
+
+      try {
+        const verifiedSession = await loadBrowserSession(storedSession);
+        if (mounted) setSession(verifiedSession);
+      } catch {
+        if (mounted) setSession(null);
+      }
+    }
+
+    void syncSession();
+    window.addEventListener("storage", syncSession);
+    window.addEventListener("focus", syncSession);
+    window.addEventListener(sessionChangeEvent, syncSession);
+
+    return () => {
+      mounted = false;
+      window.removeEventListener("storage", syncSession);
+      window.removeEventListener("focus", syncSession);
+      window.removeEventListener(sessionChangeEvent, syncSession);
+    };
+  }, []);
+
+  return session;
+}
+
+async function loadBrowserSession(storedSession: AuthSession | null) {
+  if (!hasSupabaseEnv()) return storedSession;
+
+  const supabase = createSupabaseBrowserClient();
+  const { data: userData, error: userError } = await supabase.auth.getUser();
+
+  if (userError || !userData.user) {
+    clearStoredSession();
+    return null;
+  }
+
+  const { data: profile, error: profileError } = await supabase
+    .from("profiles")
+    .select("role, full_name")
+    .eq("id", userData.user.id)
+    .maybeSingle<{ role: string; full_name: string | null }>();
+
+  if (profileError || !profile || !isAuthRole(profile.role)) {
+    await supabase.auth.signOut();
+    clearStoredSession();
+    return null;
+  }
+
+  const verifiedSession = createSession(
+    profile.role,
+    userData.user.email ?? storedSession?.username ?? "usuario",
+    profile.full_name ?? userData.user.email ?? "Usuario"
+  );
+
+  storeSession(verifiedSession);
+  return verifiedSession;
+}
+
+function isAuthRole(role: string): role is AuthRole {
+  return role === "admin" || role === "delegate" || role === "viewer";
 }
