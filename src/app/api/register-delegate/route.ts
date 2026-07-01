@@ -43,6 +43,11 @@ type RegistrationCodeRow = {
   used_by_team_id: string | null;
 };
 
+type ExistingProfileRow = {
+  role: "admin" | "delegate" | "viewer";
+  phone: string | null;
+};
+
 class PublicRouteError extends Error {
   constructor(
     message: string,
@@ -197,6 +202,14 @@ async function registerDelegateTeam(
 
     registrationCodeMarkedUsed = true;
 
+    const registeredTeamId = team.id;
+    await promoteExistingViewerToDelegate(supabase, {
+      teamId: registeredTeamId,
+      delegateEmail: input.delegateEmail,
+      delegateName: input.delegateName,
+      delegatePhone: input.delegatePhone
+    });
+
     try {
       await sendDelegateAccessEmail({
         to: input.delegateEmail,
@@ -227,6 +240,86 @@ async function registerDelegateTeam(
     });
 
     throw error;
+  }
+}
+
+async function promoteExistingViewerToDelegate(
+  supabase: ReturnType<typeof createSupabaseAdminClient>,
+  {
+    teamId,
+    delegateEmail,
+    delegateName,
+    delegatePhone
+  }: {
+    teamId: string;
+    delegateEmail: string;
+    delegateName: string;
+    delegatePhone: string;
+  }
+) {
+  const userId = await findAuthUserIdByEmail(supabase, delegateEmail);
+  if (!userId) return;
+
+  const { data: profile, error: profileError } = await supabase
+    .from("profiles")
+    .select("role, phone")
+    .eq("id", userId)
+    .maybeSingle<ExistingProfileRow>();
+
+  if (profileError) {
+    throw new PublicRouteError("No se pudo validar la cuenta existente del delegado.", 500);
+  }
+
+  if (profile?.role !== "admin") {
+    const { error: profileUpdateError } = await supabase.from("profiles").upsert(
+      {
+        id: userId,
+        role: "delegate",
+        full_name: delegateName,
+        phone: profile?.phone ?? delegatePhone,
+        updated_at: new Date().toISOString()
+      },
+      { onConflict: "id" }
+    );
+
+    if (profileUpdateError) {
+      throw new PublicRouteError("No se pudo actualizar la cuenta del delegado.", 500);
+    }
+  }
+
+  const { error: teamUpdateError } = await supabase
+    .from("teams")
+    .update({
+      delegate_user_id: userId,
+      updated_at: new Date().toISOString()
+    })
+    .eq("id", teamId);
+
+  if (teamUpdateError) {
+    throw new PublicRouteError("No se pudo vincular la cuenta con el equipo.", 500);
+  }
+}
+
+async function findAuthUserIdByEmail(
+  supabase: ReturnType<typeof createSupabaseAdminClient>,
+  email: string
+) {
+  let page = 1;
+  const perPage = 1000;
+  const normalizedEmail = email.trim().toLowerCase();
+
+  while (true) {
+    const { data, error } = await supabase.auth.admin.listUsers({ page, perPage });
+
+    if (error) {
+      throw new PublicRouteError("No se pudo buscar la cuenta existente del delegado.", 500);
+    }
+
+    const user = data.users.find((current) => current.email?.trim().toLowerCase() === normalizedEmail);
+    if (user) return user.id;
+    if (data.users.length < perPage) return null;
+
+    page += 1;
   }
 }
 

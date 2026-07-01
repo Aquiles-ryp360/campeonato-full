@@ -4,7 +4,7 @@ import { useMemo, useState } from "react";
 import { Download, FileText, Plus, Smartphone, Trash2, UserPlus } from "lucide-react";
 import type { jsPDF as JsPDFDocument } from "jspdf";
 import { toast } from "sonner";
-import type { DelegateAccess } from "@/lib/auth";
+import { sessionChangeEvent, type DelegateAccess } from "@/lib/auth";
 import type { PlayerRole, TournamentEvent } from "@/lib/types";
 import { formatDateTime, formatMoney, playerRoleLabel, sportLabel } from "@/lib/utils";
 import { Badge, Button, Card, Field, SectionHeader, inputClass } from "./ui";
@@ -191,6 +191,7 @@ export function RegistrationForm({
       };
 
       setLastReceipt(receipt);
+      window.dispatchEvent(new Event(sessionChangeEvent));
       try {
         await generateRegistrationReceiptPdf(receipt);
         toast.success(
