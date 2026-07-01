@@ -203,7 +203,7 @@ export function RegistrationForm({
         toast.success(
           payload.emailSent
             ? "Inscripcion registrada. Correo enviado y constancia PDF descargada."
-            : "Inscripcion registrada. Se descargo la constancia PDF."
+            : "Inscripcion registrada. No se pudo enviar el correo, pero se descargo la constancia PDF."
         );
       } catch {
         toast.error("La inscripcion quedo registrada, pero no se pudo descargar el PDF.");

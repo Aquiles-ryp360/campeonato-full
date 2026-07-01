@@ -222,15 +222,27 @@ async function registerDelegateTeam(
     });
 
     try {
-      await sendDelegateAccessEmail({
+      const emailInfo = await sendDelegateAccessEmail({
         to: input.delegateEmail,
         delegateName: input.delegateName,
         teamName: input.teamName,
         eventName: event.name
       });
       emailSent = true;
+      console.info("Delegate access email sent", {
+        to: input.delegateEmail,
+        teamId: createdTeamId,
+        messageId: emailInfo.messageId,
+        accepted: emailInfo.accepted,
+        rejected: emailInfo.rejected,
+        response: emailInfo.response
+      });
     } catch (emailError) {
-      console.error("Delegate access email failed", emailError);
+      console.error("Delegate access email failed", {
+        to: input.delegateEmail,
+        teamId: createdTeamId,
+        error: emailError instanceof Error ? emailError.message : String(emailError)
+      });
     }
 
     return {
