@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import type { CompetitionData } from "@/lib/data-mappers";
+import { buildVisibleFixtureMatches } from "@/lib/domain/fixture-preview";
 import { getChampionshipPublicContext } from "@/lib/queries/public";
 import { Card, SectionHeader } from "@/components/ui";
 import { TeamCard } from "@/features/teams/components/TeamCard";
@@ -24,6 +25,18 @@ export function PublicHome({
     () => getChampionshipPublicContext(data, eventId || initialChampionship),
     [data, eventId, initialChampionship]
   );
+  const visibleMatches = useMemo(
+    () =>
+      context.event
+        ? buildVisibleFixtureMatches({
+            events: [context.event],
+            teams: context.teams,
+            matches: context.matches,
+            venues: context.venues
+          })
+        : context.matches,
+    [context]
+  );
 
   if (!context.event) {
     return (
@@ -37,7 +50,7 @@ export function PublicHome({
     );
   }
 
-  const courts = Array.from(new Set(context.matches.map((match) => match.court))).slice(0, 3);
+  const courts = Array.from(new Set(visibleMatches.map((match) => match.court))).slice(0, 3);
   const selectedTeam = context.teams.find((team) => team.id === selectedTeamId) ?? null;
 
   return (
@@ -56,14 +69,14 @@ export function PublicHome({
       <ChampionshipSummaryCards
         event={context.event}
         teams={context.teams}
-        matches={context.matches}
+        matches={visibleMatches}
       />
 
       <FormatRenderer
         event={context.event}
         teams={context.teams}
         players={context.players}
-        matches={context.matches}
+        matches={visibleMatches}
         standings={context.standings}
         groups={context.groups}
         groupTeams={context.groupTeams}
@@ -97,7 +110,7 @@ export function PublicHome({
         team={selectedTeam}
         event={context.event}
         players={context.players.filter((player) => player.teamId === selectedTeam?.id)}
-        matches={context.matches}
+        matches={visibleMatches}
         teams={context.teams}
         onClose={() => setSelectedTeamId(null)}
       />

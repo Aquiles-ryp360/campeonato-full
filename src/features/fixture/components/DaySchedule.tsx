@@ -50,6 +50,11 @@ export function DaySchedule({
     [events, matches, players, teams]
   );
   const courts = Array.from(new Set(matches.map((match) => match.court))).sort();
+  const activeEvent = eventId === "all" ? null : events.find((event) => event.id === eventId) ?? null;
+  const activeEventTeamCount = activeEvent
+    ? teams.filter((team) => team.eventId === activeEvent.id).length
+    : 0;
+  const emptyMessage = getEmptyMessage(activeEvent, activeEventTeamCount);
   const selectedEvent = events.find((event) => event.id === selectedTeam?.eventId) ?? null;
 
   return (
@@ -172,7 +177,7 @@ export function DaySchedule({
         )
       ) : (
         <Card className="p-8 text-center text-sm text-ink/55">
-          No hay partidos para los filtros seleccionados.
+          {emptyMessage}
         </Card>
       )}
 
@@ -196,4 +201,19 @@ function timeKey(value: string) {
     hour12: false,
     timeZone: "America/Lima"
   }).format(new Date(value));
+}
+
+function getEmptyMessage(event: TournamentEvent | null, teamCount: number) {
+  const isPreliminaryKnockout =
+    event?.format === "single_elimination" &&
+    (event.fixtureStatus === undefined ||
+      event.fixtureStatus === "draft_auto" ||
+      event.fixtureStatus === "draft_review");
+
+  if (isPreliminaryKnockout && teamCount < 2) {
+    const suffix = teamCount === 1 ? "" : "s";
+    return `Fixture preliminar pendiente: hay ${teamCount} equipo${suffix} inscrito${suffix}. Se necesitan al menos 2 equipos para generar cruces.`;
+  }
+
+  return "No hay partidos para los filtros seleccionados.";
 }

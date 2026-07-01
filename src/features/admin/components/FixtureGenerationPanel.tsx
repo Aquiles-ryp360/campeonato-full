@@ -3,8 +3,10 @@
 import { useMemo } from "react";
 import { Lock, Send, Snowflake, Wand2 } from "lucide-react";
 import type { CompetitionData } from "@/lib/data-mappers";
-import { generateKnockoutBracket } from "@/lib/domain/bracket-generator";
-import { generateOneDaySchedule } from "@/lib/domain/schedule-generator";
+import {
+  buildEventFixturePreview,
+  buildVisibleFixtureMatches
+} from "@/lib/domain/fixture-preview";
 import {
   canPublishFixture,
   canRegenerateFixtureManually,
@@ -16,40 +18,36 @@ import { fixtureStatusLabel } from "@/lib/utils";
 
 export function FixtureGenerationPanel({ data }: { data: CompetitionData }) {
   const selectedEvent = data.events[0] ?? null;
-  const bracket = useMemo(
+  const preview = useMemo(
     () => {
       if (!selectedEvent) return null;
-      const eventTeams = data.teams.filter((team) => team.eventId === selectedEvent.id);
-      return generateKnockoutBracket({
-        eventId: selectedEvent.id,
-        teams: eventTeams,
-        matches: data.matches.filter((match) => match.eventId === selectedEvent.id),
-        thirdPlace: selectedEvent.thirdPlace ?? true,
-        seedingMode: selectedEvent.seedingMode ?? "registration_order",
-        fixtureStatus: selectedEvent.fixtureStatus ?? "draft_auto"
+      return buildEventFixturePreview({
+        event: selectedEvent,
+        teams: data.teams,
+        matches: data.matches,
+        venues: data.venues
       });
     },
-    [data.matches, data.teams, selectedEvent]
+    [data.matches, data.teams, data.venues, selectedEvent]
   );
-  const previewSchedule = useMemo(() => {
-    if (!selectedEvent || !bracket) return null;
-    return generateOneDaySchedule(bracket.matches, {
-      eventDate: selectedEvent.eventDate ?? data.matches[0]?.scheduledAt ?? new Date().toISOString(),
-      startTime: selectedEvent.scheduleConfig?.startTime ?? "09:00",
-      matchDurationMinutes: selectedEvent.scheduleConfig?.matchDurationMinutes ?? 20,
-      transitionMinutes: selectedEvent.scheduleConfig?.transitionMinutes ?? 10,
-      courts: selectedEvent.scheduleConfig?.courts ?? data.venues.map((venue) => venue.name),
-      minimumRestMinutes: selectedEvent.minimumRestMinutes,
-      respectRoundDependencies: true,
-      allowCompactPreview: selectedEvent.fixtureCompactPreview ?? true
-    });
-  }, [bracket, data.matches, data.venues, selectedEvent]);
+  const visibleMatches = useMemo(
+    () =>
+      buildVisibleFixtureMatches({
+        events: data.events,
+        teams: data.teams,
+        matches: data.matches,
+        venues: data.venues
+      }),
+    [data.events, data.matches, data.teams, data.venues]
+  );
   const conflicts = detectScheduleConflicts({
-    matches: data.matches,
+    matches: visibleMatches,
     teams: data.teams,
     players: data.players,
     events: data.events
   });
+  const bracket = preview?.bracket ?? null;
+  const previewSchedule = preview?.schedule ?? null;
 
   return (
     <div className="space-y-6">
@@ -67,6 +65,11 @@ export function FixtureGenerationPanel({ data }: { data: CompetitionData }) {
             <Info label="Pausa" value={`${selectedEvent.scheduleConfig?.transitionMinutes ?? 10} min`} />
             <Info label="Canchas" value={(selectedEvent.scheduleConfig?.courts ?? data.venues.map((venue) => venue.name)).join(", ")} />
             <Info label="Partidos" value={`${bracket?.matches.length ?? 0}`} />
+          </div>
+        ) : null}
+        {bracket?.warnings.length ? (
+          <div className="mt-4 rounded-md border border-amber-400/25 bg-amber-100 p-3 text-sm font-semibold text-amber-900">
+            {bracket.warnings.join(" ")}
           </div>
         ) : null}
         <div className="mt-5 flex flex-wrap items-center gap-3">
@@ -102,8 +105,9 @@ export function FixtureGenerationPanel({ data }: { data: CompetitionData }) {
         events={data.events}
         teams={data.teams}
         players={data.players}
-        matches={data.matches}
+        matches={visibleMatches}
         venues={data.venues}
+        initialEventId={selectedEvent?.id}
       />
     </div>
   );

@@ -1,4 +1,5 @@
 import { DaySchedule } from "@/features/fixture/components/DaySchedule";
+import { buildVisibleFixtureMatches } from "@/lib/domain/fixture-preview";
 import { getChampionshipPublicContext, getFixtureContext } from "@/lib/queries/public";
 import { getPublicCompetitionData } from "@/lib/supabase-data";
 
@@ -12,13 +13,19 @@ export default async function ChampionshipFixturePage({
   const [{ championshipSlug }, data] = await Promise.all([params, getPublicCompetitionData()]);
   const selected = getChampionshipPublicContext(data, championshipSlug);
   const fixture = getFixtureContext(data);
+  const visibleMatches = buildVisibleFixtureMatches({
+    events: fixture.events,
+    teams: fixture.teams,
+    matches: fixture.matches,
+    venues: fixture.venues
+  });
 
   return (
     <DaySchedule
       events={fixture.events}
       teams={fixture.teams}
       players={fixture.players}
-      matches={fixture.matches}
+      matches={visibleMatches}
       venues={fixture.venues}
       initialEventId={selected.event?.id}
     />
