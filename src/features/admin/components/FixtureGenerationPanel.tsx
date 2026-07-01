@@ -37,7 +37,7 @@ export function FixtureGenerationPanel({ data }: { data: CompetitionData }) {
       eventDate: selectedEvent.eventDate ?? data.matches[0]?.scheduledAt ?? new Date().toISOString(),
       startTime: selectedEvent.scheduleConfig?.startTime ?? "09:00",
       matchDurationMinutes: selectedEvent.scheduleConfig?.matchDurationMinutes ?? 20,
-      transitionMinutes: selectedEvent.scheduleConfig?.transitionMinutes ?? 0,
+      transitionMinutes: selectedEvent.scheduleConfig?.transitionMinutes ?? 10,
       courts: selectedEvent.scheduleConfig?.courts ?? data.venues.map((venue) => venue.name),
       minimumRestMinutes: selectedEvent.minimumRestMinutes,
       respectRoundDependencies: true,
@@ -64,6 +64,7 @@ export function FixtureGenerationPanel({ data }: { data: CompetitionData }) {
             <Info label="Estado" value={fixtureStatusLabel(selectedEvent.fixtureStatus)} />
             <Info label="Inicio" value={selectedEvent.scheduleConfig?.startTime ?? "09:00"} />
             <Info label="Duracion" value={`${selectedEvent.scheduleConfig?.matchDurationMinutes ?? 20} min`} />
+            <Info label="Pausa" value={`${selectedEvent.scheduleConfig?.transitionMinutes ?? 10} min`} />
             <Info label="Canchas" value={(selectedEvent.scheduleConfig?.courts ?? data.venues.map((venue) => venue.name)).join(", ")} />
             <Info label="Partidos" value={`${bracket?.matches.length ?? 0}`} />
           </div>

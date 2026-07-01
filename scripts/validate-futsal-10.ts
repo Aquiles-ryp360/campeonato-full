@@ -39,10 +39,10 @@ assert(labels.get("C1")?.awayPlaceholder === "Ganador P2", "C1 debe recibir Gana
 assert(labels.get("C3")?.awayPlaceholder === "Ganador P1", "C3 debe recibir Ganador P1.");
 
 assert(labels.get("P1")?.scheduledAt.includes("14:00:00.000Z"), "P1 debe programarse 09:00 America/Lima.");
-assert(labels.get("C1")?.scheduledAt.includes("14:20:00.000Z"), "C1 debe programarse 09:20 America/Lima.");
-assert(labels.get("C3")?.scheduledAt.includes("14:40:00.000Z"), "C3 debe programarse 09:40 America/Lima.");
-assert(labels.get("S1")?.scheduledAt.includes("15:00:00.000Z"), "S1 debe programarse 10:00 America/Lima.");
-assert(labels.get("F")?.scheduledAt.includes("15:20:00.000Z"), "Final debe programarse 10:20 America/Lima.");
+assert(labels.get("C1")?.scheduledAt.includes("14:30:00.000Z"), "C1 debe programarse 09:30 America/Lima.");
+assert(labels.get("C3")?.scheduledAt.includes("15:00:00.000Z"), "C3 debe programarse 10:00 America/Lima.");
+assert(labels.get("S1")?.scheduledAt.includes("15:30:00.000Z"), "S1 debe programarse 10:30 America/Lima.");
+assert(labels.get("F")?.scheduledAt.includes("16:00:00.000Z"), "Final debe programarse 11:00 America/Lima.");
 
 const courtTimeKeys = new Set<string>();
 for (const match of matches) {

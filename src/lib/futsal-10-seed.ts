@@ -37,7 +37,7 @@ export const futsal10Event: TournamentEvent = {
   scheduleConfig: {
     startTime: "09:00",
     matchDurationMinutes: 20,
-    transitionMinutes: 0,
+    transitionMinutes: 10,
     courts: ["Cancha A", "Cancha B"],
     minimumRestMinutes: 40,
     allowCompactPreview: true
@@ -50,7 +50,7 @@ export const futsal10Venues: Venue[] = [
 ];
 
 const teamSeedData = [
-  ["cccccccc-cccc-4ccc-8ccc-cccccccccc01", "Ingenieria Mecanica Electrica", "Carlos Rivas", "carlos.rivas.demo@campeonato.local", "999 100 001", "#0f766e"],
+  ["cccccccc-cccc-4ccc-8ccc-cccccccccc01", "Ingenieria Mecanica Electrica", "Carlos Rivas", "74396959@est.edu.unap.pe", "999 100 001", "#0f766e"],
   ["cccccccc-cccc-4ccc-8ccc-cccccccccc02", "Ingenieria de Sistemas", "Valeria Torres", "valeria.torres.demo@campeonato.local", "999 100 002", "#2563eb"],
   ["cccccccc-cccc-4ccc-8ccc-cccccccccc03", "Ingenieria Civil", "Miguel Salas", "miguel.salas.demo@campeonato.local", "999 100 003", "#16a34a"],
   ["cccccccc-cccc-4ccc-8ccc-cccccccccc04", "Ingenieria de Minas", "Rosa Quispe", "rosa.quispe.demo@campeonato.local", "999 100 004", "#7c3aed"],
@@ -106,7 +106,7 @@ export function buildFutsal10Seed(): CompetitionData {
     eventDate: futsal10Event.eventDate ?? eventDate,
     startTime: futsal10Event.scheduleConfig?.startTime ?? "09:00",
     matchDurationMinutes: futsal10Event.scheduleConfig?.matchDurationMinutes ?? 20,
-    transitionMinutes: futsal10Event.scheduleConfig?.transitionMinutes ?? 0,
+    transitionMinutes: futsal10Event.scheduleConfig?.transitionMinutes ?? 10,
     courts: futsal10Event.scheduleConfig?.courts ?? ["Cancha A", "Cancha B"],
     minimumRestMinutes: futsal10Event.minimumRestMinutes,
     respectRoundDependencies: true,

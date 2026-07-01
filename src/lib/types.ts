@@ -101,8 +101,10 @@ export interface TournamentEvent {
     matchDurationMinutes: number;
     transitionMinutes: number;
     courts: string[];
+    courtCount?: number;
     minimumRestMinutes: number;
     allowCompactPreview: boolean;
+    estimatedEndTime?: string;
   };
 }
 

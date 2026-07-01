@@ -96,7 +96,9 @@ export function generateOneDaySchedule(matches: Match[], config: OneDayScheduleC
     });
 
     const parallelGroups = Math.ceil(roundMatches.length / Math.max(1, config.courts.length));
-    const roundDuration = parallelGroups * (config.matchDurationMinutes + config.transitionMinutes);
+    const roundDuration =
+      parallelGroups * config.matchDurationMinutes +
+      Math.max(0, parallelGroups - 1) * config.transitionMinutes;
     const dependencyGap =
       config.respectRoundDependencies && !config.allowCompactPreview
         ? Math.max(config.minimumRestMinutes, config.transitionMinutes)
