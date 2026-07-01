@@ -82,9 +82,11 @@ function liveStatusLabel(status = "scheduled") {
     in_progress_second_half: "Segundo tiempo",
     pending_tiebreak: "Definir desempate",
     penalties: "Penales",
-    submitted: "En evaluacion",
+    referee_submitted: "Resultado oficial",
+    submitted: "Resultado oficial",
     validated: "Validado",
-    under_review: "En evaluacion",
+    under_review: "En revision",
+    corrected: "Corregido",
     disputed: "Observado",
     cancelled: "Cancelado"
   };
@@ -93,8 +95,8 @@ function liveStatusLabel(status = "scheduled") {
 }
 
 function liveBadgeTone(status = "scheduled"): "green" | "amber" | "red" | "blue" {
-  if (status === "submitted" || status === "under_review") return "amber";
-  if (status === "validated") return "green";
+  if (status === "under_review") return "amber";
+  if (status === "referee_submitted" || status === "submitted" || status === "corrected" || status === "validated") return "green";
   if (status === "cancelled" || status === "disputed") return "red";
   if (status === "scheduled") return "blue";
   return "green";

@@ -83,8 +83,8 @@ function statusBadgeTone(
   liveStatus: Match["liveStatus"],
   status: Match["status"]
 ): "neutral" | "green" | "amber" | "red" | "blue" | "dark" {
-  if (liveStatus === "submitted" || liveStatus === "under_review") return "amber";
-  if (liveStatus === "validated" || status === "finished") return "green";
+  if (liveStatus === "under_review") return "amber";
+  if (liveStatus === "referee_submitted" || liveStatus === "submitted" || liveStatus === "corrected" || liveStatus === "validated" || status === "finished") return "green";
   if (liveStatus === "disputed") return "red";
   if (liveStatus && liveStatus !== "scheduled") return "dark";
   return "blue";

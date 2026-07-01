@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
+import { Check, Trophy, X } from "lucide-react";
 import type { CompetitionData } from "@/lib/data-mappers";
 import { buildVisibleFixtureMatches } from "@/lib/domain/fixture-preview";
 import { getChampionshipPublicContext } from "@/lib/queries/public";
@@ -9,9 +10,11 @@ import { formatDateTime, getMatchSideLabel, sportLabel } from "@/lib/utils";
 import {
   formatMatchScore,
   liveStatusDescription,
-  splitPublicLiveMatches
+  penaltyAttemptTone,
+  splitPublicLiveMatches,
+  summarizePenaltyShootout
 } from "@/lib/live-match";
-import type { Match, Team, TournamentEvent } from "@/lib/types";
+import type { Match, MatchLiveEvent, Team, TournamentEvent } from "@/lib/types";
 import { Badge, Card, SectionHeader } from "@/components/ui";
 import { TeamCard } from "@/features/teams/components/TeamCard";
 import { TeamDetailsModal } from "./TeamDetailsModal";
@@ -89,6 +92,13 @@ export function PublicHome({
         event={context.event}
         teams={context.teams}
         matches={visibleMatches}
+        events={context.matchLiveEvents}
+      />
+
+      <PublicChampionBanner
+        event={context.event}
+        teams={context.teams}
+        matches={visibleMatches}
       />
 
       <ChampionshipSummaryCards
@@ -143,7 +153,7 @@ export function PublicHome({
   );
 }
 
-function PublicLiveMatches({
+function PublicChampionBanner({
   event,
   teams,
   matches
@@ -151,6 +161,44 @@ function PublicLiveMatches({
   event: TournamentEvent;
   teams: Team[];
   matches: Match[];
+}) {
+  if (!event.championTeamId) return null;
+
+  const champion = teams.find((team) => team.id === event.championTeamId);
+  const finalMatch = matches.find((match) => match.id === event.championMatchId);
+
+  return (
+    <section className="rounded-md bg-amber-300 p-4 text-ink shadow-panel">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex items-center gap-3">
+          <div className="grid h-12 w-12 shrink-0 place-items-center rounded-md bg-ink text-white">
+            <Trophy className="h-6 w-6" />
+          </div>
+          <div>
+            <p className="text-xs font-black uppercase text-ink/65">Campeon</p>
+            <h2 className="text-2xl font-black">{champion?.name ?? "Equipo campeon"}</h2>
+          </div>
+        </div>
+        {finalMatch ? (
+          <div className="rounded-md bg-white px-3 py-2 text-sm font-black">
+            Final: {getMatchSideLabel(finalMatch, teams, "home")} {formatMatchScore(finalMatch)} {getMatchSideLabel(finalMatch, teams, "away")}
+          </div>
+        ) : null}
+      </div>
+    </section>
+  );
+}
+
+function PublicLiveMatches({
+  event,
+  teams,
+  matches,
+  events = []
+}: {
+  event: TournamentEvent;
+  teams: Team[];
+  matches: Match[];
+  events?: MatchLiveEvent[];
 }) {
   const { primary, secondary } = splitPublicLiveMatches(matches);
   if (!primary || event.publicLiveScores === false) return null;
@@ -169,6 +217,11 @@ function PublicLiveMatches({
         <p className="mt-4 text-center text-sm font-bold text-white/75">
           {liveClockLabel(primary, event)}
         </p>
+        <PublicPenaltyStrip
+          match={primary}
+          teams={teams}
+          events={events.filter((item) => item.matchId === primary.id)}
+        />
       </div>
 
       {secondary.length > 0 ? (
@@ -181,8 +234,8 @@ function PublicLiveMatches({
                 className="rounded-md border border-ink/10 bg-mist p-3 text-left"
               >
                 <div className="flex items-center justify-between gap-2">
-                  <Badge tone={match.liveStatus === "penalties" ? "amber" : "dark"}>
-                    {match.liveStatus === "penalties" ? "Penales" : "En vivo"}
+                  <Badge tone={match.liveStatus === "under_review" ? "amber" : match.liveStatus === "disputed" ? "red" : "dark"}>
+                    {liveStatusDescription(match)}
                   </Badge>
                   <span className="text-xs font-bold text-ink/55">{match.court}</span>
                 </div>
@@ -194,6 +247,12 @@ function PublicLiveMatches({
                   <p className="truncate text-right text-sm font-black text-ink">{getMatchSideLabel(match, teams, "away")}</p>
                 </div>
                 <p className="mt-2 text-xs font-semibold text-ink/55">{liveClockLabel(match, event)}</p>
+                <PublicPenaltyStrip
+                  match={match}
+                  teams={teams}
+                  events={events.filter((item) => item.matchId === match.id)}
+                  compact
+                />
               </article>
             ))}
           </div>
@@ -203,13 +262,88 @@ function PublicLiveMatches({
   );
 }
 
+function PublicPenaltyStrip({
+  match,
+  teams,
+  events,
+  compact = false
+}: {
+  match: Match;
+  teams: Team[];
+  events: MatchLiveEvent[];
+  compact?: boolean;
+}) {
+  const penaltiesVisible = match.liveStatus === "penalties" || (match.penaltyHomeScore ?? 0) > 0 || (match.penaltyAwayScore ?? 0) > 0;
+  if (!penaltiesVisible) return null;
+
+  const summary = summarizePenaltyShootout(match, events);
+  const homeName = getMatchSideLabel(match, teams, "home");
+  const awayName = getMatchSideLabel(match, teams, "away");
+
+  return (
+    <div className={compact ? "mt-3 rounded-md bg-white p-2" : "mt-4 rounded-md bg-white/10 p-3"}>
+      <div className="flex items-center justify-between gap-3">
+        <p className={`font-black ${compact ? "text-xs text-ink" : "text-sm text-white"}`}>Penales</p>
+        <p className={`font-black tabular-nums ${compact ? "text-xs text-ink" : "text-sm text-white"}`}>
+          {summary.homeScore} - {summary.awayScore}
+        </p>
+      </div>
+      <div className="mt-2 grid gap-2">
+        <PublicPenaltyRow name={homeName} attempts={summary.home} compact={compact} />
+        <PublicPenaltyRow name={awayName} attempts={summary.away} compact={compact} />
+      </div>
+    </div>
+  );
+}
+
+function PublicPenaltyRow({
+  name,
+  attempts,
+  compact
+}: {
+  name: string;
+  attempts: ReturnType<typeof summarizePenaltyShootout>["home"];
+  compact: boolean;
+}) {
+  return (
+    <div className="grid grid-cols-[80px_1fr] items-center gap-2">
+      <p className={`truncate text-xs font-black ${compact ? "text-ink/65" : "text-white/75"}`}>{name}</p>
+      <div className="flex min-h-8 flex-wrap gap-1.5">
+        {attempts.length > 0 ? (
+          attempts.map((attempt) => {
+            const tone = penaltyAttemptTone(attempt.scored);
+            return (
+              <span
+                key={attempt.id}
+                className={`inline-flex min-h-8 min-w-9 items-center justify-center gap-1 rounded px-1.5 text-[11px] font-black text-white ${
+                  tone === "green" ? "bg-green-600" : "bg-red-600"
+                }`}
+                title={`Penal ${attempt.order}`}
+              >
+                {attempt.scored ? <Check className="h-3 w-3" /> : <X className="h-3 w-3" />}
+                {attempt.jerseyNumber ?? "S/N"}
+              </span>
+            );
+          })
+        ) : (
+          <span className={`text-xs font-semibold ${compact ? "text-ink/45" : "text-white/55"}`}>Sin tiros</span>
+        )}
+      </div>
+    </div>
+  );
+}
+
 function LiveMatchHeader({ event, match }: { event: TournamentEvent; match: Match }) {
   const headline =
     match.liveStatus === "penalties"
       ? "EN PENALES"
-      : match.liveStatus === "submitted" || match.liveStatus === "under_review"
-        ? "EN EVALUACION"
-        : "EN VIVO";
+      : match.liveStatus === "under_review"
+        ? "EN REVISION"
+        : match.liveStatus === "corrected"
+          ? "RESULTADO CORREGIDO"
+          : match.liveStatus === "referee_submitted" || match.liveStatus === "submitted" || match.liveStatus === "validated"
+            ? "RESULTADO OFICIAL"
+            : "EN VIVO";
 
   return (
     <div className="flex flex-wrap items-start justify-between gap-3">
@@ -252,7 +386,10 @@ function liveClockLabel(match: Match, event: TournamentEvent) {
   }
 
   if (status === "penalties") return "Penales en curso";
-  if (status === "submitted" || status === "under_review") return "Resultado en evaluacion";
+  if (status === "referee_submitted" || status === "submitted") return "Resultado cargado por arbitro";
+  if (status === "under_review") return "Resultado en revision";
+  if (status === "corrected") return "Resultado corregido";
+  if (status === "validated") return "Resultado validado";
   return liveStatusDescription(match);
 }
 

@@ -26,6 +26,7 @@ export interface CompetitionData {
   teams: Team[];
   players: Player[];
   matches: Match[];
+  matchLiveEvents?: MatchLiveEvent[];
   registrationCodes: RegistrationCode[];
   sports: Sport[];
   competitionFormats: CompetitionFormat[];
@@ -42,6 +43,7 @@ export const emptyCompetitionData: CompetitionData = {
   teams: [],
   players: [],
   matches: [],
+  matchLiveEvents: [],
   registrationCodes: [],
   sports: [],
   competitionFormats: [],
@@ -201,6 +203,9 @@ export type EventRow = {
   allow_byes?: boolean | null;
   penalties_enabled?: boolean | null;
   public_live_scores?: boolean | null;
+  champion_team_id?: string | null;
+  champion_match_id?: string | null;
+  champion_decided_at?: string | null;
   fixture_compact_preview?: boolean | null;
   schedule_config?: TournamentEvent["scheduleConfig"] | null;
 };
@@ -279,6 +284,7 @@ export type MatchRow = {
   penalty_home_score?: number | null;
   penalty_away_score?: number | null;
   winner_team_id?: string | null;
+  win_method?: Match["winMethod"] | null;
   actual_started_at?: string | null;
   first_half_started_at?: string | null;
   first_half_ended_at?: string | null;
@@ -468,6 +474,9 @@ export function mapEvent(row: EventRow): TournamentEvent {
     allowByes: row.allow_byes ?? undefined,
     penaltiesEnabled: row.penalties_enabled ?? undefined,
     publicLiveScores: row.public_live_scores ?? undefined,
+    championTeamId: row.champion_team_id ?? undefined,
+    championMatchId: row.champion_match_id ?? undefined,
+    championDecidedAt: row.champion_decided_at ?? undefined,
     fixtureCompactPreview: row.fixture_compact_preview ?? undefined,
     scheduleConfig: row.schedule_config ?? undefined
   };
@@ -554,6 +563,7 @@ export function mapMatch(row: MatchRow): Match {
     penaltyHomeScore: row.penalty_home_score ?? undefined,
     penaltyAwayScore: row.penalty_away_score ?? undefined,
     winnerTeamId: row.winner_team_id ?? undefined,
+    winMethod: row.win_method ?? undefined,
     actualStartedAt: row.actual_started_at ?? undefined,
     firstHalfStartedAt: row.first_half_started_at ?? undefined,
     firstHalfEndedAt: row.first_half_ended_at ?? undefined,

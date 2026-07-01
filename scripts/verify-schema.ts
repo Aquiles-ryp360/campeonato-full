@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 
 const refereeMigration = readFileSync("supabase/migrations/010_referee_live_module.sql", "utf8");
 const penaltyMigration = readFileSync("supabase/migrations/011_penalty_live_flow.sql", "utf8");
+const resolutionMigration = readFileSync("supabase/migrations/012_penalty_resolution_metadata.sql", "utf8");
 
 for (const column of [
   "penalty_home_score",
@@ -36,5 +37,24 @@ assert(
   penaltyMigration.includes("match_live_events_penalty_order_idx"),
   "Missing penalty order index"
 );
+
+for (const column of [
+  "win_method",
+  "champion_team_id",
+  "champion_match_id",
+  "champion_decided_at"
+]) {
+  assert(
+    resolutionMigration.includes(column),
+    `Missing penalty resolution metadata column: ${column}`
+  );
+}
+
+for (const status of ["referee_submitted", "corrected"]) {
+  assert(
+    resolutionMigration.includes(`'${status}'`),
+    `Missing live status in migration 012: ${status}`
+  );
+}
 
 console.log("Schema verification passed.");

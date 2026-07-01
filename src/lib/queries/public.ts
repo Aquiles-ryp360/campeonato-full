@@ -28,6 +28,7 @@ export function getChampionshipPublicContext(data: CompetitionData, slugOrId?: s
       groups: [],
       groupTeams: [],
       groupStandings: [],
+      matchLiveEvents: [],
       bases: null,
       venues: data.venues
     };
@@ -36,6 +37,7 @@ export function getChampionshipPublicContext(data: CompetitionData, slugOrId?: s
   const teams = data.teams.filter((team) => team.eventId === event.id);
   const teamIds = new Set(teams.map((team) => team.id));
   const matches = data.matches.filter((match) => match.eventId === event.id);
+  const matchIds = new Set(matches.map((match) => match.id));
   const groups = data.groups.filter((group) => group.eventId === event.id);
   const groupIds = new Set(groups.map((group) => group.id));
   const groupTeams = data.groupTeams.filter((row) => groupIds.has(row.groupId));
@@ -47,6 +49,7 @@ export function getChampionshipPublicContext(data: CompetitionData, slugOrId?: s
     teams,
     players: data.players.filter((player) => teamIds.has(player.teamId)),
     matches,
+    matchLiveEvents: (data.matchLiveEvents ?? []).filter((item) => matchIds.has(item.matchId)),
     standings: buildStandings(event, data.teams, data.matches),
     groups,
     groupTeams,

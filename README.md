@@ -34,9 +34,47 @@ SUPABASE_SERVICE_ROLE_KEY=
 
 La migracion inicial esta en `supabase/migrations/001_initial_schema.sql`.
 
+Para el flujo actual de arbitraje en vivo tambien debe aplicarse:
+
+- `supabase/migrations/012_penalty_resolution_metadata.sql`
+
+Esta migracion agrega metadatos de ganador, forma de victoria, estados publicos de resultado y campeon del evento. Debe ejecutarse en Supabase antes de desplegar el flujo nuevo en produccion.
+
 ## Flujos base
 
 - Publico: fixture, tabla y resultados.
 - Equipo: inscripcion con pago Yape/Plin, jugadores y estado.
 - Admin: crear eventos, configurar formato, aprobar/observar inscripciones, cargar resultados.
 - IA: audio de resultado, transcripcion, JSON revisable y boton para publicar.
+
+## Arbitraje en vivo
+
+El resultado cargado por el arbitro se publica inmediatamente como oficial. Cuando el arbitro presiona `Enviar resultado` o finaliza una tanda de penales:
+
+- se guarda el marcador final y los eventos del partido;
+- se actualizan marcador publico, tabla, tarjetas, suspensiones y estadisticas derivadas;
+- se actualiza el diagrama de llaves;
+- el ganador avanza inmediatamente si hay siguiente fase;
+- si el partido es final, se declara campeon inmediatamente;
+- el estado visible queda como `Resultado oficial` / `Resultado cargado por arbitro`.
+
+El admin no aprueba antes de publicar. Solo interviene despues si existe controversia, reclamo, observacion o correccion posterior.
+
+Estados relevantes:
+
+- `referee_submitted`: resultado oficial cargado por arbitro y visible publicamente.
+- `under_review`: resultado visible, marcado en revision por controversia.
+- `corrected`: resultado corregido por admin/editor.
+- `validated`: resultado confirmado definitivamente si se usa esa instancia.
+- `disputed`: resultado observado.
+- `cancelled`: partido cancelado.
+
+## Correcciones pendientes
+
+Pendiente implementar UI admin granular para corregir eventos del partido:
+
+- goleadores;
+- tarjetas;
+- penales;
+- eventos anulados;
+- auditoria visible de correcciones.

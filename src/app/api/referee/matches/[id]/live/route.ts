@@ -6,7 +6,14 @@ import {
   type AdminClient
 } from "@/lib/server-access";
 import { createSupabaseAdminClient } from "@/lib/supabase-admin";
-import { isPenaltyShootoutEvent } from "@/lib/live-match";
+import {
+  canFinalizePenaltyShootout,
+  getPenaltyStartEligibility,
+  isKnockoutStage,
+  isPenaltyShootoutEvent,
+  penaltyStartErrorMessage,
+  shouldAdvanceOfficialWinner
+} from "@/lib/live-match";
 import type { MatchLiveEventType } from "@/lib/types";
 
 export const runtime = "nodejs";
@@ -30,9 +37,17 @@ type MatchRow = {
   away_score: number | null;
   penalty_home_score: number | null;
   penalty_away_score: number | null;
+  winner_team_id: string | null;
+  win_method: string | null;
   actual_started_at: string | null;
   first_half_started_at: string | null;
+  first_half_ended_at: string | null;
+  halftime_started_at: string | null;
   second_half_started_at: string | null;
+  second_half_ended_at: string | null;
+  actual_finished_at: string | null;
+  submitted_at: string | null;
+  validated_at: string | null;
 };
 
 type EventRow = {
@@ -298,8 +313,7 @@ async function finishRegulation(
     : homeScore > awayScore
       ? match.home_team_id
       : match.away_team_id;
-  const autoValidated = autoValidateResults(event);
-  const nextLiveStatus = autoValidated ? "validated" : "submitted";
+  const nextLiveStatus = "referee_submitted";
 
   const { error } = await admin
     .from("matches")
@@ -309,16 +323,17 @@ async function finishRegulation(
       second_half_ended_at: now,
       actual_finished_at: now,
       submitted_at: now,
-      validated_at: autoValidated ? now : null,
+      validated_at: null,
       winner_team_id: winnerTeamId,
+      win_method: winnerTeamId ? "regulation" : null,
       updated_at: now
     })
     .eq("id", match.id);
 
   if (error) throw new Error(error.message);
 
-  if (autoValidated && winnerTeamId) {
-    await advanceWinnerInBracket(admin, match, winnerTeamId, userId);
+  if (shouldAdvanceOfficialWinner(nextLiveStatus) && winnerTeamId) {
+    await resolveDefinitiveWinner(admin, match, winnerTeamId, userId);
   }
 
   await insertLiveEvent(admin, {
@@ -333,23 +348,55 @@ async function finishRegulation(
 }
 
 async function startPenalties(admin: AdminClient, match: MatchRow, event: EventRow, userId: string) {
-  if (liveStatus(match) !== "pending_tiebreak") {
-    throw new Error("Los penales solo se habilitan cuando el partido queda empatado y requiere ganador.");
+  const status = liveStatus(match);
+  if (match.validated_at || status === "validated" || status === "cancelled") {
+    throw new Error("Este partido ya esta cerrado y no puede entrar a penales.");
   }
 
-  if (!isKnockoutMatch(match, event) || event.penalties_enabled === false) {
-    throw new Error("Este partido no tiene penales habilitados como desempate.");
+  const eligibility = getPenaltyStartEligibility({
+    format: eventFormat(event),
+    stage: match.stage,
+    homeScore: match.home_score,
+    awayScore: match.away_score,
+    liveStatus: status,
+    penaltiesEnabled: event.penalties_enabled,
+    homeTeamId: match.home_team_id,
+    awayTeamId: match.away_team_id
+  });
+
+  if (eligibility.reason === "already_penalties") {
+    await recalculatePenaltyScore(admin, match);
+    return;
+  }
+
+  if (!eligibility.allowed) {
+    throw new Error(penaltyStartErrorMessage(eligibility.reason));
   }
 
   const summary = await recalculatePenaltyScore(admin, match);
+  const now = new Date().toISOString();
+  const update: Record<string, unknown> = {
+    live_status: "penalties",
+    penalty_home_score: summary.home,
+    penalty_away_score: summary.away,
+    winner_team_id: null,
+    win_method: null,
+    updated_at: now
+  };
+
+  if (status === "in_progress_second_half") {
+    update.second_half_ended_at = match.second_half_ended_at ?? now;
+    update.actual_finished_at = match.actual_finished_at ?? now;
+  }
+
+  if (status === "submitted" || status === "referee_submitted") {
+    update.submitted_at = null;
+    update.validated_at = null;
+  }
+
   const { error } = await admin
     .from("matches")
-    .update({
-      live_status: "penalties",
-      penalty_home_score: summary.home,
-      penalty_away_score: summary.away,
-      updated_at: new Date().toISOString()
-    })
+    .update(update)
     .eq("id", match.id);
 
   if (error) throw new Error(error.message);
@@ -381,27 +428,39 @@ async function finishPenalties(admin: AdminClient, match: MatchRow, event: Event
 
   const now = new Date().toISOString();
   const winnerTeamId = penaltyHome > penaltyAway ? match.home_team_id : match.away_team_id;
-  const autoValidated = autoValidateResults(event);
-  const nextLiveStatus = autoValidated ? "validated" : "submitted";
+  if (!winnerTeamId) {
+    throw new Error("No se pudo calcular el ganador por penales.");
+  }
+
+  if (!canFinalizePenaltyShootout({
+    winnerTeamId,
+    homeAttempts: summary.homeAttempts,
+    awayAttempts: summary.awayAttempts
+  })) {
+    throw new Error("Ambos equipos deben tener la misma cantidad de penales antes de finalizar.");
+  }
+
+  const nextLiveStatus = "referee_submitted";
   const { error } = await admin
     .from("matches")
     .update({
       status: "finished",
       live_status: nextLiveStatus,
       submitted_at: now,
-      validated_at: autoValidated ? now : null,
+      validated_at: null,
       actual_finished_at: now,
       penalty_home_score: penaltyHome,
       penalty_away_score: penaltyAway,
       winner_team_id: winnerTeamId,
+      win_method: "penalties",
       updated_at: now
     })
     .eq("id", match.id);
 
   if (error) throw new Error(error.message);
 
-  if (autoValidated && winnerTeamId) {
-    await advanceWinnerInBracket(admin, match, winnerTeamId, userId);
+  if (shouldAdvanceOfficialWinner(nextLiveStatus) && winnerTeamId) {
+    await resolveDefinitiveWinner(admin, match, winnerTeamId, userId);
   }
 
   await insertLiveEvent(admin, {
@@ -655,8 +714,10 @@ async function recalculatePenaltyScore(admin: AdminClient, match: MatchRow) {
   if (error) throw new Error(error.message);
 
   const rows = (data ?? []) as Array<{ team_id: string | null; event_type: string }>;
-  const home = rows.filter((row) => row.team_id === match.home_team_id && row.event_type === "penalty_scored").length;
-  const away = rows.filter((row) => row.team_id === match.away_team_id && row.event_type === "penalty_scored").length;
+  const homeRows = rows.filter((row) => row.team_id === match.home_team_id);
+  const awayRows = rows.filter((row) => row.team_id === match.away_team_id);
+  const home = homeRows.filter((row) => row.event_type === "penalty_scored").length;
+  const away = awayRows.filter((row) => row.event_type === "penalty_scored").length;
 
   const { error: updateError } = await admin
     .from("matches")
@@ -668,7 +729,23 @@ async function recalculatePenaltyScore(admin: AdminClient, match: MatchRow) {
     .eq("id", match.id);
 
   if (updateError) throw new Error(updateError.message);
-  return { home, away };
+  return { home, away, homeAttempts: homeRows.length, awayAttempts: awayRows.length };
+}
+
+async function resolveDefinitiveWinner(
+  admin: AdminClient,
+  match: MatchRow,
+  winnerTeamId: string,
+  userId: string
+) {
+  if (match.next_match_id && match.is_home_next !== null) {
+    await advanceWinnerInBracket(admin, match, winnerTeamId, userId);
+    return;
+  }
+
+  if (match.stage === "final") {
+    await declareChampion(admin, match, winnerTeamId, userId);
+  }
 }
 
 async function advanceWinnerInBracket(
@@ -680,6 +757,30 @@ async function advanceWinnerInBracket(
   if (!match.next_match_id || match.is_home_next === null) return;
 
   const targetColumn = match.is_home_next ? "home_team_id" : "away_team_id";
+  const { data: nextMatch, error: nextMatchError } = await admin
+    .from("matches")
+    .select("id, home_team_id, away_team_id")
+    .eq("id", match.next_match_id)
+    .maybeSingle<{ id: string; home_team_id: string | null; away_team_id: string | null }>();
+
+  if (nextMatchError) throw new Error(nextMatchError.message);
+  if (!nextMatch) return;
+
+  const existingTeamId = targetColumn === "home_team_id" ? nextMatch.home_team_id : nextMatch.away_team_id;
+  if (existingTeamId && existingTeamId !== winnerTeamId) {
+    await insertLiveEvent(admin, {
+      match,
+      eventType: "bracket_updated",
+      period: "post_match",
+      minute: 0,
+      notes: `Avance omitido: ${targetColumn} de ${match.next_match_id} ya tiene equipo`,
+      userId
+    });
+    return;
+  }
+
+  if (existingTeamId === winnerTeamId) return;
+
   const { error } = await admin
     .from("matches")
     .update({
@@ -696,6 +797,34 @@ async function advanceWinnerInBracket(
     period: "post_match",
     minute: 0,
     notes: `Ganador enviado a ${match.next_match_id}`,
+    userId
+  });
+}
+
+async function declareChampion(
+  admin: AdminClient,
+  match: MatchRow,
+  winnerTeamId: string,
+  userId: string
+) {
+  const now = new Date().toISOString();
+  const { error } = await admin
+    .from("events")
+    .update({
+      champion_team_id: winnerTeamId,
+      champion_match_id: match.id,
+      champion_decided_at: now
+    })
+    .eq("id", match.event_id);
+
+  if (error) throw new Error(error.message);
+
+  await insertLiveEvent(admin, {
+    match,
+    eventType: "bracket_updated",
+    period: "post_match",
+    minute: 0,
+    notes: `Campeon declarado: ${winnerTeamId}`,
     userId
   });
 }
@@ -958,14 +1087,9 @@ function eventFormat(event: EventRow) {
 }
 
 function isKnockoutMatch(match: MatchRow, event: EventRow) {
-  const format = eventFormat(event);
-  if (format === "single_elimination") return true;
-  return Boolean(format === "groups_then_knockout" && match.stage && match.stage !== "group_stage");
+  return isKnockoutStage(eventFormat(event), match.stage);
 }
 
-function autoValidateResults(event: EventRow) {
-  return event.schedule_config?.autoValidateResults === true;
-}
 
 function limaDateKey(date: Date) {
   const parts = new Intl.DateTimeFormat("en-US", {

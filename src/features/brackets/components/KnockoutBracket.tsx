@@ -5,7 +5,7 @@ import { generateKnockoutBracket } from "@/lib/domain/bracket-generator";
 import type { Match, Team } from "@/lib/types";
 import { Badge } from "@/components/ui";
 import { formatDateTime } from "@/lib/utils";
-import { liveStatusLabel, visiblePenaltyScores } from "@/lib/live-match";
+import { liveStatusLabel, shouldAdvanceOfficialWinner, visiblePenaltyScores } from "@/lib/live-match";
 import { ThirdPlaceMatch } from "./ThirdPlaceMatch";
 
 export function KnockoutBracket({
@@ -61,6 +61,11 @@ export function KnockoutBracket({
                     teams={teams}
                     onOpenTeam={onOpenTeam}
                   />
+                  {provisionalWinnerName(slot.match, teams) ? (
+                    <p className="mt-2 rounded bg-amber-100 px-2 py-1 text-[11px] font-bold text-amber-900">
+                      Ganador provisional: {provisionalWinnerName(slot.match, teams)}
+                    </p>
+                  ) : null}
                   <p className="mt-3 truncate text-[11px] text-ink/50">
                     {slot.match?.scheduledAt
                       ? `${formatDateTime(slot.match.scheduledAt)} · ${slot.match.court}`
@@ -108,7 +113,7 @@ function TeamLine({
 }) {
   const team = teams.find((item) => item.id === teamId);
   const score = scoreForSide(match, side);
-  const validatedWinner = match?.liveStatus === "validated" && match.winnerTeamId === teamId;
+  const officialWinner = shouldAdvanceOfficialWinner(match?.liveStatus) && match?.winnerTeamId === teamId;
 
   if (!team) {
     return (
@@ -131,7 +136,7 @@ function TeamLine({
       </span>
       <span className="inline-flex items-center gap-1 font-black tabular-nums text-ink">
         {score}
-        {validatedWinner ? <Check className="h-3.5 w-3.5 text-green-700" /> : null}
+        {officialWinner ? <Check className="h-3.5 w-3.5 text-green-700" /> : null}
       </span>
     </button>
   );
@@ -148,4 +153,10 @@ function scoreForSide(match: Match | undefined, side: "home" | "away") {
   const penaltyScore = side === "home" ? penalties.home : penalties.away;
 
   return penalties.hasPenalties ? `${score} (${penaltyScore})` : String(score);
+}
+
+function provisionalWinnerName(match: Match | undefined, teams: Team[]) {
+  if (!match?.winnerTeamId) return null;
+  if (match.liveStatus !== "under_review" && match.liveStatus !== "disputed") return null;
+  return teams.find((team) => team.id === match.winnerTeamId)?.name ?? "Equipo ganador";
 }

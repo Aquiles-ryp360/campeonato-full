@@ -5,6 +5,7 @@ import {
   applyCatalogLabels,
   mapEvent,
   mapMatch,
+  mapMatchLiveEvent,
   mapPlayer,
   mapTeam,
   mapSport,
@@ -18,6 +19,7 @@ import {
   type CompetitionData,
   type EventRow,
   type MatchRow,
+  type MatchLiveEventRow,
   type PlayerRow,
   type TeamRow,
   type SportRow,
@@ -143,7 +145,8 @@ export async function getPublicCompetitionData({
     groupsResponse,
     groupTeamsResponse,
     groupStandingsResponse,
-    basesResponse
+    basesResponse,
+    liveEventsResponse
   ] = await Promise.all([
     supabase.from("events").select("*").order("created_at", { ascending: true }),
     supabase.from("teams").select(publicTeamColumns).order("created_at", { ascending: true }),
@@ -156,7 +159,8 @@ export async function getPublicCompetitionData({
     supabase.from("groups").select("*").order("name", { ascending: true }),
     supabase.from("group_teams").select("*").order("created_at", { ascending: true }),
     supabase.from("group_standings").select("*").order("points", { ascending: false }),
-    supabase.from("tournament_bases").select("*").order("created_at", { ascending: true })
+    supabase.from("tournament_bases").select("*").order("created_at", { ascending: true }),
+    supabase.from("match_live_events").select("*").order("created_at", { ascending: true })
   ]);
 
   logSupabaseError("events", eventsResponse.error);
@@ -171,6 +175,7 @@ export async function getPublicCompetitionData({
   logSupabaseError("group_teams", groupTeamsResponse.error);
   logSupabaseError("group_standings", groupStandingsResponse.error);
   logSupabaseError("tournament_bases", basesResponse.error);
+  logSupabaseError("match_live_events", liveEventsResponse.error);
 
   if (
     hasAnyError([
@@ -195,6 +200,7 @@ export async function getPublicCompetitionData({
     teams: ((teamsResponse.data ?? []) as TeamRow[]).map(mapTeam),
     players: mapPlayerRows((playersResponse.data ?? []) as unknown as PublicPlayerRow[], includePrivatePlayerFields),
     matches: ((matchesResponse.data ?? []) as MatchRow[]).map(mapMatch),
+    matchLiveEvents: ((liveEventsResponse.data ?? []) as MatchLiveEventRow[]).map(mapMatchLiveEvent),
     registrationCodes: [],
     sports: ((sportsResponse.data ?? []) as SportRow[]).map(mapSport),
     competitionFormats: ((formatsResponse.data ?? []) as CompetitionFormatRow[]).map(mapCompetitionFormat),
@@ -229,6 +235,7 @@ async function getLegacyPublicCompetitionData(
     teams: ((teamsResponse.data ?? []) as TeamRow[]).map(mapTeam),
     players: mapPlayerRows((playersResponse.data ?? []) as unknown as PublicPlayerRow[], includePrivatePlayerFields),
     matches: ((matchesResponse.data ?? []) as MatchRow[]).map(mapMatch),
+    matchLiveEvents: [],
     registrationCodes: [],
     sports: [],
     competitionFormats: [],

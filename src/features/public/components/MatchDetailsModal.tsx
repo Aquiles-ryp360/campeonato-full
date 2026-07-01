@@ -26,7 +26,7 @@ export function MatchDetailsModal({
       <div className="w-full max-w-xl rounded-t-lg bg-white p-5 shadow-panel sm:rounded-lg">
         <div className="flex items-start justify-between gap-4">
           <div>
-            <Badge tone={liveStatus === "submitted" || liveStatus === "under_review" ? "amber" : match.status === "finished" ? "green" : "blue"}>
+            <Badge tone={liveStatus === "under_review" ? "amber" : match.status === "finished" ? "green" : "blue"}>
               {liveStatusLabel(match.liveStatus, match.status)}
             </Badge>
             <h2 className="mt-3 text-xl font-bold text-ink">

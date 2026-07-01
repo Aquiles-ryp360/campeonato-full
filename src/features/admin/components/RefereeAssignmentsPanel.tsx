@@ -208,9 +208,11 @@ function liveStatusLabel(status: Match["liveStatus"]) {
     in_progress_second_half: "Segundo tiempo",
     pending_tiebreak: "Definir desempate",
     penalties: "Penales",
-    submitted: "En evaluacion",
+    referee_submitted: "Resultado oficial",
+    submitted: "Resultado oficial",
     validated: "Validado",
-    under_review: "En evaluacion",
+    under_review: "En revision",
+    corrected: "Corregido",
     disputed: "Observado",
     cancelled: "Cancelado"
   };

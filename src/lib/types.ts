@@ -15,6 +15,8 @@ export type TeamStatus = "pending_payment" | "registered" | "observed" | "approv
 
 export type MatchStatus = "scheduled" | "finished" | "walkover" | "postponed";
 
+export type MatchWinMethod = "regulation" | "penalties" | "walkover";
+
 export type LiveMatchStatus =
   | "scheduled"
   | "in_progress_first_half"
@@ -22,9 +24,11 @@ export type LiveMatchStatus =
   | "in_progress_second_half"
   | "pending_tiebreak"
   | "penalties"
+  | "referee_submitted"
   | "submitted"
   | "validated"
   | "under_review"
+  | "corrected"
   | "disputed"
   | "cancelled";
 
@@ -138,6 +142,9 @@ export interface TournamentEvent {
   allowByes?: boolean;
   penaltiesEnabled?: boolean;
   publicLiveScores?: boolean;
+  championTeamId?: string;
+  championMatchId?: string;
+  championDecidedAt?: string;
   fixtureCompactPreview?: boolean;
   scheduleConfig?: {
     startTime: string;
@@ -273,6 +280,7 @@ export interface Match {
   penaltyHomeScore?: number;
   penaltyAwayScore?: number;
   winnerTeamId?: string;
+  winMethod?: MatchWinMethod;
   actualStartedAt?: string;
   firstHalfStartedAt?: string;
   firstHalfEndedAt?: string;

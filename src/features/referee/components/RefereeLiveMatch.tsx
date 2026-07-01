@@ -17,7 +17,12 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { Badge, Button, Card } from "@/components/ui";
-import { summarizePenaltyShootout } from "@/lib/live-match";
+import {
+  canFinalizePenaltyShootout,
+  formatMatchScore,
+  penaltyAttemptTone,
+  summarizePenaltyShootout
+} from "@/lib/live-match";
 import type { RefereeLiveMatchData } from "@/lib/queries/referee";
 import type { MatchLiveEventType, Player, Team } from "@/lib/types";
 import { formatDateTime, getMatchSideLabel } from "@/lib/utils";
@@ -61,6 +66,8 @@ export function RefereeLiveMatch({ data }: { data: RefereeLiveMatchData }) {
     (status === "in_progress_first_half" && timer.elapsedMinutes >= firstHalfMinute) ||
     (status === "halftime" && timer.elapsedMinutes >= breakMinutes) ||
     (status === "in_progress_second_half" && timer.elapsedMinutes >= secondHalfMinutes);
+  const finishPenaltyDisabled = mainAction?.action === "finish_penalties" && !canFinalizePenaltyShootout(penaltySummary);
+  const mainActionDisabled = Boolean(busyAction) || finishPenaltyDisabled;
 
   useEffect(() => {
     const timerId = window.setInterval(() => setNow(Date.now()), 1000);
@@ -177,11 +184,11 @@ export function RefereeLiveMatch({ data }: { data: RefereeLiveMatchData }) {
           {mainAction ? (
             <Button
               onClick={() => confirmAndRun(mainAction.action, mainAction.confirm)}
-              disabled={Boolean(busyAction)}
+              disabled={mainActionDisabled}
               className={`min-h-12 w-full text-base md:w-auto ${thresholdReached ? "ring-4 ring-amber-300" : ""}`}
             >
               <Timer className="h-5 w-5" />
-              {busyAction?.startsWith(mainAction.action) ? "Procesando..." : mainAction.label}
+              {finishPenaltyDisabled ? "Falta ganador" : busyAction?.startsWith(mainAction.action) ? "Procesando..." : mainAction.label}
             </Button>
           ) : null}
         </div>
@@ -200,22 +207,29 @@ export function RefereeLiveMatch({ data }: { data: RefereeLiveMatchData }) {
             <div className="flex-1">
               <h2 className="text-xl font-black text-ink">Empate en eliminacion directa</h2>
               <p className="mt-1 text-sm text-ink/60">Debe definirse ganador por penales.</p>
-              <Button className="mt-4 w-full md:w-auto" onClick={() => runAction("start_penalties")}>
+              <Button className="mt-4 w-full md:w-auto" disabled={Boolean(busyAction)} onClick={() => runAction("start_penalties")}>
                 <Flag className="h-4 w-4" />
-                Ir a penales
+                {busyAction?.startsWith("start_penalties") ? "Entrando..." : "Ir a penales"}
               </Button>
             </div>
           </div>
         </Card>
       ) : null}
 
-      {status === "submitted" || status === "validated" ? (
+      {["referee_submitted", "submitted", "corrected", "under_review", "validated"].includes(status) ? (
         <Card className="p-4">
           <h2 className="text-xl font-black text-ink">Resultado enviado</h2>
           <p className="mt-1 text-sm text-ink/60">
-            Marcador final: {homeName} {homeScore} - {awayScore} {awayName}
+            Marcador final: {homeName} {formatMatchScore(match)} {awayName}
           </p>
-          <p className="mt-3 text-sm font-semibold text-amber-900">Estado visual: En evaluacion.</p>
+          {match.winnerTeamId ? (
+            <p className="mt-2 text-sm font-semibold text-ink">
+              Ganador{match.winMethod === "penalties" ? " por penales" : ""}: {winnerName(match.winnerTeamId, data)}
+            </p>
+          ) : null}
+          <p className={`mt-3 text-sm font-semibold ${status === "under_review" ? "text-amber-900" : "text-green-800"}`}>
+            Estado visual: {statusLabel(status)}.
+          </p>
         </Card>
       ) : null}
 
@@ -360,19 +374,22 @@ function PenaltyShootoutRow({
       <p className="truncate text-xs font-black text-ink">{name}</p>
       <div className="flex min-h-10 flex-wrap items-center gap-2">
         {attempts.length > 0 ? (
-          attempts.map((attempt) => (
-            <span
-              key={attempt.id}
-              className={`inline-flex min-h-9 min-w-10 items-center justify-center gap-1 rounded-md px-2 text-xs font-black text-white ${
-                attempt.scored ? "bg-green-600" : "bg-red-600"
-              }`}
-              title={`Penal ${attempt.order}`}
-            >
-              {attempt.scored ? <Check className="h-3.5 w-3.5" /> : <X className="h-3.5 w-3.5" />}
-              <span>{attempt.jerseyNumber ?? "S/N"}</span>
-              <span className="text-[10px] opacity-75">#{attempt.order}</span>
-            </span>
-          ))
+          attempts.map((attempt) => {
+            const tone = penaltyAttemptTone(attempt.scored);
+            return (
+              <span
+                key={attempt.id}
+                className={`inline-flex min-h-9 min-w-10 items-center justify-center gap-1 rounded-md px-2 text-xs font-black text-white ${
+                  tone === "green" ? "bg-green-600" : "bg-red-600"
+                }`}
+                title={`Penal ${attempt.order}`}
+              >
+                {attempt.scored ? <Check className="h-3.5 w-3.5" /> : <X className="h-3.5 w-3.5" />}
+                <span>{attempt.jerseyNumber ?? "S/N"}</span>
+                <span className="text-[10px] opacity-75">#{attempt.order}</span>
+              </span>
+            );
+          })
         ) : (
           <span className="text-xs font-semibold text-ink/45">Sin tiros</span>
         )}
@@ -455,6 +472,7 @@ function TeamActionPanel({
             label="Penal fallado"
             icon={<Ban className="h-5 w-5" />}
             disabled={panelDisabled}
+            tone="red"
             onClick={() => onPick(team, players, "penalty_missed_tiebreak")}
           />
         </div>
@@ -758,8 +776,8 @@ function getMainAction(
   if (status === "penalties") {
     return {
       action: "finish_penalties",
-      label: "Enviar penales",
-      confirm: "Enviar resultado definido por penales?"
+      label: "Finalizar penales",
+      confirm: "Finalizar penales y enviar el resultado?"
     };
   }
 
@@ -774,9 +792,11 @@ function statusLabel(status: string) {
     in_progress_second_half: "Segundo tiempo",
     pending_tiebreak: "Definir desempate",
     penalties: "Penales",
-    submitted: "En evaluacion",
+    referee_submitted: "Resultado oficial",
+    submitted: "Resultado oficial",
     validated: "Validado",
-    under_review: "En evaluacion",
+    under_review: "En revision",
+    corrected: "Corregido",
     disputed: "Observado",
     cancelled: "Cancelado"
   };
@@ -786,9 +806,9 @@ function statusLabel(status: string) {
 
 function statusBadgeTone(status: string): "neutral" | "green" | "amber" | "red" | "blue" | "dark" {
   if (status === "scheduled") return "blue";
-  if (status === "submitted" || status === "under_review" || status === "pending_tiebreak") return "amber";
+  if (status === "under_review" || status === "pending_tiebreak") return "amber";
   if (status === "cancelled" || status === "disputed") return "red";
-  if (status === "validated") return "green";
+  if (status === "referee_submitted" || status === "submitted" || status === "corrected" || status === "validated") return "green";
   return "dark";
 }
 
@@ -840,6 +860,10 @@ function eventLabel(eventType: MatchLiveEventType) {
 
 function teamsForMatch(data: RefereeLiveMatchData) {
   return [data.homeTeam, data.awayTeam].filter(Boolean) as Team[];
+}
+
+function winnerName(teamId: string, data: RefereeLiveMatchData) {
+  return teamsForMatch(data).find((team) => team.id === teamId)?.name ?? "Equipo ganador";
 }
 
 function playerName(player?: Player) {

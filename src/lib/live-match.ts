@@ -1,4 +1,4 @@
-import type { Match, MatchLiveEvent, MatchLiveEventType } from "./types";
+import type { LiveMatchStatus, Match, MatchLiveEvent, MatchLiveEventType, MatchStage, TournamentFormat } from "./types";
 
 export const liveMatchStatuses = [
   "in_progress_first_half",
@@ -9,6 +9,47 @@ export const liveMatchStatuses = [
 ] as const;
 
 export const reviewLiveStatuses = ["submitted", "under_review"] as const;
+
+export const officialResultStatuses = ["referee_submitted", "submitted", "corrected", "validated"] as const;
+
+export const publicResultStatuses = [
+  ...officialResultStatuses,
+  "under_review",
+  "disputed"
+] as const;
+
+export const penaltyStartCompatibleStatuses = [
+  "pending_tiebreak",
+  "in_progress_second_half",
+  "submitted",
+  "referee_submitted"
+] as const;
+
+export type PenaltyStartEligibilityReason =
+  | "allowed"
+  | "already_penalties"
+  | "missing_teams"
+  | "closed"
+  | "penalties_disabled"
+  | "not_knockout"
+  | "not_tied"
+  | "invalid_status";
+
+export type PenaltyStartEligibility = {
+  allowed: boolean;
+  reason: PenaltyStartEligibilityReason;
+};
+
+export type PenaltyStartEligibilityInput = {
+  format?: TournamentFormat | string | null;
+  stage?: MatchStage | string | null;
+  homeScore?: number | null;
+  awayScore?: number | null;
+  liveStatus?: LiveMatchStatus | string | null;
+  penaltiesEnabled?: boolean | null;
+  homeTeamId?: string | null;
+  awayTeamId?: string | null;
+};
 
 export type PenaltyShootoutSide = "home" | "away";
 
@@ -38,11 +79,83 @@ export function isPenaltyShootoutEvent(eventType: MatchLiveEventType | string) {
   return eventType === "penalty_scored" || eventType === "penalty_missed_tiebreak";
 }
 
+export function isKnockoutStage(format?: TournamentFormat | string | null, stage?: MatchStage | string | null) {
+  if (format === "single_elimination") return true;
+  return Boolean(format === "groups_then_knockout" && stage && stage !== "group_stage");
+}
+
+export function getPenaltyStartEligibility(input: PenaltyStartEligibilityInput): PenaltyStartEligibility {
+  const status = input.liveStatus ?? "scheduled";
+
+  if (!input.homeTeamId || !input.awayTeamId) {
+    return { allowed: false, reason: "missing_teams" };
+  }
+
+  if (status === "penalties") {
+    return { allowed: true, reason: "already_penalties" };
+  }
+
+  if (status === "validated" || status === "cancelled") {
+    return { allowed: false, reason: "closed" };
+  }
+
+  if (input.penaltiesEnabled === false) {
+    return { allowed: false, reason: "penalties_disabled" };
+  }
+
+  if (!isKnockoutStage(input.format, input.stage)) {
+    return { allowed: false, reason: "not_knockout" };
+  }
+
+  if ((input.homeScore ?? 0) !== (input.awayScore ?? 0)) {
+    return { allowed: false, reason: "not_tied" };
+  }
+
+  if (!penaltyStartCompatibleStatuses.includes(status as (typeof penaltyStartCompatibleStatuses)[number])) {
+    return { allowed: false, reason: "invalid_status" };
+  }
+
+  return { allowed: true, reason: "allowed" };
+}
+
+export function penaltyStartErrorMessage(reason: PenaltyStartEligibilityReason) {
+  const messages: Record<PenaltyStartEligibilityReason, string> = {
+    allowed: "",
+    already_penalties: "",
+    missing_teams: "El partido todavia tiene equipos pendientes.",
+    closed: "Este partido ya esta cerrado y no puede entrar a penales.",
+    penalties_disabled: "Este partido no tiene penales habilitados como desempate.",
+    not_knockout: "Los penales solo se habilitan en eliminacion directa o fases que requieren ganador.",
+    not_tied: "Los penales solo se habilitan cuando el marcador reglamentario queda empatado.",
+    invalid_status: "El partido no esta en un estado compatible para iniciar penales."
+  };
+
+  return messages[reason] || "Los penales solo se habilitan cuando el partido queda empatado y requiere ganador.";
+}
+
+export function penaltyAttemptTone(scored: boolean) {
+  return scored ? "green" : "red";
+}
+
+export function canFinalizePenaltyShootout(
+  summary: Pick<PenaltyShootoutSummary, "winnerTeamId" | "homeAttempts" | "awayAttempts">
+) {
+  return Boolean(summary.winnerTeamId) && summary.homeAttempts === summary.awayAttempts;
+}
+
+export function shouldAdvanceValidatedWinner(liveStatus?: LiveMatchStatus | string | null) {
+  return shouldAdvanceOfficialWinner(liveStatus);
+}
+
+export function shouldAdvanceOfficialWinner(liveStatus?: LiveMatchStatus | string | null) {
+  return officialResultStatuses.includes(liveStatus as (typeof officialResultStatuses)[number]);
+}
+
 export function isPublicLiveMatch(match: Match) {
   const status = match.liveStatus ?? "scheduled";
   return (
     liveMatchStatuses.includes(status as (typeof liveMatchStatuses)[number]) ||
-    reviewLiveStatuses.includes(status as (typeof reviewLiveStatuses)[number])
+    publicResultStatuses.includes(status as (typeof publicResultStatuses)[number])
   );
 }
 
@@ -123,9 +236,11 @@ export function liveStatusLabel(status?: Match["liveStatus"], fallbackStatus?: M
     in_progress_second_half: "Segundo tiempo",
     pending_tiebreak: "Definir desempate",
     penalties: "Penales",
-    submitted: "En evaluacion",
+    referee_submitted: "Resultado oficial",
+    submitted: "Resultado oficial",
     validated: "Validado",
-    under_review: "En evaluacion",
+    under_review: "En revision",
+    corrected: "Corregido",
     disputed: "Observado",
     cancelled: "Cancelado"
   };
@@ -144,7 +259,9 @@ export function liveStatusDescription(match: Match) {
   if (status === "in_progress_second_half") return "Segundo tiempo";
   if (status === "pending_tiebreak") return "Debe definir ganador";
   if (status === "penalties") return "Penales en curso";
-  if (status === "submitted" || status === "under_review") return "En evaluacion";
+  if (status === "referee_submitted" || status === "submitted") return "Resultado cargado por arbitro";
+  if (status === "under_review") return "Resultado en revision";
+  if (status === "corrected") return "Resultado corregido";
   if (status === "validated") return "Validado";
   return liveStatusLabel(status, match.status);
 }
