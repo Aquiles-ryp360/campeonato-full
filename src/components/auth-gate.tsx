@@ -241,11 +241,15 @@ async function loadBrowserSession(storedSession: AuthSession | null) {
     return null;
   }
 
-  const verifiedSession = createSession(
-    profile.role,
-    userData.user.email ?? storedSession?.username ?? "usuario",
-    profile.full_name ?? userData.user.email ?? "Usuario"
-  );
+  const username = userData.user.email ?? storedSession?.username ?? "usuario";
+  const displayName = profile.full_name ?? userData.user.email ?? "Usuario";
+  const createdAt =
+    storedSession?.role === profile.role &&
+    storedSession.username === username &&
+    storedSession.displayName === displayName
+      ? storedSession.createdAt
+      : undefined;
+  const verifiedSession = createSession(profile.role, username, displayName, createdAt);
 
   storeSession(verifiedSession);
   return verifiedSession;

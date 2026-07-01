@@ -27,12 +27,17 @@ export const demoDelegateCredentials = {
   password: "delegado123"
 };
 
-export function createSession(role: AuthRole, username: string, displayName: string): AuthSession {
+export function createSession(
+  role: AuthRole,
+  username: string,
+  displayName: string,
+  createdAt = new Date().toISOString()
+): AuthSession {
   return {
     role,
     username,
     displayName,
-    createdAt: new Date().toISOString()
+    createdAt
   };
 }
 
@@ -52,12 +57,15 @@ export function getStoredSession() {
 
 export function storeSession(session: AuthSession) {
   if (typeof window === "undefined") return;
-  window.localStorage.setItem(sessionKey, JSON.stringify(session));
+  const nextSession = JSON.stringify(session);
+  if (window.localStorage.getItem(sessionKey) === nextSession) return;
+  window.localStorage.setItem(sessionKey, nextSession);
   window.dispatchEvent(new Event(sessionChangeEvent));
 }
 
 export function clearStoredSession() {
   if (typeof window === "undefined") return;
+  if (!window.localStorage.getItem(sessionKey)) return;
   window.localStorage.removeItem(sessionKey);
   window.dispatchEvent(new Event(sessionChangeEvent));
 }
