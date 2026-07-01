@@ -121,6 +121,11 @@ async function registerDelegateTeam(
     );
   }
 
+  const repeatedDni = findDuplicateValue(input.players.map((player) => player.dni));
+  if (repeatedDni) {
+    throw new PublicRouteError(`El DNI ${repeatedDni} esta repetido en la plantilla.`, 400);
+  }
+
   const registrationCode = await findRegistrationCode(
     supabase,
     event.id,
@@ -181,7 +186,13 @@ async function registerDelegateTeam(
     );
 
     if (playersError) {
-      throw new PublicRouteError("No se pudo guardar la plantilla de jugadores.", 500);
+      console.error("Player roster insert failed", {
+        code: playersError.code,
+        message: playersError.message,
+        details: playersError.details,
+        hint: playersError.hint
+      });
+      throw playerRosterError(playersError);
     }
 
     const { data: updatedCode, error: codeUpdateError } = await supabase
@@ -411,4 +422,29 @@ function isUuid(value: string) {
   return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(
     value
   );
+}
+
+function findDuplicateValue(values: string[]) {
+  const seen = new Set<string>();
+
+  for (const value of values) {
+    const normalized = value.trim().toLowerCase();
+    if (!normalized) continue;
+    if (seen.has(normalized)) return value.trim();
+    seen.add(normalized);
+  }
+
+  return null;
+}
+
+function playerRosterError(error: { code?: string; message?: string }) {
+  if (error.code === "23505" || error.message?.includes("players_team_id_dni_key")) {
+    return new PublicRouteError("Hay jugadores con DNI repetido en la plantilla.", 400);
+  }
+
+  if (error.code === "23502") {
+    return new PublicRouteError("Completa los datos obligatorios de todos los jugadores.", 400);
+  }
+
+  return new PublicRouteError("No se pudo guardar la plantilla de jugadores.", 500);
 }

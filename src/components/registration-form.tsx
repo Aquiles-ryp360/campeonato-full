@@ -144,6 +144,12 @@ export function RegistrationForm({
       return;
     }
 
+    const repeatedDni = findDuplicateValue(completedPlayers.map((player) => player.dni));
+    if (repeatedDni) {
+      toast.error(`El DNI ${repeatedDni} esta repetido en la plantilla.`);
+      return;
+    }
+
     setIsSubmitting(true);
     try {
       const response = await fetch("/api/register-delegate", {
@@ -657,4 +663,17 @@ function slugify(value: string) {
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/^-+|-+$/g, "")
     .slice(0, 40);
+}
+
+function findDuplicateValue(values: string[]) {
+  const seen = new Set<string>();
+
+  for (const value of values) {
+    const normalized = value.trim().toLowerCase();
+    if (!normalized) continue;
+    if (seen.has(normalized)) return value.trim();
+    seen.add(normalized);
+  }
+
+  return null;
 }
