@@ -195,9 +195,21 @@ export async function getPublicCompetitionData({
     supabase.from("match_live_events").select("*").order("created_at", { ascending: true })
   ]);
 
+  const safeTeamsResponse = teamsResponse.error
+    ? await supabase.from("teams").select(legacyPublicTeamColumns).order("created_at", { ascending: true })
+    : teamsResponse;
+  const safePlayersResponse = playersResponse.error
+    ? await supabase
+        .from("players")
+        .select(includePrivatePlayerFields ? legacyPrivatePlayerColumns : legacyPublicPlayerColumns)
+        .order("created_at", { ascending: true })
+    : playersResponse;
+
   logSupabaseError("events", eventsResponse.error);
   logSupabaseError("teams", teamsResponse.error);
+  logSupabaseError("teams legacy retry", safeTeamsResponse.error);
   logSupabaseError("players", playersResponse.error);
+  logSupabaseError("players legacy retry", safePlayersResponse.error);
   logSupabaseError("matches", matchesResponse.error);
   logSupabaseError("sports", sportsResponse.error);
   logSupabaseError("competition_formats", formatsResponse.error);
@@ -212,8 +224,8 @@ export async function getPublicCompetitionData({
   if (
     hasAnyError([
       eventsResponse.error,
-      teamsResponse.error,
-      playersResponse.error,
+      safeTeamsResponse.error,
+      safePlayersResponse.error,
       matchesResponse.error,
       sportsResponse.error,
       formatsResponse.error,
@@ -230,8 +242,8 @@ export async function getPublicCompetitionData({
 
   return applyCatalogLabels({
     events: ((eventsResponse.data ?? []) as EventRow[]).map(mapEvent),
-    teams: ((teamsResponse.data ?? []) as TeamRow[]).map(mapTeam),
-    players: mapPlayerRows((playersResponse.data ?? []) as unknown as PublicPlayerRow[], includePrivatePlayerFields),
+    teams: ((safeTeamsResponse.data ?? []) as TeamRow[]).map(mapTeam),
+    players: mapPlayerRows((safePlayersResponse.data ?? []) as unknown as PublicPlayerRow[], includePrivatePlayerFields),
     matches: ((matchesResponse.data ?? []) as MatchRow[]).map(mapMatch),
     matchLiveEvents: ((liveEventsResponse.data ?? []) as MatchLiveEventRow[]).map(mapMatchLiveEvent),
     registrationCodes: [],

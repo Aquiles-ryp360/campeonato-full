@@ -198,11 +198,19 @@ export async function fetchBrowserCompetitionData({
     supabase.from("tournament_bases").select("*").order("created_at", { ascending: true })
   ]);
 
+  const legacyTeamSelect = includeRegistrationCodes ? legacyTeamColumnsWithCode : legacyTeamColumns;
+  const safeTeamsResponse = teamsResponse.error
+    ? await supabase.from("teams").select(legacyTeamSelect).order("created_at", { ascending: true })
+    : teamsResponse;
+  const safePlayersResponse = playersResponse.error
+    ? await supabase.from("players").select(legacyPlayerColumns).order("created_at", { ascending: true })
+    : playersResponse;
+
   if (
     hasAnyError([
       eventsResponse.error,
-      teamsResponse.error,
-      playersResponse.error,
+      safeTeamsResponse.error,
+      safePlayersResponse.error,
       matchesResponse.error,
       sportsResponse.error,
       formatsResponse.error,
@@ -218,8 +226,8 @@ export async function fetchBrowserCompetitionData({
   }
 
   if (eventsResponse.error) throw new Error("No se pudieron cargar los eventos.");
-  if (teamsResponse.error) throw new Error("No se pudieron cargar los equipos.");
-  if (playersResponse.error) throw new Error("No se pudieron cargar los jugadores.");
+  if (safeTeamsResponse.error) throw new Error("No se pudieron cargar los equipos.");
+  if (safePlayersResponse.error) throw new Error("No se pudieron cargar los jugadores.");
   if (matchesResponse.error) throw new Error("No se pudieron cargar los partidos.");
   if (codesResponse.error) throw new Error("No se pudieron cargar los codigos.");
   if (sportsResponse.error) throw new Error("No se pudieron cargar los deportes.");
@@ -233,8 +241,8 @@ export async function fetchBrowserCompetitionData({
 
   return applyCatalogLabels({
     events: ((eventsResponse.data ?? []) as EventRow[]).map(mapEvent),
-    teams: ((teamsResponse.data ?? []) as unknown as TeamRow[]).map(mapTeam),
-    players: ((playersResponse.data ?? []) as PlayerRow[]).map(mapPlayer),
+    teams: ((safeTeamsResponse.data ?? []) as unknown as TeamRow[]).map(mapTeam),
+    players: ((safePlayersResponse.data ?? []) as PlayerRow[]).map(mapPlayer),
     matches: ((matchesResponse.data ?? []) as MatchRow[]).map(mapMatch),
     registrationCodes: ((codesResponse.data ?? []) as RegistrationCodeRow[]).map(mapRegistrationCode),
     sports: ((sportsResponse.data ?? []) as SportRow[]).map(mapSport),
