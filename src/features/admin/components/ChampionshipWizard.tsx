@@ -50,6 +50,7 @@ type WizardDraft = {
   penaltiesEnabled: boolean;
   groupCount: number;
   matchDuration: number;
+  halfTimeMinute: number;
   walkoverMinutes: number;
   pointsWin: number;
   pointsDraw: number;
@@ -174,7 +175,19 @@ export function ChampionshipWizard({
               <input className={inputClass} value={draft.name} onChange={(event) => updateDraft({ name: event.target.value })} />
             </Field>
             <Field label="Deporte">
-              <select className={inputClass} value={draft.sport} onChange={(event) => updateDraft({ sport: event.target.value as SportKey, matchDuration: defaultDuration(event.target.value as SportKey) })}>
+              <select
+                className={inputClass}
+                value={draft.sport}
+                onChange={(event) => {
+                  const sport = event.target.value as SportKey;
+                  const matchDuration = defaultDuration(sport);
+                  updateDraft({
+                    sport,
+                    matchDuration,
+                    halfTimeMinute: defaultHalfTimeMinute(matchDuration)
+                  });
+                }}
+              >
                 <option value="futsal">Futsal</option>
                 <option value="futbol">Futbol</option>
                 <option value="voley">Voley</option>
@@ -252,6 +265,16 @@ export function ChampionshipWizard({
             <Field label="Duracion partido">
               <input className={inputClass} type="number" min={5} value={draft.matchDuration} onChange={(event) => updateDraft({ matchDuration: Number(event.target.value) })} />
             </Field>
+            <Field label="Medio tiempo minuto">
+              <input
+                className={inputClass}
+                type="number"
+                min={1}
+                max={Math.max(1, draft.matchDuration - 1)}
+                value={draft.halfTimeMinute}
+                onChange={(event) => updateDraft({ halfTimeMinute: Number(event.target.value) })}
+              />
+            </Field>
             <Field label="W.O. minutos">
               <input className={inputClass} type="number" min={0} value={draft.walkoverMinutes} onChange={(event) => updateDraft({ walkoverMinutes: Number(event.target.value) })} />
             </Field>
@@ -289,6 +312,7 @@ export function ChampionshipWizard({
           courtCount={draft.courtCount}
           onCourtCountChange={(value) => updateDraft({ courtCount: value })}
           matchDuration={draft.matchDuration}
+          halfTimeMinute={draft.halfTimeMinute}
           transitionMinutes={transitionMinutes}
           fixtureCompactPreview={draft.fixtureCompactPreview}
           onFixtureCompactPreviewChange={(value) => updateDraft({ fixtureCompactPreview: value })}
@@ -337,6 +361,7 @@ function draftFromEvent(event?: TournamentEvent | null): WizardDraft {
     penaltiesEnabled: event?.penaltiesEnabled ?? true,
     groupCount: 2,
     matchDuration: schedule?.matchDurationMinutes ?? defaultDuration(event?.sport ?? "futsal"),
+    halfTimeMinute: schedule?.halfTimeMinute ?? defaultHalfTimeMinute(schedule?.matchDurationMinutes ?? defaultDuration(event?.sport ?? "futsal")),
     walkoverMinutes: 10,
     pointsWin: event?.pointsWin ?? 3,
     pointsDraw: event?.pointsDraw ?? 1,
@@ -361,6 +386,7 @@ function normalizeDraft(draft: WizardDraft): WizardDraft {
     courtCount: clampNumber(draft.courtCount, 1, 3),
     groupCount: clampNumber(draft.groupCount, 2, Math.max(2, Math.min(8, maxTeams))),
     matchDuration: clampNumber(draft.matchDuration, 5, 240),
+    halfTimeMinute: clampNumber(draft.halfTimeMinute, 1, Math.max(1, clampNumber(draft.matchDuration, 5, 240) - 1)),
     walkoverMinutes: clampNumber(draft.walkoverMinutes, 0, 60),
     registrationFee: Math.max(0, Number.isFinite(draft.registrationFee) ? draft.registrationFee : 0),
     pointsWin: isKnockout ? 0 : draft.pointsWin,
@@ -412,6 +438,10 @@ function defaultDuration(sport: SportKey) {
   if (sport === "futbol") return 90;
   if (sport === "voley") return 45;
   return 20;
+}
+
+function defaultHalfTimeMinute(matchDuration: number) {
+  return Math.max(1, Math.floor(matchDuration / 2));
 }
 
 function estimateMatchCount(format: TournamentFormat, maxTeams: number, thirdPlace: boolean, groupCount: number) {

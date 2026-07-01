@@ -99,6 +99,7 @@ export interface TournamentEvent {
   scheduleConfig?: {
     startTime: string;
     matchDurationMinutes: number;
+    halfTimeMinute?: number;
     transitionMinutes: number;
     courts: string[];
     courtCount?: number;

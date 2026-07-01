@@ -23,6 +23,7 @@ const payloadSchema = z.object({
   allowByes: z.boolean(),
   penaltiesEnabled: z.boolean(),
   matchDuration: z.coerce.number().int().min(5).max(240),
+  halfTimeMinute: z.coerce.number().int().min(1).max(239),
   walkoverMinutes: z.coerce.number().int().min(0).max(60),
   pointsWin: z.coerce.number().int(),
   pointsDraw: z.coerce.number().int(),
@@ -33,6 +34,14 @@ const payloadSchema = z.object({
   fixtureCompactPreview: z.boolean(),
   transitionMinutes: z.coerce.number().int().min(0).max(60),
   estimatedEndTime: z.string().trim().regex(/^\d{2}:\d{2}$/)
+}).superRefine((input, context) => {
+  if (input.halfTimeMinute >= input.matchDuration) {
+    context.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ["halfTimeMinute"],
+      message: "El medio tiempo debe ser menor que la duracion del partido."
+    });
+  }
 });
 
 type AdminClient = ReturnType<typeof createSupabaseAdminClient>;
@@ -61,6 +70,7 @@ export async function POST(request: Request) {
     const scheduleConfig = {
       startTime: input.startTime,
       matchDurationMinutes: input.matchDuration,
+      halfTimeMinute: input.halfTimeMinute,
       transitionMinutes: input.transitionMinutes,
       courts: input.courts,
       courtCount: input.courtCount,

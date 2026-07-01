@@ -6,6 +6,7 @@ export function ScheduleConfigForm({
   courtCount,
   onCourtCountChange,
   matchDuration,
+  halfTimeMinute,
   transitionMinutes,
   fixtureCompactPreview,
   onFixtureCompactPreviewChange,
@@ -17,6 +18,7 @@ export function ScheduleConfigForm({
   courtCount: number;
   onCourtCountChange: (value: number) => void;
   matchDuration: number;
+  halfTimeMinute: number;
   transitionMinutes: number;
   fixtureCompactPreview: boolean;
   onFixtureCompactPreviewChange: (value: boolean) => void;
@@ -54,6 +56,7 @@ export function ScheduleConfigForm({
           </div>
         </Field>
         <Info label="Duracion partido" value={`${matchDuration} min`} />
+        <Info label="Medio tiempo" value={`Minuto ${halfTimeMinute}`} />
         <Info label="Pausa entre partidos" value={`${transitionMinutes} min`} />
         <Info label="Hora fin estimada" value={estimatedEndTime} />
         <Info label="Partidos estimados" value={`${estimatedMatches}`} />
