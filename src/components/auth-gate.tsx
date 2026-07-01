@@ -209,6 +209,30 @@ export function MobileSessionAction() {
   );
 }
 
+export function MobileLogoutAction() {
+  const session = useSyncedSession();
+
+  if (!session) return null;
+
+  return (
+    <button
+      type="button"
+      onClick={async () => {
+        if (hasSupabaseEnv()) {
+          await createSupabaseBrowserClient().auth.signOut();
+        }
+
+        clearStoredSession();
+        window.location.href = "/";
+      }}
+      className="flex flex-col items-center gap-1 px-2 py-2 text-[11px] font-semibold text-red-800"
+    >
+      <LogOut className="h-4 w-4" />
+      Salir
+    </button>
+  );
+}
+
 function useSyncedSession() {
   const [session, setSession] = useState<AuthSession | null>(null);
 

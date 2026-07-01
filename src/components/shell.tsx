@@ -13,7 +13,7 @@ import {
   Calendar,
   ClipboardCheck
 } from "lucide-react";
-import { AuthGate, MobileSessionAction, SessionActions } from "./auth-gate";
+import { AuthGate, MobileLogoutAction, MobileSessionAction, SessionActions } from "./auth-gate";
 
 type ShellNavLink = {
   href: string;
@@ -98,13 +98,16 @@ function Header({
 
 function MobileNav({
   nav,
-  showSessionAction
+  showSessionAction,
+  showLogoutAction
 }: {
   nav: ShellNavItem[];
   showSessionAction: boolean;
+  showLogoutAction: boolean;
 }) {
-  const visibleNav = showSessionAction ? nav.slice(0, 4) : nav.slice(0, 5);
-  const columnCount = Math.min(5, visibleNav.length + (showSessionAction ? 1 : 0));
+  const actionCount = (showSessionAction ? 1 : 0) + (showLogoutAction ? 1 : 0);
+  const visibleNav = nav.slice(0, Math.max(1, 5 - actionCount));
+  const columnCount = Math.min(5, visibleNav.length + actionCount);
 
   return (
     <nav className="fixed inset-x-0 bottom-0 z-40 border-t border-ink/10 bg-white md:hidden">
@@ -127,6 +130,7 @@ function MobileNav({
           );
         })}
         {showSessionAction ? <MobileSessionAction /> : null}
+        {showLogoutAction ? <MobileLogoutAction /> : null}
       </div>
     </nav>
   );
@@ -137,19 +141,25 @@ function ShellFrame({
   nav,
   eyebrow,
   showMobileSessionAction = false,
+  showMobileLogoutAction = false,
   showPanelLink = true
 }: {
   children: ReactNode;
   nav: ShellNavItem[];
   eyebrow: string;
   showMobileSessionAction?: boolean;
+  showMobileLogoutAction?: boolean;
   showPanelLink?: boolean;
 }) {
   return (
     <div className="min-h-screen">
       <Header nav={nav} eyebrow={eyebrow} showPanelLink={showPanelLink} />
       <main className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:py-8">{children}</main>
-      <MobileNav nav={nav} showSessionAction={showMobileSessionAction} />
+      <MobileNav
+        nav={nav}
+        showSessionAction={showMobileSessionAction}
+        showLogoutAction={showMobileLogoutAction}
+      />
     </div>
   );
 }
@@ -198,6 +208,7 @@ export function RefereeShell({ children }: { children: ReactNode }) {
       nav={refereeNav}
       eyebrow="Panel arbitro"
       showMobileSessionAction
+      showMobileLogoutAction
       showPanelLink={false}
     >
       <AuthGate role="referee">{children}</AuthGate>
