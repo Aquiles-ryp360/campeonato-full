@@ -6,6 +6,7 @@ import {
   type AdminClient
 } from "@/lib/server-access";
 import { createSupabaseAdminClient } from "@/lib/supabase-admin";
+import { isPenaltyShootoutEvent } from "@/lib/live-match";
 import type { MatchLiveEventType } from "@/lib/types";
 
 export const runtime = "nodejs";
@@ -17,8 +18,11 @@ type RouteContext = {
 type MatchRow = {
   id: string;
   event_id: string;
+  stage: string | null;
   home_team_id: string | null;
   away_team_id: string | null;
+  next_match_id: string | null;
+  is_home_next: boolean | null;
   scheduled_at: string;
   status: "scheduled" | "finished" | "walkover" | "postponed";
   live_status: string | null;
@@ -42,6 +46,7 @@ type EventRow = {
     additionalTimeAllowedMinutes?: number;
     matchStartToleranceMinutes?: number;
     allowManualFinish?: boolean;
+    autoValidateResults?: boolean;
   } | null;
 };
 
@@ -51,6 +56,9 @@ type LiveEventRow = {
   player_id: string | null;
   event_type: MatchLiveEventType;
   minute: number;
+  penalty_order: number | null;
+  created_at: string;
+  corrected_at: string | null;
 };
 
 const actionSchema = z.discriminatedUnion("action", [
@@ -82,7 +90,8 @@ const actionSchema = z.discriminatedUnion("action", [
   z.object({
     action: z.literal("undo_last_event"),
     teamId: z.string().uuid().optional()
-  })
+  }),
+  z.object({ action: z.literal("undo_last_penalty") })
 ]);
 
 export async function POST(request: Request, context: RouteContext) {
@@ -112,7 +121,7 @@ export async function POST(request: Request, context: RouteContext) {
         await finishRegulation(admin, match, event, access.user.id);
         break;
       case "start_penalties":
-        await startPenalties(admin, match);
+        await startPenalties(admin, match, event, access.user.id);
         break;
       case "finish_penalties":
         await finishPenalties(admin, match, event, access.user.id);
@@ -128,6 +137,9 @@ export async function POST(request: Request, context: RouteContext) {
         break;
       case "undo_last_event":
         await undoLastEvent(admin, match, access.user.id, input.teamId, access.isAdmin);
+        break;
+      case "undo_last_penalty":
+        await undoLastPenalty(admin, match, access.user.id, access.isAdmin);
         break;
     }
 
@@ -250,12 +262,13 @@ async function finishRegulation(
   const homeScore = match.home_score ?? 0;
   const awayScore = match.away_score ?? 0;
   const now = new Date().toISOString();
-  const tiedKnockout =
-    homeScore === awayScore &&
-    eventFormat(event) === "single_elimination" &&
-    event.penalties_enabled !== false;
+  const tiedKnockout = homeScore === awayScore && isKnockoutMatch(match, event);
 
   if (tiedKnockout) {
+    if (event.penalties_enabled === false) {
+      throw new Error("Este cruce requiere ganador. Habilita penales o define una regla de desempate antes de enviar.");
+    }
+
     const { error } = await admin
       .from("matches")
       .update({
@@ -285,21 +298,28 @@ async function finishRegulation(
     : homeScore > awayScore
       ? match.home_team_id
       : match.away_team_id;
+  const autoValidated = autoValidateResults(event);
+  const nextLiveStatus = autoValidated ? "validated" : "submitted";
 
   const { error } = await admin
     .from("matches")
     .update({
       status: "finished",
-      live_status: "submitted",
+      live_status: nextLiveStatus,
       second_half_ended_at: now,
       actual_finished_at: now,
       submitted_at: now,
+      validated_at: autoValidated ? now : null,
       winner_team_id: winnerTeamId,
       updated_at: now
     })
     .eq("id", match.id);
 
   if (error) throw new Error(error.message);
+
+  if (autoValidated && winnerTeamId) {
+    await advanceWinnerInBracket(admin, match, winnerTeamId, userId);
+  }
 
   await insertLiveEvent(admin, {
     match,
@@ -312,20 +332,38 @@ async function finishRegulation(
   });
 }
 
-async function startPenalties(admin: AdminClient, match: MatchRow) {
+async function startPenalties(admin: AdminClient, match: MatchRow, event: EventRow, userId: string) {
   if (liveStatus(match) !== "pending_tiebreak") {
     throw new Error("Los penales solo se habilitan cuando el partido queda empatado y requiere ganador.");
   }
 
+  if (!isKnockoutMatch(match, event) || event.penalties_enabled === false) {
+    throw new Error("Este partido no tiene penales habilitados como desempate.");
+  }
+
+  const summary = await recalculatePenaltyScore(admin, match);
   const { error } = await admin
     .from("matches")
     .update({
       live_status: "penalties",
+      penalty_home_score: summary.home,
+      penalty_away_score: summary.away,
       updated_at: new Date().toISOString()
     })
     .eq("id", match.id);
 
   if (error) throw new Error(error.message);
+
+  await insertLiveEvent(admin, {
+    match,
+    eventType: "penalties_started",
+    period: "penalties",
+    minute: minuteFromMatch(match, "penalties", event),
+    scoreHome: match.home_score ?? 0,
+    scoreAway: match.away_score ?? 0,
+    notes: "Modo penales iniciado",
+    userId
+  });
 }
 
 async function finishPenalties(admin: AdminClient, match: MatchRow, event: EventRow, userId: string) {
@@ -333,8 +371,9 @@ async function finishPenalties(admin: AdminClient, match: MatchRow, event: Event
     throw new Error("El partido no esta en modo penales.");
   }
 
-  const penaltyHome = match.penalty_home_score ?? 0;
-  const penaltyAway = match.penalty_away_score ?? 0;
+  const summary = await recalculatePenaltyScore(admin, match);
+  const penaltyHome = summary.home;
+  const penaltyAway = summary.away;
 
   if (penaltyHome === penaltyAway) {
     throw new Error("Los penales siguen empatados. Define un ganador antes de enviar.");
@@ -342,18 +381,39 @@ async function finishPenalties(admin: AdminClient, match: MatchRow, event: Event
 
   const now = new Date().toISOString();
   const winnerTeamId = penaltyHome > penaltyAway ? match.home_team_id : match.away_team_id;
+  const autoValidated = autoValidateResults(event);
+  const nextLiveStatus = autoValidated ? "validated" : "submitted";
   const { error } = await admin
     .from("matches")
     .update({
       status: "finished",
-      live_status: "submitted",
+      live_status: nextLiveStatus,
       submitted_at: now,
+      validated_at: autoValidated ? now : null,
+      actual_finished_at: now,
+      penalty_home_score: penaltyHome,
+      penalty_away_score: penaltyAway,
       winner_team_id: winnerTeamId,
       updated_at: now
     })
     .eq("id", match.id);
 
   if (error) throw new Error(error.message);
+
+  if (autoValidated && winnerTeamId) {
+    await advanceWinnerInBracket(admin, match, winnerTeamId, userId);
+  }
+
+  await insertLiveEvent(admin, {
+    match,
+    eventType: "penalties_finished",
+    period: "post_match",
+    minute: minuteFromMatch(match, "penalties", event),
+    scoreHome: match.home_score ?? 0,
+    scoreAway: match.away_score ?? 0,
+    notes: `Penales ${penaltyHome}-${penaltyAway}`,
+    userId
+  });
 
   await insertLiveEvent(admin, {
     match,
@@ -379,8 +439,7 @@ async function recordLiveEvent(
   }
 ) {
   const status = liveStatus(match);
-  const isPenaltyShootout =
-    input.eventType === "penalty_scored" || input.eventType === "penalty_missed_tiebreak";
+  const isPenaltyShootout = isPenaltyShootoutEvent(input.eventType);
 
   if (isPenaltyShootout && status !== "penalties") {
     throw new Error("Los penales solo se registran en modo penales.");
@@ -409,9 +468,9 @@ async function recordLiveEvent(
   }
 
   const score = nextScore(match, input.eventType, input.teamId);
-  const penaltyScore = nextPenaltyScore(match, input.eventType, input.teamId);
   const minute = minuteFromMatch(match, status, event);
   const period = periodForStatus(status);
+  const penaltyOrder = isPenaltyShootout ? await nextPenaltyOrder(admin, match.id) : undefined;
 
   if (score) {
     const { error } = await admin
@@ -419,19 +478,6 @@ async function recordLiveEvent(
       .update({
         home_score: score.home,
         away_score: score.away,
-        updated_at: new Date().toISOString()
-      })
-      .eq("id", match.id);
-
-    if (error) throw new Error(error.message);
-  }
-
-  if (penaltyScore) {
-    const { error } = await admin
-      .from("matches")
-      .update({
-        penalty_home_score: penaltyScore.home,
-        penalty_away_score: penaltyScore.away,
         updated_at: new Date().toISOString()
       })
       .eq("id", match.id);
@@ -447,11 +493,17 @@ async function recordLiveEvent(
     teamId: input.teamId,
     playerId: input.playerId,
     jerseyNumber: player?.jersey_number ?? null,
+    penaltyOrder,
     scoreHome: score?.home ?? match.home_score ?? 0,
     scoreAway: score?.away ?? match.away_score ?? 0,
     notes: input.notes,
     userId: input.userId
   });
+
+  if (isPenaltyShootout) {
+    await recalculatePenaltyScore(admin, match);
+    return;
+  }
 
   await mirrorEventToLegacyTables(admin, match, {
     eventType: input.eventType,
@@ -475,7 +527,7 @@ async function undoLastEvent(
 ) {
   let query = admin
     .from("match_live_events")
-    .select("id, team_id, player_id, event_type, minute")
+    .select("id, team_id, player_id, event_type, minute, penalty_order, created_at, corrected_at")
     .eq("match_id", match.id)
     .is("corrected_at", null)
     .in("event_type", [
@@ -487,9 +539,7 @@ async function undoLastEvent(
       "red_card",
       "foul",
       "injury",
-      "observation",
-      "penalty_scored",
-      "penalty_missed_tiebreak"
+      "observation"
     ])
     .order("created_at", { ascending: false })
     .limit(1);
@@ -534,6 +584,122 @@ async function undoLastEvent(
   if (updateError) throw new Error(updateError.message);
 }
 
+async function undoLastPenalty(
+  admin: AdminClient,
+  match: MatchRow,
+  userId: string,
+  isAdmin = false
+) {
+  if (liveStatus(match) !== "penalties") {
+    throw new Error("Solo se puede anular penales mientras el partido esta en modo penales.");
+  }
+
+  let query = admin
+    .from("match_live_events")
+    .select("id, team_id, player_id, event_type, minute, penalty_order, created_at, corrected_at")
+    .eq("match_id", match.id)
+    .is("corrected_at", null)
+    .in("event_type", ["penalty_scored", "penalty_missed_tiebreak"])
+    .order("penalty_order", { ascending: false, nullsFirst: false })
+    .order("created_at", { ascending: false })
+    .limit(1);
+
+  if (!isAdmin) {
+    query = query.eq("created_by", userId);
+  }
+
+  const { data, error } = await query.maybeSingle<LiveEventRow>();
+  if (error) throw new Error(error.message);
+  if (!data) throw new Error("No hay penales para anular.");
+
+  const { error: updateError } = await admin
+    .from("match_live_events")
+    .update({
+      corrected_at: new Date().toISOString(),
+      corrected_by: userId,
+      correction_reason: "Penal anulado por el arbitro"
+    })
+    .eq("id", data.id);
+
+  if (updateError) throw new Error(updateError.message);
+
+  await recalculatePenaltyScore(admin, match);
+}
+
+async function nextPenaltyOrder(admin: AdminClient, matchId: string) {
+  const { data, error } = await admin
+    .from("match_live_events")
+    .select("penalty_order")
+    .eq("match_id", matchId)
+    .is("corrected_at", null)
+    .in("event_type", ["penalty_scored", "penalty_missed_tiebreak"]);
+
+  if (error) throw new Error(error.message);
+
+  const highest = (data ?? []).reduce((max, row) => {
+    const order = typeof row.penalty_order === "number" ? row.penalty_order : 0;
+    return Math.max(max, order);
+  }, 0);
+
+  return highest + 1;
+}
+
+async function recalculatePenaltyScore(admin: AdminClient, match: MatchRow) {
+  const { data, error } = await admin
+    .from("match_live_events")
+    .select("team_id, event_type")
+    .eq("match_id", match.id)
+    .is("corrected_at", null)
+    .in("event_type", ["penalty_scored", "penalty_missed_tiebreak"]);
+
+  if (error) throw new Error(error.message);
+
+  const rows = (data ?? []) as Array<{ team_id: string | null; event_type: string }>;
+  const home = rows.filter((row) => row.team_id === match.home_team_id && row.event_type === "penalty_scored").length;
+  const away = rows.filter((row) => row.team_id === match.away_team_id && row.event_type === "penalty_scored").length;
+
+  const { error: updateError } = await admin
+    .from("matches")
+    .update({
+      penalty_home_score: home,
+      penalty_away_score: away,
+      updated_at: new Date().toISOString()
+    })
+    .eq("id", match.id);
+
+  if (updateError) throw new Error(updateError.message);
+  return { home, away };
+}
+
+async function advanceWinnerInBracket(
+  admin: AdminClient,
+  match: MatchRow,
+  winnerTeamId: string,
+  userId: string
+) {
+  if (!match.next_match_id || match.is_home_next === null) return;
+
+  const targetColumn = match.is_home_next ? "home_team_id" : "away_team_id";
+  const { error } = await admin
+    .from("matches")
+    .update({
+      [targetColumn]: winnerTeamId,
+      updated_at: new Date().toISOString()
+    })
+    .eq("id", match.next_match_id);
+
+  if (error) throw new Error(error.message);
+
+  await insertLiveEvent(admin, {
+    match,
+    eventType: "bracket_updated",
+    period: "post_match",
+    minute: 0,
+    notes: `Ganador enviado a ${match.next_match_id}`,
+    userId
+  });
+}
+
 function validateStartWindow(match: MatchRow, event: EventRow) {
   const scheduled = new Date(match.scheduled_at);
   const now = new Date();
@@ -566,16 +732,6 @@ function nextScore(match: MatchRow, eventType: MatchLiveEventType, teamId?: stri
       : { home: home + 1, away };
   }
 
-  return teamId === match.home_team_id
-    ? { home: home + 1, away }
-    : { home, away: away + 1 };
-}
-
-function nextPenaltyScore(match: MatchRow, eventType: MatchLiveEventType, teamId?: string) {
-  if (!teamId || eventType !== "penalty_scored") return null;
-
-  const home = match.penalty_home_score ?? 0;
-  const away = match.penalty_away_score ?? 0;
   return teamId === match.home_team_id
     ? { home: home + 1, away }
     : { home, away: away + 1 };
@@ -682,6 +838,7 @@ async function insertLiveEvent(
     teamId?: string;
     playerId?: string;
     jerseyNumber?: number | null;
+    penaltyOrder?: number;
     scoreHome?: number;
     scoreAway?: number;
     notes?: string;
@@ -698,6 +855,7 @@ async function insertLiveEvent(
     minute: input.minute,
     score_home: input.scoreHome ?? null,
     score_away: input.scoreAway ?? null,
+    penalty_order: input.penaltyOrder ?? null,
     notes: input.notes ?? null,
     created_by: input.userId
   });
@@ -797,6 +955,16 @@ function eventFormat(event: EventRow) {
     return value;
   }
   return "league";
+}
+
+function isKnockoutMatch(match: MatchRow, event: EventRow) {
+  const format = eventFormat(event);
+  if (format === "single_elimination") return true;
+  return Boolean(format === "groups_then_knockout" && match.stage && match.stage !== "group_stage");
+}
+
+function autoValidateResults(event: EventRow) {
+  return event.schedule_config?.autoValidateResults === true;
 }
 
 function limaDateKey(date: Date) {

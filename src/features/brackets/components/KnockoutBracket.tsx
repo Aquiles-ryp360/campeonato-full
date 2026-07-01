@@ -1,10 +1,11 @@
 "use client";
 
-import { Trophy } from "lucide-react";
+import { Check, Trophy } from "lucide-react";
 import { generateKnockoutBracket } from "@/lib/domain/bracket-generator";
 import type { Match, Team } from "@/lib/types";
 import { Badge } from "@/components/ui";
 import { formatDateTime } from "@/lib/utils";
+import { liveStatusLabel, visiblePenaltyScores } from "@/lib/live-match";
 import { ThirdPlaceMatch } from "./ThirdPlaceMatch";
 
 export function KnockoutBracket({
@@ -40,14 +41,26 @@ export function KnockoutBracket({
                     <span className="rounded bg-ink px-2 py-1 text-[10px] font-black uppercase text-white">
                       {slot.label}
                     </span>
-                    {slot.match?.status === "finished" ? (
-                      <span className="text-[10px] font-bold uppercase text-field">Fin</span>
-                    ) : (
-                      <span className="text-[10px] font-bold uppercase text-ink/40">Pend.</span>
-                    )}
+                    <span className="text-[10px] font-bold uppercase text-ink/55">
+                      {liveStatusLabel(slot.match?.liveStatus, slot.match?.status)}
+                    </span>
                   </div>
-                  <TeamLine teamId={slot.homeTeamId} fallback={slot.homeLabel} teams={teams} onOpenTeam={onOpenTeam} />
-                  <TeamLine teamId={slot.awayTeamId} fallback={slot.awayLabel} teams={teams} onOpenTeam={onOpenTeam} />
+                  <TeamLine
+                    side="home"
+                    match={slot.match}
+                    teamId={slot.homeTeamId}
+                    fallback={slot.homeLabel}
+                    teams={teams}
+                    onOpenTeam={onOpenTeam}
+                  />
+                  <TeamLine
+                    side="away"
+                    match={slot.match}
+                    teamId={slot.awayTeamId}
+                    fallback={slot.awayLabel}
+                    teams={teams}
+                    onOpenTeam={onOpenTeam}
+                  />
                   <p className="mt-3 truncate text-[11px] text-ink/50">
                     {slot.match?.scheduledAt
                       ? `${formatDateTime(slot.match.scheduledAt)} · ${slot.match.court}`
@@ -79,23 +92,29 @@ export function KnockoutBracket({
 }
 
 function TeamLine({
+  side,
+  match,
   teamId,
   fallback,
   teams,
   onOpenTeam
 }: {
+  side: "home" | "away";
+  match?: Match;
   teamId?: string;
   fallback: string;
   teams: Team[];
   onOpenTeam?: (team: Team) => void;
 }) {
   const team = teams.find((item) => item.id === teamId);
-  const score = "";
+  const score = scoreForSide(match, side);
+  const validatedWinner = match?.liveStatus === "validated" && match.winnerTeamId === teamId;
 
   if (!team) {
     return (
-      <div className="mb-1 flex min-h-9 items-center rounded bg-mist px-2 text-sm text-ink/55">
-        {fallback}
+      <div className="mb-1 flex min-h-9 items-center justify-between gap-2 rounded bg-mist px-2 text-sm text-ink/55">
+        <span className="truncate">{fallback}</span>
+        {score ? <span className="font-black tabular-nums text-ink">{score}</span> : null}
       </div>
     );
   }
@@ -110,7 +129,23 @@ function TeamLine({
         <span className="h-3 w-3 shrink-0 rounded-sm" style={{ backgroundColor: team.primaryColor }} />
         <span className="truncate">{team.name}</span>
       </span>
-      {score}
+      <span className="inline-flex items-center gap-1 font-black tabular-nums text-ink">
+        {score}
+        {validatedWinner ? <Check className="h-3.5 w-3.5 text-green-700" /> : null}
+      </span>
     </button>
   );
+}
+
+function scoreForSide(match: Match | undefined, side: "home" | "away") {
+  if (!match) return "";
+
+  const scoreVisible = match.status === "finished" || (match.liveStatus ?? "scheduled") !== "scheduled";
+  if (!scoreVisible) return "";
+
+  const penalties = visiblePenaltyScores(match);
+  const score = side === "home" ? match.homeScore ?? 0 : match.awayScore ?? 0;
+  const penaltyScore = side === "home" ? penalties.home : penalties.away;
+
+  return penalties.hasPenalties ? `${score} (${penaltyScore})` : String(score);
 }

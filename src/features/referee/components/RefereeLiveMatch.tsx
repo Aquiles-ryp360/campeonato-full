@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import {
   AlertTriangle,
   Ban,
-  Circle,
+  Check,
   Clock,
   Flag,
   RotateCcw,
@@ -17,6 +17,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { Badge, Button, Card } from "@/components/ui";
+import { summarizePenaltyShootout } from "@/lib/live-match";
 import type { RefereeLiveMatchData } from "@/lib/queries/referee";
 import type { MatchLiveEventType, Player, Team } from "@/lib/types";
 import { formatDateTime, getMatchSideLabel } from "@/lib/utils";
@@ -39,6 +40,12 @@ export function RefereeLiveMatch({ data }: { data: RefereeLiveMatchData }) {
   const awayName = getMatchSideLabel(match, teamsForMatch(data), "away");
   const homeScore = match.homeScore ?? 0;
   const awayScore = match.awayScore ?? 0;
+  const penaltySummary = useMemo(
+    () => summarizePenaltyShootout(match, data.events),
+    [data.events, match]
+  );
+  const penaltyHomeScore = status === "penalties" ? penaltySummary.homeScore : match.penaltyHomeScore ?? 0;
+  const penaltyAwayScore = status === "penalties" ? penaltySummary.awayScore : match.penaltyAwayScore ?? 0;
   const firstHalfMinute = data.event.scheduleConfig?.halfTimeMinute ?? Math.floor((data.event.scheduleConfig?.matchDurationMinutes ?? 90) / 2);
   const secondHalfMinutes = (data.event.scheduleConfig?.matchDurationMinutes ?? firstHalfMinute * 2) - firstHalfMinute;
   const breakMinutes = data.event.scheduleConfig?.halfTimeBreakMinutes ?? 10;
@@ -46,7 +53,7 @@ export function RefereeLiveMatch({ data }: { data: RefereeLiveMatchData }) {
     () => buildTimer(match, now, firstHalfMinute),
     [firstHalfMinute, match, now]
   );
-  const mainAction = getMainAction(status, homeScore, awayScore, data.event.format);
+  const mainAction = getMainAction(status, homeScore, awayScore, data.event.format, match.stage);
   const eventActionsEnabled = status === "in_progress_first_half" || status === "in_progress_second_half";
   const secondaryActionsEnabled = eventActionsEnabled || status === "halftime";
   const penaltiesEnabled = status === "penalties";
@@ -129,25 +136,33 @@ export function RefereeLiveMatch({ data }: { data: RefereeLiveMatchData }) {
             <p className="text-4xl font-black tabular-nums">
               {homeScore} - {awayScore}
             </p>
-            {status === "penalties" || (match.penaltyHomeScore || match.penaltyAwayScore) ? (
+            {status === "penalties" || penaltyHomeScore || penaltyAwayScore ? (
               <p className="mt-1 text-xs font-bold text-white/70">
-                Penales {match.penaltyHomeScore ?? 0} - {match.penaltyAwayScore ?? 0}
+                Penales {penaltyHomeScore} - {penaltyAwayScore}
               </p>
             ) : null}
           </div>
           <ScoreTeam name={awayName} align="right" />
         </div>
 
-        <div className="mt-3 grid grid-cols-2 gap-2 text-center">
-          <div className="rounded-md bg-mist p-3">
-            <p className="text-xs font-bold uppercase text-ink/45">Cronometro</p>
-            <p className="text-3xl font-black tabular-nums text-ink">{timer.display}</p>
+        {penaltiesEnabled ? (
+          <PenaltyShootoutPanel
+            homeName={homeName}
+            awayName={awayName}
+            summary={penaltySummary}
+          />
+        ) : (
+          <div className="mt-3 grid grid-cols-2 gap-2 text-center">
+            <div className="rounded-md bg-mist p-3">
+              <p className="text-xs font-bold uppercase text-ink/45">Cronometro</p>
+              <p className="text-3xl font-black tabular-nums text-ink">{timer.display}</p>
+            </div>
+            <div className="rounded-md bg-mist p-3">
+              <p className="text-xs font-bold uppercase text-ink/45">Minuto</p>
+              <p className="text-3xl font-black tabular-nums text-ink">{timer.minute}</p>
+            </div>
           </div>
-          <div className="rounded-md bg-mist p-3">
-            <p className="text-xs font-bold uppercase text-ink/45">Minuto</p>
-            <p className="text-3xl font-black tabular-nums text-ink">{timer.minute}</p>
-          </div>
-        </div>
+        )}
       </div>
 
       <Card className="p-4">
@@ -156,7 +171,7 @@ export function RefereeLiveMatch({ data }: { data: RefereeLiveMatchData }) {
             <p className="text-xs font-bold uppercase text-field">Partido en vivo</p>
             <h1 className="mt-1 text-2xl font-black text-ink">{data.event.name}</h1>
             <p className="mt-1 text-sm font-semibold text-ink/60">
-              {data.event.category} · {match.court}
+              {data.event.category} - {match.court}
             </p>
           </div>
           {mainAction ? (
@@ -205,30 +220,46 @@ export function RefereeLiveMatch({ data }: { data: RefereeLiveMatchData }) {
       ) : null}
 
       {eventActionsEnabled || secondaryActionsEnabled || penaltiesEnabled ? (
-        <div className="grid gap-4 md:grid-cols-2">
-          <TeamActionPanel
-            side="home"
-            team={data.homeTeam}
-            players={data.homePlayers}
-            disabled={!eventActionsEnabled}
-            secondaryDisabled={!secondaryActionsEnabled}
-            penaltiesEnabled={penaltiesEnabled}
-            onPick={openPicker}
-            onRecord={recordWithoutPlayer}
-            onUndo={(team) => runAction("undo_last_event", { teamId: team.id })}
-          />
-          <TeamActionPanel
-            side="away"
-            team={data.awayTeam}
-            players={data.awayPlayers}
-            disabled={!eventActionsEnabled}
-            secondaryDisabled={!secondaryActionsEnabled}
-            penaltiesEnabled={penaltiesEnabled}
-            onPick={openPicker}
-            onRecord={recordWithoutPlayer}
-            onUndo={(team) => runAction("undo_last_event", { teamId: team.id })}
-          />
-        </div>
+        <>
+          <div className="grid gap-4 md:grid-cols-2">
+            <TeamActionPanel
+              side="home"
+              team={data.homeTeam}
+              players={data.homePlayers}
+              disabled={!eventActionsEnabled}
+              secondaryDisabled={!secondaryActionsEnabled}
+              penaltiesEnabled={penaltiesEnabled}
+              onPick={openPicker}
+              onRecord={recordWithoutPlayer}
+              onUndo={(team) => runAction("undo_last_event", { teamId: team.id })}
+            />
+            <TeamActionPanel
+              side="away"
+              team={data.awayTeam}
+              players={data.awayPlayers}
+              disabled={!eventActionsEnabled}
+              secondaryDisabled={!secondaryActionsEnabled}
+              penaltiesEnabled={penaltiesEnabled}
+              onPick={openPicker}
+              onRecord={recordWithoutPlayer}
+              onUndo={(team) => runAction("undo_last_event", { teamId: team.id })}
+            />
+          </div>
+
+          {penaltiesEnabled ? (
+            <Card className="p-4">
+              <Button
+                variant="secondary"
+                className="min-h-12 w-full text-base"
+                disabled={Boolean(busyAction)}
+                onClick={() => confirmAndRun("undo_last_penalty", "Anular el ultimo penal registrado?")}
+              >
+                <RotateCcw className="h-5 w-5" />
+                Anular ultimo penal
+              </Button>
+            </Card>
+          ) : null}
+        </>
       ) : null}
 
       <SuspensionsPanel data={data} />
@@ -272,6 +303,82 @@ function PreMatchPanel({ data }: { data: RefereeLiveMatchData }) {
         <p className="mt-1 text-sm text-ink/60">{enabledPlayers.length} jugadores disponibles.</p>
       </div>
     </Card>
+  );
+}
+
+function PenaltyShootoutPanel({
+  homeName,
+  awayName,
+  summary
+}: {
+  homeName: string;
+  awayName: string;
+  summary: ReturnType<typeof summarizePenaltyShootout>;
+}) {
+  const nextTeamName = summary.nextSide === "home" ? homeName : awayName;
+
+  return (
+    <div className="mt-3 rounded-md border border-ink/10 bg-mist p-3">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <div>
+          <p className="text-xs font-black uppercase text-ink/45">Penales</p>
+          <p className="text-sm font-black text-ink">Patea: {nextTeamName}</p>
+        </div>
+        <div className="rounded-md bg-ink px-3 py-2 text-center text-white">
+          <p className="text-xs font-bold uppercase text-white/60">Parcial</p>
+          <p className="text-2xl font-black tabular-nums">{summary.homeScore} - {summary.awayScore}</p>
+        </div>
+      </div>
+
+      <div className="mt-3 grid gap-2">
+        <PenaltyShootoutRow
+          name={homeName}
+          attempts={summary.home}
+          count={summary.homeAttempts}
+        />
+        <PenaltyShootoutRow
+          name={awayName}
+          attempts={summary.away}
+          count={summary.awayAttempts}
+        />
+      </div>
+    </div>
+  );
+}
+
+function PenaltyShootoutRow({
+  name,
+  attempts,
+  count
+}: {
+  name: string;
+  attempts: ReturnType<typeof summarizePenaltyShootout>["home"];
+  count: number;
+}) {
+  return (
+    <div className="grid grid-cols-[minmax(90px,0.55fr)_1fr_auto] items-center gap-2 rounded-md bg-white p-2">
+      <p className="truncate text-xs font-black text-ink">{name}</p>
+      <div className="flex min-h-10 flex-wrap items-center gap-2">
+        {attempts.length > 0 ? (
+          attempts.map((attempt) => (
+            <span
+              key={attempt.id}
+              className={`inline-flex min-h-9 min-w-10 items-center justify-center gap-1 rounded-md px-2 text-xs font-black text-white ${
+                attempt.scored ? "bg-green-600" : "bg-red-600"
+              }`}
+              title={`Penal ${attempt.order}`}
+            >
+              {attempt.scored ? <Check className="h-3.5 w-3.5" /> : <X className="h-3.5 w-3.5" />}
+              <span>{attempt.jerseyNumber ?? "S/N"}</span>
+              <span className="text-[10px] opacity-75">#{attempt.order}</span>
+            </span>
+          ))
+        ) : (
+          <span className="text-xs font-semibold text-ink/45">Sin tiros</span>
+        )}
+      </div>
+      <Badge tone="neutral">{count}</Badge>
+    </div>
   );
 }
 
@@ -339,8 +446,9 @@ function TeamActionPanel({
         <div className="mt-4 grid grid-cols-2 gap-2">
           <ActionButton
             label="Penal anotado"
-            icon={<Circle className="h-5 w-5" />}
+            icon={<Check className="h-5 w-5" />}
             disabled={panelDisabled}
+            tone="green"
             onClick={() => onPick(team, players, "penalty_scored")}
           />
           <ActionButton
@@ -489,10 +597,13 @@ function EventHistory({ data }: { data: RefereeLiveMatchData }) {
               <div key={event.id} className={`rounded-md bg-mist p-3 ${event.correctedAt ? "opacity-50" : ""}`}>
                 <div className="flex items-center justify-between gap-3">
                   <p className="font-bold text-ink">{eventLabel(event.eventType)}</p>
-                  <Badge tone={event.correctedAt ? "red" : "neutral"}>Min {event.minute}</Badge>
+                  <Badge tone={event.correctedAt ? "red" : "neutral"}>
+                    {event.penaltyOrder ? `Penal #${event.penaltyOrder}` : `Min ${event.minute}`}
+                  </Badge>
                 </div>
                 <p className="mt-1 text-sm text-ink/60">
-                  {team?.name ?? "Sin equipo"} {player ? `· ${playerName(player)}` : ""}
+                  {team?.name ?? "Sin equipo"} {player ? `- ${playerNumber(player)} ${playerName(player)}` : ""}
+                  {!player && event.jerseyNumber ? ` - ${event.jerseyNumber}` : ""}
                 </p>
                 {event.notes ? <p className="mt-1 text-sm text-ink/55">{event.notes}</p> : null}
               </div>
@@ -525,10 +636,11 @@ function ActionButton({
   icon: React.ReactNode;
   disabled?: boolean;
   onClick: () => void;
-  tone?: "dark" | "amber" | "red" | "neutral";
+  tone?: "dark" | "green" | "amber" | "red" | "neutral";
 }) {
   const tones = {
     dark: "bg-ink text-white",
+    green: "bg-green-600 text-white",
     amber: "bg-amber-100 text-amber-950",
     red: "bg-coral/10 text-red-800",
     neutral: "bg-mist text-ink"
@@ -601,7 +713,13 @@ function buildTimer(match: RefereeLiveMatchData["match"], now: number, firstHalf
   };
 }
 
-function getMainAction(status: string, homeScore: number, awayScore: number, format: string) {
+function getMainAction(
+  status: string,
+  homeScore: number,
+  awayScore: number,
+  format: string,
+  stage: string
+) {
   if (status === "scheduled") {
     return {
       action: "start_match",
@@ -627,7 +745,9 @@ function getMainAction(status: string, homeScore: number, awayScore: number, for
   }
 
   if (status === "in_progress_second_half") {
-    const tiedKnockout = format === "single_elimination" && homeScore === awayScore;
+    const tiedKnockout =
+      homeScore === awayScore &&
+      (format === "single_elimination" || (format === "groups_then_knockout" && stage !== "group_stage"));
     return {
       action: "finish_match",
       label: tiedKnockout ? "Finalizar e ir a desempate" : "Finalizar y enviar",
@@ -681,7 +801,8 @@ function successMessage(action: string) {
     start_penalties: "Modo penales iniciado.",
     finish_penalties: "Resultado por penales enviado.",
     record_event: "Evento registrado.",
-    undo_last_event: "Ultimo evento anulado."
+    undo_last_event: "Ultimo evento anulado.",
+    undo_last_penalty: "Ultimo penal anulado."
   };
 
   return labels[action] ?? "Partido actualizado.";
@@ -698,6 +819,9 @@ function eventLabel(eventType: MatchLiveEventType) {
     second_half_started: "Inicio segundo tiempo",
     match_finished: "Fin del partido",
     result_submitted: "Resultado enviado",
+    penalties_started: "Inicio penales",
+    penalties_finished: "Fin penales",
+    bracket_updated: "Llave actualizada",
     goal: "Gol",
     own_goal: "Autogol",
     penalty_goal: "Gol de penal",

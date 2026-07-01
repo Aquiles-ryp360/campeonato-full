@@ -5,6 +5,7 @@ import type { Match, Team, TournamentEvent } from "@/lib/types";
 import type { ScheduleConflict } from "@/lib/domain/conflict-detector";
 import { Badge } from "@/components/ui";
 import { fixtureStatusLabel, formatDateTime, getMatchSideLabel } from "@/lib/utils";
+import { formatMatchScore, liveStatusLabel } from "@/lib/live-match";
 import { ConflictBadge } from "./ConflictBadge";
 
 export function MatchCard({
@@ -50,7 +51,7 @@ export function MatchCard({
           className="rounded-md bg-mist px-3 py-2 text-sm font-black text-ink transition hover:bg-field/10 hover:text-field"
           aria-label="Ver detalle del partido"
         >
-          {scoreVisible ? `${match.homeScore ?? 0} - ${match.awayScore ?? 0}` : "VS"}
+          {scoreVisible ? formatMatchScore(match) : "VS"}
         </button>
         <TeamName
           team={awayTeam}
@@ -75,15 +76,7 @@ export function MatchCard({
 }
 
 function matchStatusLabel(liveStatus: Match["liveStatus"], status: Match["status"]) {
-  if (liveStatus === "in_progress_first_half") return "Primer tiempo";
-  if (liveStatus === "halftime") return "Descanso";
-  if (liveStatus === "in_progress_second_half") return "Segundo tiempo";
-  if (liveStatus === "penalties") return "Penales";
-  if (liveStatus === "submitted" || liveStatus === "under_review") return "En evaluacion";
-  if (liveStatus === "validated") return "Validado";
-  if (liveStatus === "disputed") return "Observado";
-  if (status === "finished") return "Finalizado";
-  return "Programado";
+  return liveStatusLabel(liveStatus, status);
 }
 
 function statusBadgeTone(

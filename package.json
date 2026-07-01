@@ -6,8 +6,10 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
+    "test": "tsx --test scripts/referee-live.test.ts",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
+    "verify:schema": "tsx scripts/verify-schema.ts",
     "seed": "tsx scripts/reset-and-seed-futsal-10.ts",
     "validate:fixture": "tsx scripts/validate-futsal-10.ts"
   },
