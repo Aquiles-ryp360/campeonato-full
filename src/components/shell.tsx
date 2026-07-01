@@ -10,7 +10,8 @@ import {
   UserPlus,
   UsersRound,
   BookOpen,
-  Calendar
+  Calendar,
+  ClipboardCheck
 } from "lucide-react";
 import { AuthGate, MobileSessionAction, SessionActions } from "./auth-gate";
 
@@ -44,6 +45,12 @@ const delegateNav: ShellNavItem[] = [
   { href: "/delegado/plantel", label: "Plantel", icon: UsersRound },
   { href: "/delegado/partidos", label: "Mis partidos", icon: Calendar },
   { href: "/delegado/avisos", label: "Avisos y bases", icon: FileText }
+];
+
+const refereeNav: ShellNavItem[] = [
+  { href: "/arbitro", label: "Mis partidos", icon: ClipboardCheck },
+  { href: "/c/default/fixture", label: "Fixture del dia", icon: Calendar },
+  { href: "/c/default/bases", label: "Bases", icon: BookOpen }
 ];
 
 function Header({
@@ -181,6 +188,19 @@ export function DelegateShell({ children }: { children: ReactNode }) {
       showPanelLink={false}
     >
       <AuthGate role="delegate">{children}</AuthGate>
+    </ShellFrame>
+  );
+}
+
+export function RefereeShell({ children }: { children: ReactNode }) {
+  return (
+    <ShellFrame
+      nav={refereeNav}
+      eyebrow="Panel arbitro"
+      showMobileSessionAction
+      showPanelLink={false}
+    >
+      <AuthGate role="referee">{children}</AuthGate>
     </ShellFrame>
   );
 }

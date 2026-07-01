@@ -24,6 +24,10 @@ const payloadSchema = z.object({
   penaltiesEnabled: z.boolean(),
   matchDuration: z.coerce.number().int().min(5).max(240),
   halfTimeMinute: z.coerce.number().int().min(1).max(239),
+  halfTimeBreakMinutes: z.coerce.number().int().min(0).max(60),
+  additionalTimeAllowedMinutes: z.coerce.number().int().min(0).max(60),
+  matchStartToleranceMinutes: z.coerce.number().int().min(0).max(120),
+  allowManualFinish: z.boolean(),
   walkoverMinutes: z.coerce.number().int().min(0).max(60),
   pointsWin: z.coerce.number().int(),
   pointsDraw: z.coerce.number().int(),
@@ -32,6 +36,7 @@ const payloadSchema = z.object({
   courtCount: z.coerce.number().int().min(1).max(3),
   courts: z.array(z.string().trim().min(1)).min(1).max(3),
   fixtureCompactPreview: z.boolean(),
+  publicLiveScores: z.boolean(),
   transitionMinutes: z.coerce.number().int().min(0).max(60),
   estimatedEndTime: z.string().trim().regex(/^\d{2}:\d{2}$/)
 }).superRefine((input, context) => {
@@ -71,6 +76,10 @@ export async function POST(request: Request) {
       startTime: input.startTime,
       matchDurationMinutes: input.matchDuration,
       halfTimeMinute: input.halfTimeMinute,
+      halfTimeBreakMinutes: input.halfTimeBreakMinutes,
+      additionalTimeAllowedMinutes: input.additionalTimeAllowedMinutes,
+      matchStartToleranceMinutes: input.matchStartToleranceMinutes,
+      allowManualFinish: input.allowManualFinish,
       transitionMinutes: input.transitionMinutes,
       courts: input.courts,
       courtCount: input.courtCount,
@@ -106,6 +115,7 @@ export async function POST(request: Request) {
         allow_byes: normalized.allowByes,
         penalties_enabled: normalized.penaltiesEnabled,
         fixture_compact_preview: input.fixtureCompactPreview,
+        public_live_scores: input.publicLiveScores,
         schedule_config: scheduleConfig,
         created_by: user.id,
         updated_at: new Date().toISOString()

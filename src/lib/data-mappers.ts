@@ -1,8 +1,11 @@
 import type {
   Match,
+  MatchLiveEvent,
   PaymentMethod,
   PaymentStatus,
   Player,
+  PlayerSuspension,
+  RefereeAssignment,
   RegistrationCode,
   SportKey,
   Team,
@@ -197,6 +200,7 @@ export type EventRow = {
   third_place?: boolean | null;
   allow_byes?: boolean | null;
   penalties_enabled?: boolean | null;
+  public_live_scores?: boolean | null;
   fixture_compact_preview?: boolean | null;
   schedule_config?: TournamentEvent["scheduleConfig"] | null;
 };
@@ -239,6 +243,7 @@ export type PlayerRow = {
   enrollment_file: string | null;
   semester: string | null;
   lineup_role: Player["lineupRole"] | null;
+  jersey_number?: number | null;
   photo_url?: string | null;
 };
 
@@ -266,11 +271,70 @@ export type MatchRow = {
   venue?: NestedRelation<VenueRelation>;
   court?: string | null;
   status: Match["status"];
+  live_status?: Match["liveStatus"] | null;
   fixture_status?: Match["fixtureStatus"] | null;
   is_fixture_preliminary?: boolean | null;
   home_score: number | null;
   away_score: number | null;
+  penalty_home_score?: number | null;
+  penalty_away_score?: number | null;
+  winner_team_id?: string | null;
+  actual_started_at?: string | null;
+  first_half_started_at?: string | null;
+  first_half_ended_at?: string | null;
+  halftime_started_at?: string | null;
+  second_half_started_at?: string | null;
+  second_half_ended_at?: string | null;
+  actual_finished_at?: string | null;
+  submitted_at?: string | null;
+  validated_at?: string | null;
+  referee_notes?: string | null;
   notes: string | null;
+};
+
+export type RefereeAssignmentRow = {
+  id: string;
+  match_id: string;
+  referee_user_id: string | null;
+  referee_email: string;
+  referee_name: string | null;
+  active: boolean;
+  assigned_by: string | null;
+  created_at?: string | null;
+  updated_at?: string | null;
+};
+
+export type MatchLiveEventRow = {
+  id: string;
+  match_id: string;
+  team_id: string | null;
+  player_id: string | null;
+  jersey_number: number | null;
+  event_type: MatchLiveEvent["eventType"];
+  period: MatchLiveEvent["period"];
+  minute: number;
+  score_home: number | null;
+  score_away: number | null;
+  penalty_order: number | null;
+  notes: string | null;
+  created_by: string | null;
+  created_at: string;
+  corrected_at: string | null;
+  corrected_by: string | null;
+  correction_reason: string | null;
+};
+
+export type PlayerSuspensionRow = {
+  id: string;
+  event_id: string;
+  team_id: string;
+  player_id: string;
+  source_match_id: string | null;
+  reason: string;
+  matches_remaining: number;
+  active: boolean;
+  created_at?: string | null;
+  updated_at?: string | null;
 };
 
 export function mapSport(row: SportRow): Sport {
@@ -403,6 +467,7 @@ export function mapEvent(row: EventRow): TournamentEvent {
     thirdPlace: row.third_place ?? undefined,
     allowByes: row.allow_byes ?? undefined,
     penaltiesEnabled: row.penalties_enabled ?? undefined,
+    publicLiveScores: row.public_live_scores ?? undefined,
     fixtureCompactPreview: row.fixture_compact_preview ?? undefined,
     scheduleConfig: row.schedule_config ?? undefined
   };
@@ -452,6 +517,7 @@ export function mapPlayer(row: PlayerRow): Player {
     enrollmentFile: row.enrollment_file ?? "",
     semester: row.semester ?? "",
     lineupRole: row.lineup_role ?? "starter",
+    jerseyNumber: row.jersey_number ?? undefined,
     photoUrl: row.photo_url ?? undefined
   };
 }
@@ -480,11 +546,76 @@ export function mapMatch(row: MatchRow): Match {
     venueId: row.venue_id ?? undefined,
     court: venueNameFromValue(row.venue) ?? row.court ?? "Cancha por definir",
     status: row.status,
+    liveStatus: row.live_status ?? undefined,
     fixtureStatus: row.fixture_status ?? undefined,
     isFixturePreliminary: row.is_fixture_preliminary ?? undefined,
     homeScore: row.home_score ?? undefined,
     awayScore: row.away_score ?? undefined,
+    penaltyHomeScore: row.penalty_home_score ?? undefined,
+    penaltyAwayScore: row.penalty_away_score ?? undefined,
+    winnerTeamId: row.winner_team_id ?? undefined,
+    actualStartedAt: row.actual_started_at ?? undefined,
+    firstHalfStartedAt: row.first_half_started_at ?? undefined,
+    firstHalfEndedAt: row.first_half_ended_at ?? undefined,
+    halftimeStartedAt: row.halftime_started_at ?? undefined,
+    secondHalfStartedAt: row.second_half_started_at ?? undefined,
+    secondHalfEndedAt: row.second_half_ended_at ?? undefined,
+    actualFinishedAt: row.actual_finished_at ?? undefined,
+    submittedAt: row.submitted_at ?? undefined,
+    validatedAt: row.validated_at ?? undefined,
+    refereeNotes: row.referee_notes ?? undefined,
     notes: row.notes ?? undefined
+  };
+}
+
+export function mapRefereeAssignment(row: RefereeAssignmentRow): RefereeAssignment {
+  return {
+    id: row.id,
+    matchId: row.match_id,
+    refereeUserId: row.referee_user_id ?? undefined,
+    refereeEmail: row.referee_email,
+    refereeName: row.referee_name ?? undefined,
+    active: row.active,
+    assignedBy: row.assigned_by ?? undefined,
+    createdAt: row.created_at ?? undefined,
+    updatedAt: row.updated_at ?? undefined
+  };
+}
+
+export function mapMatchLiveEvent(row: MatchLiveEventRow): MatchLiveEvent {
+  return {
+    id: row.id,
+    matchId: row.match_id,
+    teamId: row.team_id ?? undefined,
+    playerId: row.player_id ?? undefined,
+    jerseyNumber: row.jersey_number ?? undefined,
+    eventType: row.event_type,
+    period: row.period,
+    minute: row.minute,
+    scoreHome: row.score_home ?? undefined,
+    scoreAway: row.score_away ?? undefined,
+    penaltyOrder: row.penalty_order ?? undefined,
+    notes: row.notes ?? undefined,
+    createdBy: row.created_by ?? undefined,
+    createdAt: row.created_at,
+    correctedAt: row.corrected_at ?? undefined,
+    correctedBy: row.corrected_by ?? undefined,
+    correctionReason: row.correction_reason ?? undefined
+  };
+}
+
+export function mapPlayerSuspension(row: PlayerSuspensionRow): PlayerSuspension {
+  return {
+    id: row.id,
+    eventId: row.event_id,
+    teamId: row.team_id,
+    playerId: row.player_id,
+    sourceMatchId: row.source_match_id ?? undefined,
+    reason: row.reason,
+    matchesRemaining: row.matches_remaining,
+    active: row.active,
+    createdAt: row.created_at ?? undefined,
+    updatedAt: row.updated_at ?? undefined
   };
 }
 

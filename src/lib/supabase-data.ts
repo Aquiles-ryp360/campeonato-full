@@ -86,6 +86,7 @@ const privatePlayerColumns = `
   enrollment_file,
   semester,
   lineup_role,
+  jersey_number,
   photo_url
 `;
 
@@ -97,6 +98,7 @@ const publicPlayerColumns = `
   student_code,
   semester,
   lineup_role,
+  jersey_number,
   photo_url
 `;
 

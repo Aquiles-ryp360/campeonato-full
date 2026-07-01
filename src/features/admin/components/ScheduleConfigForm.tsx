@@ -8,8 +8,12 @@ export function ScheduleConfigForm({
   matchDuration,
   halfTimeMinute,
   transitionMinutes,
+  matchStartToleranceMinutes,
+  onMatchStartToleranceMinutesChange,
   fixtureCompactPreview,
   onFixtureCompactPreviewChange,
+  publicLiveScores,
+  onPublicLiveScoresChange,
   estimatedEndTime,
   estimatedMatches
 }: {
@@ -20,8 +24,12 @@ export function ScheduleConfigForm({
   matchDuration: number;
   halfTimeMinute: number;
   transitionMinutes: number;
+  matchStartToleranceMinutes: number;
+  onMatchStartToleranceMinutesChange: (value: number) => void;
   fixtureCompactPreview: boolean;
   onFixtureCompactPreviewChange: (value: boolean) => void;
+  publicLiveScores: boolean;
+  onPublicLiveScoresChange: (value: boolean) => void;
   estimatedEndTime: string;
   estimatedMatches: number;
 }) {
@@ -58,6 +66,16 @@ export function ScheduleConfigForm({
         <Info label="Duracion partido" value={`${matchDuration} min`} />
         <Info label="Medio tiempo" value={`Minuto ${halfTimeMinute}`} />
         <Info label="Pausa entre partidos" value={`${transitionMinutes} min`} />
+        <Field label="Tolerancia de inicio">
+          <input
+            className={inputClass}
+            type="number"
+            min={0}
+            max={120}
+            value={matchStartToleranceMinutes}
+            onChange={(event) => onMatchStartToleranceMinutesChange(Number(event.target.value))}
+          />
+        </Field>
         <Info label="Hora fin estimada" value={estimatedEndTime} />
         <Info label="Partidos estimados" value={`${estimatedMatches}`} />
         <Field label="Canchas asignadas">
@@ -77,6 +95,16 @@ export function ScheduleConfigForm({
           >
             <option value="yes">Permitido</option>
             <option value="no">No permitido</option>
+          </select>
+        </Field>
+        <Field label="Marcador publico en vivo">
+          <select
+            className={inputClass}
+            value={publicLiveScores ? "yes" : "no"}
+            onChange={(event) => onPublicLiveScoresChange(event.target.value === "yes")}
+          >
+            <option value="yes">Visible</option>
+            <option value="no">Oculto hasta validar</option>
           </select>
         </Field>
       </div>

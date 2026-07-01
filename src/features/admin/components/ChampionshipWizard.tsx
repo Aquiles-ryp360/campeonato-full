@@ -51,6 +51,10 @@ type WizardDraft = {
   groupCount: number;
   matchDuration: number;
   halfTimeMinute: number;
+  halfTimeBreakMinutes: number;
+  additionalTimeAllowedMinutes: number;
+  matchStartToleranceMinutes: number;
+  allowManualFinish: boolean;
   walkoverMinutes: number;
   pointsWin: number;
   pointsDraw: number;
@@ -58,6 +62,7 @@ type WizardDraft = {
   startTime: string;
   courtCount: number;
   fixtureCompactPreview: boolean;
+  publicLiveScores: boolean;
 };
 
 export function ChampionshipWizard({
@@ -275,8 +280,20 @@ export function ChampionshipWizard({
                 onChange={(event) => updateDraft({ halfTimeMinute: Number(event.target.value) })}
               />
             </Field>
+            <Field label="Descanso medio tiempo">
+              <input className={inputClass} type="number" min={0} max={60} value={draft.halfTimeBreakMinutes} onChange={(event) => updateDraft({ halfTimeBreakMinutes: Number(event.target.value) })} />
+            </Field>
+            <Field label="Tiempo adicional max.">
+              <input className={inputClass} type="number" min={0} max={60} value={draft.additionalTimeAllowedMinutes} onChange={(event) => updateDraft({ additionalTimeAllowedMinutes: Number(event.target.value) })} />
+            </Field>
             <Field label="W.O. minutos">
               <input className={inputClass} type="number" min={0} value={draft.walkoverMinutes} onChange={(event) => updateDraft({ walkoverMinutes: Number(event.target.value) })} />
+            </Field>
+            <Field label="Cierre del arbitro">
+              <select className={inputClass} value={draft.allowManualFinish ? "manual" : "suggested"} onChange={(event) => updateDraft({ allowManualFinish: event.target.value === "manual" })}>
+                <option value="manual">Puede confirmar manual</option>
+                <option value="suggested">Solo tiempo sugerido</option>
+              </select>
             </Field>
             {usesTablePoints ? (
               <>
@@ -314,8 +331,12 @@ export function ChampionshipWizard({
           matchDuration={draft.matchDuration}
           halfTimeMinute={draft.halfTimeMinute}
           transitionMinutes={transitionMinutes}
+          matchStartToleranceMinutes={draft.matchStartToleranceMinutes}
+          onMatchStartToleranceMinutesChange={(value) => updateDraft({ matchStartToleranceMinutes: value })}
           fixtureCompactPreview={draft.fixtureCompactPreview}
           onFixtureCompactPreviewChange={(value) => updateDraft({ fixtureCompactPreview: value })}
+          publicLiveScores={draft.publicLiveScores}
+          onPublicLiveScoresChange={(value) => updateDraft({ publicLiveScores: value })}
           estimatedEndTime={estimatedEndTime}
           estimatedMatches={estimatedMatches}
         />
@@ -362,13 +383,18 @@ function draftFromEvent(event?: TournamentEvent | null): WizardDraft {
     groupCount: 2,
     matchDuration: schedule?.matchDurationMinutes ?? defaultDuration(event?.sport ?? "futsal"),
     halfTimeMinute: schedule?.halfTimeMinute ?? defaultHalfTimeMinute(schedule?.matchDurationMinutes ?? defaultDuration(event?.sport ?? "futsal")),
+    halfTimeBreakMinutes: schedule?.halfTimeBreakMinutes ?? 10,
+    additionalTimeAllowedMinutes: schedule?.additionalTimeAllowedMinutes ?? 0,
+    matchStartToleranceMinutes: schedule?.matchStartToleranceMinutes ?? 15,
+    allowManualFinish: schedule?.allowManualFinish ?? true,
     walkoverMinutes: 10,
     pointsWin: event?.pointsWin ?? 3,
     pointsDraw: event?.pointsDraw ?? 1,
     pointsLoss: event?.pointsLoss ?? 0,
     startTime: schedule?.startTime ?? "09:00",
     courtCount,
-    fixtureCompactPreview: event?.fixtureCompactPreview ?? true
+    fixtureCompactPreview: event?.fixtureCompactPreview ?? true,
+    publicLiveScores: event?.publicLiveScores ?? true
   });
 }
 
@@ -387,6 +413,9 @@ function normalizeDraft(draft: WizardDraft): WizardDraft {
     groupCount: clampNumber(draft.groupCount, 2, Math.max(2, Math.min(8, maxTeams))),
     matchDuration: clampNumber(draft.matchDuration, 5, 240),
     halfTimeMinute: clampNumber(draft.halfTimeMinute, 1, Math.max(1, clampNumber(draft.matchDuration, 5, 240) - 1)),
+    halfTimeBreakMinutes: clampNumber(draft.halfTimeBreakMinutes, 0, 60),
+    additionalTimeAllowedMinutes: clampNumber(draft.additionalTimeAllowedMinutes, 0, 60),
+    matchStartToleranceMinutes: clampNumber(draft.matchStartToleranceMinutes, 0, 120),
     walkoverMinutes: clampNumber(draft.walkoverMinutes, 0, 60),
     registrationFee: Math.max(0, Number.isFinite(draft.registrationFee) ? draft.registrationFee : 0),
     pointsWin: isKnockout ? 0 : draft.pointsWin,

@@ -134,9 +134,8 @@ export function LoginPanel() {
               {isGoogleSubmitting ? "Abriendo Google..." : "Entrar con Google"}
             </Button>
             <p className="text-sm leading-6 text-ink/62">
-              Si eres delegado, el correo debe coincidir con el correo registrado en la
-              inscripcion. Si eres admin, tu correo debe estar autorizado en Supabase.
-              Otros correos entran como visitante.
+              Si eres delegado o arbitro, el correo debe coincidir con la inscripcion o
+              con una asignacion de partido. Otros correos entran como visitante.
             </p>
           </div>
         ) : (
@@ -232,14 +231,32 @@ export function LoginPanel() {
 
         <Card className="p-5">
           <div className="flex items-start gap-3">
+            <div className="grid h-11 w-11 shrink-0 place-items-center rounded-md bg-field/10 text-field">
+              <ShieldCheck className="h-5 w-5" />
+            </div>
+            <div>
+              <div className="flex flex-wrap items-center gap-2">
+                <p className="font-bold text-ink">Arbitro</p>
+                <Badge tone="green">Partidos asignados</Badge>
+              </div>
+              <p className="mt-3 text-sm leading-6 text-ink/62">
+                El arbitro entra con el correo asignado por el admin y solo ve los
+                partidos vinculados a ese correo.
+              </p>
+            </div>
+          </div>
+        </Card>
+
+        <Card className="p-5">
+          <div className="flex items-start gap-3">
             <div className="grid h-11 w-11 shrink-0 place-items-center rounded-md bg-amber-100 text-amber-900">
               <KeyRound className="h-5 w-5" />
             </div>
             <div>
               <p className="font-bold text-ink">Seguridad</p>
               <p className="mt-2 text-sm leading-6 text-ink/62">
-                Tener Gmail no da acceso automatico. El correo debe estar inscrito como
-                delegado o autorizado como administrador.
+                Tener Gmail no da permisos automaticos. Si el correo no es admin,
+                delegado ni arbitro asignado, se mantiene como visitante.
               </p>
             </div>
           </div>

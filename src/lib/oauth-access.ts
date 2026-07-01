@@ -8,7 +8,7 @@ const defaultAdminEmails = ["renzomamanigalindo@gmail.com"];
 
 type ProfileRow = {
   id: string;
-  role: "admin" | "delegate" | "viewer";
+  role: "admin" | "delegate" | "referee" | "viewer";
   full_name: string | null;
   phone: string | null;
 };
@@ -23,6 +23,11 @@ type DelegateTeamRow = {
   delegate_name: string;
   delegate_phone: string | null;
   delegate_email: string | null;
+};
+
+type RefereeAssignmentRow = {
+  id: string;
+  referee_name: string | null;
 };
 
 type OAuthAccessResult =
@@ -68,6 +73,27 @@ export async function resolveOAuthAccess(user: User): Promise<OAuthAccessResult>
   const team = await findDelegateTeamByEmail(supabase, email);
 
   if (!team) {
+    const refereeAssignment = await findRefereeAssignmentByEmail(supabase, email);
+
+    if (refereeAssignment) {
+      const refereeName = refereeAssignment.referee_name || displayName;
+
+      await upsertProfile(supabase, {
+        id: user.id,
+        role: "referee",
+        fullName: refereeName,
+        phone: profile?.phone ?? null
+      });
+      await linkRefereeAssignments(supabase, user.id, email);
+
+      return {
+        ok: true,
+        role: "referee",
+        email,
+        displayName: refereeName
+      };
+    }
+
     await upsertProfile(supabase, {
       id: user.id,
       role: "viewer",
@@ -119,6 +145,26 @@ async function getProfile(
 
   if (error) {
     throw new Error(`Could not load OAuth profile: ${error.message}`);
+  }
+
+  return data;
+}
+
+async function findRefereeAssignmentByEmail(
+  supabase: ReturnType<typeof createSupabaseAdminClient>,
+  email: string
+) {
+  const { data, error } = await supabase
+    .from("referee_assignments")
+    .select("id, referee_name")
+    .eq("referee_email", email)
+    .eq("active", true)
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle<RefereeAssignmentRow>();
+
+  if (error) {
+    throw new Error(`Could not load referee assignment: ${error.message}`);
   }
 
   return data;
@@ -206,6 +252,25 @@ async function linkDelegateTeams(
 
   if (error) {
     throw new Error(`Could not link delegate teams: ${error.message}`);
+  }
+}
+
+async function linkRefereeAssignments(
+  supabase: ReturnType<typeof createSupabaseAdminClient>,
+  userId: string,
+  email: string
+) {
+  const { error } = await supabase
+    .from("referee_assignments")
+    .update({
+      referee_user_id: userId,
+      updated_at: new Date().toISOString()
+    })
+    .eq("referee_email", email)
+    .eq("active", true);
+
+  if (error) {
+    throw new Error(`Could not link referee assignments: ${error.message}`);
   }
 }
 

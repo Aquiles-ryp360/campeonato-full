@@ -15,6 +15,45 @@ export type TeamStatus = "pending_payment" | "registered" | "observed" | "approv
 
 export type MatchStatus = "scheduled" | "finished" | "walkover" | "postponed";
 
+export type LiveMatchStatus =
+  | "scheduled"
+  | "in_progress_first_half"
+  | "halftime"
+  | "in_progress_second_half"
+  | "pending_tiebreak"
+  | "penalties"
+  | "submitted"
+  | "validated"
+  | "under_review"
+  | "disputed"
+  | "cancelled";
+
+export type MatchLiveEventType =
+  | "match_started"
+  | "first_half_finished"
+  | "second_half_started"
+  | "match_finished"
+  | "result_submitted"
+  | "goal"
+  | "own_goal"
+  | "penalty_goal"
+  | "penalty_missed"
+  | "yellow_card"
+  | "red_card"
+  | "foul"
+  | "injury"
+  | "observation"
+  | "penalty_scored"
+  | "penalty_missed_tiebreak";
+
+export type MatchPeriod =
+  | "pre_match"
+  | "first_half"
+  | "halftime"
+  | "second_half"
+  | "penalties"
+  | "post_match";
+
 export type PlayerRole = "starter" | "substitute";
 
 export type FixtureStatus = "draft_auto" | "draft_review" | "published" | "locked";
@@ -95,11 +134,16 @@ export interface TournamentEvent {
   thirdPlace?: boolean;
   allowByes?: boolean;
   penaltiesEnabled?: boolean;
+  publicLiveScores?: boolean;
   fixtureCompactPreview?: boolean;
   scheduleConfig?: {
     startTime: string;
     matchDurationMinutes: number;
     halfTimeMinute?: number;
+    halfTimeBreakMinutes?: number;
+    additionalTimeAllowedMinutes?: number;
+    matchStartToleranceMinutes?: number;
+    allowManualFinish?: boolean;
     transitionMinutes: number;
     courts: string[];
     courtCount?: number;
@@ -218,13 +262,72 @@ export interface Match {
   venueId?: string;
   court: string;
   status: MatchStatus;
+  liveStatus?: LiveMatchStatus;
   fixtureStatus?: FixtureStatus;
   isFixturePreliminary?: boolean;
   homeScore?: number;
   awayScore?: number;
+  penaltyHomeScore?: number;
+  penaltyAwayScore?: number;
+  winnerTeamId?: string;
+  actualStartedAt?: string;
+  firstHalfStartedAt?: string;
+  firstHalfEndedAt?: string;
+  halftimeStartedAt?: string;
+  secondHalfStartedAt?: string;
+  secondHalfEndedAt?: string;
+  actualFinishedAt?: string;
+  submittedAt?: string;
+  validatedAt?: string;
+  refereeNotes?: string;
   homeFouls?: number;
   awayFouls?: number;
   notes?: string;
+}
+
+export interface RefereeAssignment {
+  id: string;
+  matchId: string;
+  refereeUserId?: string;
+  refereeEmail: string;
+  refereeName?: string;
+  active: boolean;
+  assignedBy?: string;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface MatchLiveEvent {
+  id: string;
+  matchId: string;
+  teamId?: string;
+  playerId?: string;
+  jerseyNumber?: number;
+  eventType: MatchLiveEventType;
+  period: MatchPeriod;
+  minute: number;
+  scoreHome?: number;
+  scoreAway?: number;
+  penaltyOrder?: number;
+  notes?: string;
+  createdBy?: string;
+  createdAt: string;
+  correctedAt?: string;
+  correctedBy?: string;
+  correctionReason?: string;
+}
+
+export interface PlayerSuspension {
+  id: string;
+  eventId: string;
+  teamId: string;
+  playerId: string;
+  sourceMatchId?: string;
+  reason: string;
+  matchesRemaining: number;
+  active: boolean;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 export interface StandingRow {

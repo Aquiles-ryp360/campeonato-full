@@ -108,6 +108,7 @@ const playerColumns = `
   enrollment_file,
   semester,
   lineup_role,
+  jersey_number,
   photo_url
 `;
 

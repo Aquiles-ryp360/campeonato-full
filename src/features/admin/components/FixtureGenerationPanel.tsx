@@ -15,6 +15,7 @@ import {
 import { Badge, Button, Card, SectionHeader } from "@/components/ui";
 import { DaySchedule } from "@/features/fixture/components/DaySchedule";
 import { fixtureStatusLabel } from "@/lib/utils";
+import { RefereeAssignmentsPanel } from "./RefereeAssignmentsPanel";
 
 export function FixtureGenerationPanel({ data }: { data: CompetitionData }) {
   const selectedEvent = data.events[0] ?? null;
@@ -63,6 +64,8 @@ export function FixtureGenerationPanel({ data }: { data: CompetitionData }) {
             <Info label="Inicio" value={selectedEvent.scheduleConfig?.startTime ?? "09:00"} />
             <Info label="Duracion" value={`${selectedEvent.scheduleConfig?.matchDurationMinutes ?? 20} min`} />
             <Info label="Medio tiempo" value={`Min ${selectedEvent.scheduleConfig?.halfTimeMinute ?? Math.floor((selectedEvent.scheduleConfig?.matchDurationMinutes ?? 20) / 2)}`} />
+            <Info label="Descanso" value={`${selectedEvent.scheduleConfig?.halfTimeBreakMinutes ?? 10} min`} />
+            <Info label="Tolerancia inicio" value={`${selectedEvent.scheduleConfig?.matchStartToleranceMinutes ?? 15} min`} />
             <Info label="Pausa" value={`${selectedEvent.scheduleConfig?.transitionMinutes ?? 10} min`} />
             <Info label="Canchas" value={(selectedEvent.scheduleConfig?.courts ?? data.venues.map((venue) => venue.name)).join(", ")} />
             <Info label="Partidos" value={`${bracket?.matches.length ?? 0}`} />
@@ -102,6 +105,11 @@ export function FixtureGenerationPanel({ data }: { data: CompetitionData }) {
           </div>
         ) : null}
       </Card>
+      <RefereeAssignmentsPanel
+        events={data.events}
+        teams={data.teams}
+        matches={visibleMatches}
+      />
       <DaySchedule
         events={data.events}
         teams={data.teams}

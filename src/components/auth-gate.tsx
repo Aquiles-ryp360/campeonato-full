@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import {
+  ClipboardCheck,
   LayoutDashboard,
   LockKeyhole,
   LogIn,
@@ -70,7 +71,7 @@ export function AuthGate({
             <div>
               <p className="text-xl font-bold text-ink">Acceso restringido</p>
               <p className="mt-1 max-w-2xl text-sm leading-6 text-ink/65">
-                Inicia sesion como {role === "admin" ? "administrador" : "delegado"} para
+                Inicia sesion como {roleLabel(role)} para
                 ver este panel.
               </p>
             </div>
@@ -103,11 +104,29 @@ export function SessionActions({ showPanelLink = true }: { showPanelLink?: boole
   }
 
   const panelHref =
-    session.role === "admin" ? "/admin" : session.role === "delegate" ? "/delegado" : "/";
+    session.role === "admin"
+      ? "/admin"
+      : session.role === "delegate"
+        ? "/delegado"
+        : session.role === "referee"
+          ? "/arbitro"
+          : "/";
   const panelLabel =
-    session.role === "admin" ? "Admin" : session.role === "delegate" ? "Mi equipo" : "Vista publica";
+    session.role === "admin"
+      ? "Admin"
+      : session.role === "delegate"
+        ? "Mi equipo"
+        : session.role === "referee"
+          ? "Arbitro"
+          : "Vista publica";
   const PanelIcon =
-    session.role === "admin" ? LayoutDashboard : session.role === "delegate" ? ShieldCheck : UserRound;
+    session.role === "admin"
+      ? LayoutDashboard
+      : session.role === "delegate"
+        ? ShieldCheck
+        : session.role === "referee"
+          ? ClipboardCheck
+          : UserRound;
 
   return (
     <>
@@ -156,6 +175,8 @@ export function MobileSessionAction() {
       ? "/admin"
       : session.role === "delegate"
         ? "/delegado"
+        : session.role === "referee"
+          ? "/arbitro"
         : "/"
     : "/login";
   const label = session
@@ -163,6 +184,8 @@ export function MobileSessionAction() {
       ? "Admin"
       : session.role === "delegate"
         ? "Equipo"
+        : session.role === "referee"
+          ? "Arbitro"
         : "Cuenta"
     : "Ingresar";
   const Icon = session
@@ -170,6 +193,8 @@ export function MobileSessionAction() {
       ? LayoutDashboard
       : session.role === "delegate"
         ? ShieldCheck
+        : session.role === "referee"
+          ? ClipboardCheck
         : UserRound
     : LogIn;
 
@@ -256,5 +281,11 @@ async function loadBrowserSession(storedSession: AuthSession | null) {
 }
 
 function isAuthRole(role: string): role is AuthRole {
-  return role === "admin" || role === "delegate" || role === "viewer";
+  return role === "admin" || role === "delegate" || role === "referee" || role === "viewer";
+}
+
+function roleLabel(role: ProtectedAuthRole) {
+  if (role === "admin") return "administrador";
+  if (role === "delegate") return "delegado";
+  return "arbitro";
 }

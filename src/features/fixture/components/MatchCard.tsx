@@ -25,13 +25,16 @@ export function MatchCard({
   const homeTeam = teams.find((team) => team.id === match.homeTeamId);
   const awayTeam = teams.find((team) => team.id === match.awayTeamId);
   const fixturePreliminary = match.isFixturePreliminary || match.fixtureStatus === "draft_auto" || match.fixtureStatus === "draft_review";
+  const liveStatus = match.liveStatus ?? "scheduled";
+  const publicLiveScore = event?.publicLiveScores !== false && liveStatus !== "scheduled";
+  const scoreVisible = match.status === "finished" || publicLiveScore;
 
   return (
     <article className="rounded-md border border-ink/10 bg-white p-4 transition hover:border-field/30">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div className="flex flex-wrap items-center gap-2">
-          <Badge tone={match.status === "finished" ? "green" : "blue"}>
-            {match.status === "finished" ? "Finalizado" : "Programado"}
+          <Badge tone={statusBadgeTone(liveStatus, match.status)}>
+            {matchStatusLabel(liveStatus, match.status)}
           </Badge>
           {event ? <Badge tone="neutral">{event.name}</Badge> : null}
           {fixturePreliminary ? <Badge tone="amber">{fixtureStatusLabel(match.fixtureStatus)}</Badge> : null}
@@ -47,7 +50,7 @@ export function MatchCard({
           className="rounded-md bg-mist px-3 py-2 text-sm font-black text-ink transition hover:bg-field/10 hover:text-field"
           aria-label="Ver detalle del partido"
         >
-          {match.status === "finished" ? `${match.homeScore} - ${match.awayScore}` : "VS"}
+          {scoreVisible ? `${match.homeScore ?? 0} - ${match.awayScore ?? 0}` : "VS"}
         </button>
         <TeamName
           team={awayTeam}
@@ -69,6 +72,29 @@ export function MatchCard({
       </div>
     </article>
   );
+}
+
+function matchStatusLabel(liveStatus: Match["liveStatus"], status: Match["status"]) {
+  if (liveStatus === "in_progress_first_half") return "Primer tiempo";
+  if (liveStatus === "halftime") return "Descanso";
+  if (liveStatus === "in_progress_second_half") return "Segundo tiempo";
+  if (liveStatus === "penalties") return "Penales";
+  if (liveStatus === "submitted" || liveStatus === "under_review") return "En evaluacion";
+  if (liveStatus === "validated") return "Validado";
+  if (liveStatus === "disputed") return "Observado";
+  if (status === "finished") return "Finalizado";
+  return "Programado";
+}
+
+function statusBadgeTone(
+  liveStatus: Match["liveStatus"],
+  status: Match["status"]
+): "neutral" | "green" | "amber" | "red" | "blue" | "dark" {
+  if (liveStatus === "submitted" || liveStatus === "under_review") return "amber";
+  if (liveStatus === "validated" || status === "finished") return "green";
+  if (liveStatus === "disputed") return "red";
+  if (liveStatus && liveStatus !== "scheduled") return "dark";
+  return "blue";
 }
 
 function TeamName({

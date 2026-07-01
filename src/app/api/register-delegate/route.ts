@@ -44,7 +44,7 @@ type RegistrationCodeRow = {
 };
 
 type ExistingProfileRow = {
-  role: "admin" | "delegate" | "viewer";
+  role: "admin" | "delegate" | "referee" | "viewer";
   phone: string | null;
 };
 
