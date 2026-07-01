@@ -6,13 +6,13 @@ export const footballVenueId = "22222222-2222-4222-8222-222222222222";
 
 export const footballBases: TournamentBases = {
   id: "bases-futbol-2026",
-  championshipName: "Campeonato Futbol 11 Intercarreras 2026",
+  championshipName: "Campeonato Futbol 11 Ingenieria Mecanica Electrica",
   year: 2026,
-  organizer: "Comision deportiva de Mecanica Electrica",
-  startDate: "2026-07-20T15:00:00-05:00",
-  endDate: "2026-08-30T18:00:00-05:00",
+  organizer: "Comision deportiva de Ingenieria Mecanica Electrica",
+  startDate: "2026-07-09T08:00:00-05:00",
+  endDate: "2026-07-09T18:00:00-05:00",
   description:
-    "Torneo de futbol 11 con formato de eliminacion directa. Los equipos inscritos entran a sorteo publico administrado desde el panel admin; despues del sorteo, las llaves quedan visibles para delegados y publico.",
+    "Torneo de futbol 11 con formato de eliminacion directa para Ingenieria Mecanica Electrica. Los equipos inscritos entran a sorteo publico administrado desde el panel admin; despues del sorteo, las llaves quedan visibles para delegados y publico.",
   matchDuration: 90,
   pointsWin: 0,
   pointsDraw: 0,
@@ -39,24 +39,46 @@ export const footballRules = [
 
 export const footballEvent: TournamentEvent = {
   id: footballEventId,
-  name: "Campeonato Futbol 11",
+  name: "Campeonato Futbol 11 Ingenieria Mecanica Electrica",
   sportId: "sport-futbol",
   sport: "futbol",
   category: "Libre",
   formatId: "format-knockout",
   format: "single_elimination",
-  status: "in_progress",
-  registrationFee: 40,
-  registrationOpenUntil: "2026-07-18T23:59:00-05:00",
+  status: "registration",
+  registrationFee: 35,
+  registrationOpenUntil: "2026-07-08T23:59:00-05:00",
   maxTeams: 8,
   minPlayers: 11,
   maxPlayers: 18,
   pointsWin: 0,
   pointsDraw: 0,
   pointsLoss: 0,
-  rulesSummary: "Eliminacion directa. Empates por penales. Sorteo admin antes de publicar llaves.",
+  rulesSummary: "Eliminacion directa. Empates por penales. Inscripcion oficial del campeonato de Ingenieria Mecanica Electrica.",
   preventCrossSportConflicts: true,
-  minimumRestMinutes: 120
+  minimumRestMinutes: 120,
+  eventDate: "2026-07-09T08:00:00-05:00",
+  fixtureStatus: "draft_auto",
+  seedingMode: "registration_order",
+  thirdPlace: false,
+  allowByes: true,
+  penaltiesEnabled: true,
+  publicLiveScores: true,
+  fixtureCompactPreview: true,
+  scheduleConfig: {
+    startTime: "08:00",
+    matchDurationMinutes: 90,
+    halfTimeMinute: 45,
+    halfTimeBreakMinutes: 10,
+    matchStartToleranceMinutes: 10,
+    allowManualFinish: true,
+    transitionMinutes: 20,
+    courts: ["Campo Futbol 11 Principal"],
+    courtCount: 1,
+    minimumRestMinutes: 120,
+    allowCompactPreview: true,
+    estimatedEndTime: "18:00"
+  }
 };
 
 export const footballVenue: Venue = {
@@ -177,7 +199,7 @@ function createFootballTeam(id: string, name: string, career: string, color: str
 }
 
 function nextFootballSlot(index: number) {
-  const base = new Date("2026-07-20T15:00:00-05:00");
+  const base = new Date("2026-07-09T08:00:00-05:00");
   base.setDate(base.getDate() + index);
   return base.toISOString();
 }
