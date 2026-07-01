@@ -37,6 +37,12 @@ const payloadSchema = z.object({
 
 type AdminClient = ReturnType<typeof createSupabaseAdminClient>;
 
+type EventForDeletion = {
+  id: string;
+  name: string;
+  event_date: string | null;
+};
+
 export async function POST(request: Request) {
   try {
     const input = payloadSchema.parse(await request.json());
@@ -125,6 +131,37 @@ export async function POST(request: Request) {
   }
 }
 
+export async function DELETE(request: Request) {
+  try {
+    const id = getChampionshipId(request);
+    const admin = createSupabaseAdminClient();
+    await requireAdminUser(admin);
+
+    const { data: event, error: lookupError } = await admin
+      .from("events")
+      .select("id, name, event_date")
+      .eq("id", id)
+      .maybeSingle<EventForDeletion>();
+
+    if (lookupError) throw new Error(lookupError.message);
+    if (!event) throw new Error("Campeonato no encontrado.");
+
+    const matchesResponse = await admin.from("matches").delete().eq("event_id", id);
+    if (matchesResponse.error) throw new Error(matchesResponse.error.message);
+
+    const eventResponse = await admin.from("events").delete().eq("id", id);
+    if (eventResponse.error) throw new Error(eventResponse.error.message);
+
+    await deleteBasesForEvent(admin, event);
+
+    return NextResponse.json({ ok: true });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "No se pudo borrar el campeonato.";
+    const status = message === "No autorizado" ? 401 : message === "Campeonato no encontrado." ? 404 : 400;
+    return NextResponse.json({ error: message }, { status });
+  }
+}
+
 async function requireAdminUser(admin: AdminClient) {
   const authClient = await createSupabaseRouteClient();
   const { data, error } = await authClient.auth.getUser();
@@ -151,6 +188,17 @@ async function requireAdminUser(admin: AdminClient) {
   }
 
   throw new Error("No autorizado");
+}
+
+function getChampionshipId(request: Request) {
+  const id = new URL(request.url).searchParams.get("id");
+  const parsed = z.string().uuid().safeParse(id);
+
+  if (!parsed.success) {
+    throw new Error("Selecciona un campeonato valido.");
+  }
+
+  return parsed.data;
 }
 
 async function upsertSport(admin: AdminClient, sport: SportKey, matchDuration: number) {
@@ -252,6 +300,17 @@ function normalizeCompetitionInput(input: z.infer<typeof payloadSchema>) {
     penaltiesEnabled: false,
     seedingMode: input.seedingMode
   };
+}
+
+async function deleteBasesForEvent(admin: AdminClient, event: EventForDeletion) {
+  let query = admin.from("tournament_bases").delete().eq("championship_name", event.name);
+
+  if (event.event_date) {
+    query = query.eq("start_date", event.event_date);
+  }
+
+  const { error } = await query;
+  if (error) throw new Error(error.message);
 }
 
 async function upsertBases(

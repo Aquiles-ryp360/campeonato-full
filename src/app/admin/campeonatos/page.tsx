@@ -1,5 +1,6 @@
 import { Trophy } from "lucide-react";
 import { Button, Card, SectionHeader } from "@/components/ui";
+import { DeleteChampionshipButton } from "@/features/admin/components/DeleteChampionshipButton";
 import { getPublicCompetitionData } from "@/lib/supabase-data";
 import { eventStatusLabel, formatMoney } from "@/lib/utils";
 
@@ -23,7 +24,7 @@ export default async function AdminChampionshipsPage() {
       />
       <div className="grid gap-4 md:grid-cols-3">
         {data.events.map((event) => (
-          <Card key={event.id} className="p-5">
+          <Card key={event.id} className="flex h-full flex-col p-5">
             <p className="font-bold text-ink">{event.name}</p>
             <p className="mt-1 text-sm text-ink/55">{event.category}</p>
             <div className="mt-4 space-y-1 text-sm text-ink/65">
@@ -31,9 +32,12 @@ export default async function AdminChampionshipsPage() {
               <p>{formatMoney(event.registrationFee)}</p>
               <p>{event.maxTeams} equipos max.</p>
             </div>
-            <Button href={`/admin/campeonatos/${event.id}`} variant="secondary" className="mt-4 w-full">
-              Configurar
-            </Button>
+            <div className="mt-auto grid gap-2 pt-4 sm:grid-cols-2">
+              <Button href={`/admin/campeonatos/${event.id}`} variant="secondary" className="w-full">
+                Configurar
+              </Button>
+              <DeleteChampionshipButton id={event.id} name={event.name} />
+            </div>
           </Card>
         ))}
       </div>

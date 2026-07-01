@@ -41,7 +41,7 @@ export function Button({
 }: {
   children: React.ReactNode;
   href?: string;
-  variant?: "primary" | "secondary" | "ghost";
+  variant?: "primary" | "secondary" | "ghost" | "danger";
   className?: string;
   type?: "button" | "submit";
   onClick?: () => void;
@@ -50,7 +50,8 @@ export function Button({
   const variants = {
     primary: "bg-ink text-white hover:bg-ink/90",
     secondary: "bg-white text-ink ring-1 ring-ink/10 hover:bg-mist",
-    ghost: "bg-transparent text-ink hover:bg-white/70"
+    ghost: "bg-transparent text-ink hover:bg-white/70",
+    danger: "bg-coral/10 text-red-800 ring-1 ring-coral/25 hover:bg-coral/15"
   };
   const classes = cn(
     "inline-flex min-h-10 items-center justify-center gap-2 rounded-md px-4 py-2 text-sm font-semibold transition",
