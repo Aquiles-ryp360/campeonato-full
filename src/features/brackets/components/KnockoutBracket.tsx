@@ -86,7 +86,7 @@ export function KnockoutBracket({
           <div>
             <p className="font-bold">Llave dinamica</p>
             <p className="text-sm text-white/65">
-              Base {bracket.bracketSize} equipos, {bracket.byeCount} bye(s) calculados.
+              {bracketSummary(bracket)}
             </p>
           </div>
         </div>
@@ -94,6 +94,18 @@ export function KnockoutBracket({
       </div>
     </div>
   );
+}
+
+function bracketSummary(bracket: ReturnType<typeof generateKnockoutBracket>) {
+  if (bracket.status === "incomplete") {
+    return bracket.warnings[0] ?? "Se necesitan mas equipos para generar la llave.";
+  }
+
+  if (bracket.preliminaryMatches > 0) {
+    return `${bracket.preliminaryTeams} equipos juegan preliminar; ${bracket.byeCount} pasan directo a la llave de ${bracket.lowerPowerOfTwo}.`;
+  }
+
+  return `Llave pareja de ${bracket.lowerPowerOfTwo} equipos, sin preliminar.`;
 }
 
 function TeamLine({

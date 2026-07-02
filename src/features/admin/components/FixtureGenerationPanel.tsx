@@ -4,6 +4,7 @@ import { useMemo } from "react";
 import { Lock, Send, Snowflake, Wand2 } from "lucide-react";
 import type { CompetitionData } from "@/lib/data-mappers";
 import type { TournamentEvent } from "@/lib/types";
+import type { GeneratedBracket } from "@/lib/domain/bracket-generator";
 import {
   buildEventFixturePreview,
   buildVisibleFixtureMatches
@@ -94,6 +95,9 @@ export function FixtureGenerationPanel({
             <Info label="Pausa" value={`${selectedEvent.scheduleConfig?.transitionMinutes ?? 10} min`} />
             <Info label="Canchas" value={(selectedEvent.scheduleConfig?.courts ?? data.venues.map((venue) => venue.name)).join(", ")} />
             <Info label="Partidos" value={`${bracket?.matches.length ?? 0}`} />
+            <Info label="Preliminar" value={bracketPreliminaryLabel(bracket)} />
+            <Info label="Pasan directo" value={bracketDirectLabel(bracket)} />
+            <Info label="Llave principal" value={bracketMainLabel(bracket)} />
           </div>
         ) : null}
         {bracket?.warnings.length ? (
@@ -145,6 +149,22 @@ export function FixtureGenerationPanel({
       />
     </div>
   );
+}
+
+function bracketPreliminaryLabel(bracket: GeneratedBracket | null) {
+  if (!bracket || bracket.status === "incomplete") return "Pendiente";
+  if (bracket.preliminaryMatches === 0) return "No aplica";
+  return `${bracket.preliminaryMatches} partido(s), ${bracket.preliminaryTeams} equipos`;
+}
+
+function bracketDirectLabel(bracket: GeneratedBracket | null) {
+  if (!bracket || bracket.status === "incomplete") return "Pendiente";
+  return `${bracket.byeCount} equipo(s) con bye`;
+}
+
+function bracketMainLabel(bracket: GeneratedBracket | null) {
+  if (!bracket || bracket.status === "incomplete") return "Pendiente";
+  return `${bracket.lowerPowerOfTwo} clasificados`;
 }
 
 function Info({ label, value }: { label: string; value: string }) {
