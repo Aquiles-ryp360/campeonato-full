@@ -89,6 +89,10 @@ export function ChampionshipWizard({
     () => estimateEndTime(draft.startTime, estimatedMatches, draft.courtCount, draft.matchDuration),
     [draft.courtCount, draft.matchDuration, draft.startTime, estimatedMatches]
   );
+  const fixturePreviewEvent = useMemo(
+    () => eventFromDraft(draft, initialEvent, estimatedEndTime),
+    [draft, estimatedEndTime, initialEvent]
+  );
 
   useEffect(() => {
     const rawDraft = window.localStorage.getItem(draftKey);
@@ -342,7 +346,7 @@ export function ChampionshipWizard({
         />
       ) : null}
       {step === 4 ? <BasesUploadForm /> : null}
-      {step === 5 ? <FixtureGenerationPanel data={data} /> : null}
+      {step === 5 ? <FixtureGenerationPanel data={data} activeEvent={fixturePreviewEvent} /> : null}
 
       <div className="flex justify-end">
         <Button onClick={saveDraft} disabled={saving}>
@@ -396,6 +400,60 @@ function draftFromEvent(event?: TournamentEvent | null): WizardDraft {
     fixtureCompactPreview: event?.fixtureCompactPreview ?? true,
     publicLiveScores: event?.publicLiveScores ?? true
   });
+}
+
+function eventFromDraft(
+  draft: WizardDraft,
+  event: TournamentEvent | null | undefined,
+  estimatedEndTime: string
+): TournamentEvent {
+  return {
+    id: draft.id ?? event?.id ?? "draft-preview",
+    name: draft.name,
+    sportId: event?.sportId ?? sportIdFromKey(draft.sport),
+    sport: draft.sport,
+    category: draft.category,
+    formatId: event?.formatId ?? formatIdFromKey(draft.format),
+    format: draft.format,
+    status: draft.status,
+    registrationFee: draft.registrationFee,
+    registrationOpenUntil: draft.registrationOpenUntil,
+    maxTeams: draft.maxTeams,
+    minPlayers: draft.minPlayers,
+    maxPlayers: draft.maxPlayers,
+    pointsWin: draft.pointsWin,
+    pointsDraw: draft.pointsDraw,
+    pointsLoss: draft.pointsLoss,
+    rulesSummary: draft.rulesSummary,
+    preventCrossSportConflicts: event?.preventCrossSportConflicts ?? true,
+    minimumRestMinutes: draft.matchDuration + transitionMinutes,
+    eventDate: draft.eventDate,
+    fixtureStatus: event?.fixtureStatus ?? "draft_auto",
+    seedingMode: draft.seedingMode,
+    thirdPlace: draft.thirdPlace,
+    allowByes: draft.allowByes,
+    penaltiesEnabled: draft.penaltiesEnabled,
+    publicLiveScores: draft.publicLiveScores,
+    championTeamId: event?.championTeamId,
+    championMatchId: event?.championMatchId,
+    championDecidedAt: event?.championDecidedAt,
+    fixtureCompactPreview: draft.fixtureCompactPreview,
+    scheduleConfig: {
+      startTime: draft.startTime,
+      matchDurationMinutes: draft.matchDuration,
+      halfTimeMinute: draft.halfTimeMinute,
+      halfTimeBreakMinutes: draft.halfTimeBreakMinutes,
+      additionalTimeAllowedMinutes: draft.additionalTimeAllowedMinutes,
+      matchStartToleranceMinutes: draft.matchStartToleranceMinutes,
+      allowManualFinish: draft.allowManualFinish,
+      transitionMinutes,
+      courts: buildCourts(draft.courtCount),
+      courtCount: draft.courtCount,
+      minimumRestMinutes: draft.matchDuration + transitionMinutes,
+      allowCompactPreview: draft.fixtureCompactPreview,
+      estimatedEndTime
+    }
+  };
 }
 
 function normalizeDraft(draft: WizardDraft): WizardDraft {
@@ -495,6 +553,16 @@ function estimateEndTime(startTime: string, matches: number, courtCount: number,
 
 function buildCourts(count: number) {
   return Array.from({ length: clampNumber(count, 1, 3) }, (_, index) => `Cancha ${String.fromCharCode(65 + index)}`);
+}
+
+function sportIdFromKey(sport: SportKey) {
+  return `sport-${sport}`;
+}
+
+function formatIdFromKey(format: TournamentFormat) {
+  if (format === "single_elimination") return "format-knockout";
+  if (format === "groups_then_knockout") return "format-groups";
+  return "format-league";
 }
 
 function clampNumber(value: number, min: number, max: number) {

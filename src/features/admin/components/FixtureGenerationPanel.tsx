@@ -3,6 +3,7 @@
 import { useMemo } from "react";
 import { Lock, Send, Snowflake, Wand2 } from "lucide-react";
 import type { CompetitionData } from "@/lib/data-mappers";
+import type { TournamentEvent } from "@/lib/types";
 import {
   buildEventFixturePreview,
   buildVisibleFixtureMatches
@@ -17,8 +18,19 @@ import { DaySchedule } from "@/features/fixture/components/DaySchedule";
 import { fixtureStatusLabel } from "@/lib/utils";
 import { RefereeAssignmentsPanel } from "./RefereeAssignmentsPanel";
 
-export function FixtureGenerationPanel({ data }: { data: CompetitionData }) {
-  const selectedEvent = data.events[0] ?? null;
+export function FixtureGenerationPanel({
+  data,
+  activeEvent
+}: {
+  data: CompetitionData;
+  activeEvent?: TournamentEvent | null;
+}) {
+  const selectedEvent = activeEvent ?? data.events[0] ?? null;
+  const scopedEvents = useMemo(() => {
+    if (!selectedEvent) return data.events;
+    if (activeEvent) return [selectedEvent];
+    return data.events;
+  }, [activeEvent, data.events, selectedEvent]);
   const preview = useMemo(
     () => {
       if (!selectedEvent) return null;
@@ -34,18 +46,31 @@ export function FixtureGenerationPanel({ data }: { data: CompetitionData }) {
   const visibleMatches = useMemo(
     () =>
       buildVisibleFixtureMatches({
-        events: data.events,
+        events: scopedEvents,
         teams: data.teams,
         matches: data.matches,
         venues: data.venues
       }),
-    [data.events, data.matches, data.teams, data.venues]
+    [data.matches, data.teams, data.venues, scopedEvents]
   );
+  const scopedMatches = useMemo(() => {
+    if (!activeEvent || !selectedEvent) return visibleMatches;
+    return visibleMatches.filter((match) => match.eventId === selectedEvent.id);
+  }, [activeEvent, selectedEvent, visibleMatches]);
+  const scopedTeams = useMemo(() => {
+    if (!activeEvent || !selectedEvent) return data.teams;
+    return data.teams.filter((team) => team.eventId === selectedEvent.id);
+  }, [activeEvent, data.teams, selectedEvent]);
+  const scopedTeamIds = useMemo(() => new Set(scopedTeams.map((team) => team.id)), [scopedTeams]);
+  const scopedPlayers = useMemo(() => {
+    if (!activeEvent) return data.players;
+    return data.players.filter((player) => scopedTeamIds.has(player.teamId));
+  }, [activeEvent, data.players, scopedTeamIds]);
   const conflicts = detectScheduleConflicts({
-    matches: visibleMatches,
-    teams: data.teams,
-    players: data.players,
-    events: data.events
+    matches: scopedMatches,
+    teams: scopedTeams,
+    players: scopedPlayers,
+    events: scopedEvents
   });
   const bracket = preview?.bracket ?? null;
   const previewSchedule = preview?.schedule ?? null;
@@ -106,15 +131,15 @@ export function FixtureGenerationPanel({ data }: { data: CompetitionData }) {
         ) : null}
       </Card>
       <RefereeAssignmentsPanel
-        events={data.events}
-        teams={data.teams}
-        matches={visibleMatches}
+        events={scopedEvents}
+        teams={scopedTeams}
+        matches={scopedMatches}
       />
       <DaySchedule
-        events={data.events}
-        teams={data.teams}
-        players={data.players}
-        matches={visibleMatches}
+        events={scopedEvents}
+        teams={scopedTeams}
+        players={scopedPlayers}
+        matches={scopedMatches}
         venues={data.venues}
         initialEventId={selectedEvent?.id}
       />
