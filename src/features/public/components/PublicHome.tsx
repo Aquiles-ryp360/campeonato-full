@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Check, Trophy, X } from "lucide-react";
 import type { CompetitionData } from "@/lib/data-mappers";
+import { isActiveRegistrationTeamStatus } from "@/lib/domain/registration-rules";
 import { buildVisibleFixtureMatches } from "@/lib/domain/fixture-preview";
 import { getChampionshipPublicContext } from "@/lib/queries/public";
 import { formatDateTime, getMatchSideLabel, sportLabel } from "@/lib/utils";
@@ -73,14 +74,18 @@ export function PublicHome({
   }
 
   const courts = Array.from(new Set(visibleMatches.map((match) => match.court))).slice(0, 3);
-  const selectedTeam = context.teams.find((team) => team.id === selectedTeamId) ?? null;
+  const activeTeams = context.teams.filter((team) =>
+    isActiveRegistrationTeamStatus(team.status)
+  );
+  const selectedTeam = activeTeams.find((team) => team.id === selectedTeamId) ?? null;
+  const activeTeamCount = activeTeams.length;
 
   return (
     <div className="space-y-6 pb-20 md:pb-0">
       <ChampionshipHero
         event={context.event}
         events={context.events}
-        teamCount={context.teams.length}
+        teamCount={activeTeamCount}
         courts={courts}
         onChangeEvent={(nextEventId) => {
           setEventId(nextEventId);
@@ -104,6 +109,7 @@ export function PublicHome({
       <ChampionshipSummaryCards
         event={context.event}
         teams={context.teams}
+        teamCount={activeTeamCount}
         matches={visibleMatches}
       />
 
@@ -124,8 +130,8 @@ export function PublicHome({
           description="Selecciona un equipo para ver detalle publico sin DNI ni documentos."
         />
         <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-          {context.teams.length > 0 ? (
-            context.teams.map((team) => (
+          {activeTeams.length > 0 ? (
+            activeTeams.map((team) => (
               <TeamCard
                 key={team.id}
                 team={team}

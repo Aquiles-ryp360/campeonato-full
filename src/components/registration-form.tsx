@@ -18,7 +18,8 @@ import { toast } from "sonner";
 import { sessionChangeEvent, type DelegateAccess } from "@/lib/auth";
 import {
   findDuplicateNormalizedValue,
-  isRegistrationOpen,
+  registrationAvailability,
+  registrationClosedMessage,
   validateEnrollmentFileMeta
 } from "@/lib/domain/registration-rules";
 import type {
@@ -103,13 +104,16 @@ type RegisterDelegateResponse =
 
 export function RegistrationForm({
   events,
-  initialEventId
+  initialEventId,
+  teamCountsByEventId = {}
 }: {
   events: TournamentEvent[];
   initialEventId?: string;
+  teamCountsByEventId?: Record<string, number>;
 }) {
+  const [teamCounts, setTeamCounts] = useState(teamCountsByEventId);
   const openEvents = useMemo(
-    () => events.filter((event) => isRegistrationOpen(event)),
+    () => events.filter((event) => registrationAvailability({ event }).open),
     [events]
   );
   const initialOpenEvent = openEvents.find((event) => event.id === initialEventId) ?? openEvents[0];
@@ -133,6 +137,13 @@ export function RegistrationForm({
     () => openEvents.find((current) => current.id === eventId) ?? openEvents[0] ?? null,
     [eventId, openEvents]
   );
+  const currentTeamCount = event ? teamCounts[event.id] ?? 0 : 0;
+  const currentAvailability = event
+    ? registrationAvailability({ event, teamCount: currentTeamCount })
+    : null;
+  const availableTeamSlots = event
+    ? Math.max(0, event.maxTeams - currentTeamCount)
+    : 0;
   const branding = useMemo(() => getEventBranding(event), [event]);
   const activePaymentQrUrl =
     paymentMethod === "plin" ? branding.paymentQrPlinUrl : branding.paymentQrYapeUrl;
@@ -195,6 +206,13 @@ export function RegistrationForm({
   function addPlayer() {
     if (!event) {
       toast.error("No hay campeonatos abiertos para inscripcion.");
+      return;
+    }
+
+    if (!currentAvailability?.open) {
+      toast.error(
+        registrationClosedMessage(currentAvailability?.reason ?? "not_registration")
+      );
       return;
     }
 
@@ -358,6 +376,10 @@ export function RegistrationForm({
       };
 
       setLastReceipt(receipt);
+      setTeamCounts((current) => ({
+        ...current,
+        [event.id]: (current[event.id] ?? currentTeamCount) + 1
+      }));
       window.dispatchEvent(new Event(sessionChangeEvent));
       try {
         await generateRegistrationReceiptPdf(receipt);
@@ -422,6 +444,9 @@ export function RegistrationForm({
               style={{ backgroundColor: branding.secondaryColor }}
             />
             <span className="text-xs font-bold uppercase text-ink/60">{sportLabel(event.sport)}</span>
+            <span className="text-xs font-bold uppercase text-ink/60">
+              {currentTeamCount}/{event.maxTeams}
+            </span>
           </div>
         </div>
         <div
@@ -548,7 +573,16 @@ export function RegistrationForm({
                     Jugadores: <strong>{event.minPlayers}</strong> minimo,{" "}
                     <strong>{event.maxPlayers}</strong> maximo.
                   </p>
+                  <p>
+                    Cupos: <strong>{currentTeamCount}/{event.maxTeams}</strong> equipos inscritos,
+                    quedan <strong>{availableTeamSlots}</strong>.
+                  </p>
                 </div>
+                {currentAvailability && !currentAvailability.open ? (
+                  <div className="mt-4 rounded-md border border-coral/25 bg-coral/10 p-3 text-sm font-semibold text-red-800">
+                    {registrationClosedMessage(currentAvailability.reason)}
+                  </div>
+                ) : null}
                 <div className="mt-4 space-y-3">
                   <Badge tone="amber">Cada codigo se usa una vez</Badge>
                   <div className="rounded-md border border-ink/10 bg-white p-3">
@@ -602,6 +636,7 @@ export function RegistrationForm({
               type="button"
               variant="secondary"
               onClick={addPlayer}
+              disabled={isSubmitting || currentAvailability?.open === false}
             >
               <Plus className="h-4 w-4" />
               Agregar jugador
@@ -767,7 +802,7 @@ export function RegistrationForm({
           type="submit"
           className="w-full sm:w-auto"
           style={{ backgroundColor: branding.primaryColor }}
-          disabled={isSubmitting}
+          disabled={isSubmitting || currentAvailability?.open === false}
         >
           <UserPlus className="h-4 w-4" />
           {isSubmitting ? "Registrando..." : "Enviar inscripcion"}

@@ -94,7 +94,18 @@ export async function POST(request: Request) {
       courtCount: input.courtCount,
       minimumRestMinutes: input.matchDuration + input.transitionMinutes,
       allowCompactPreview: input.fixtureCompactPreview,
-      estimatedEndTime: input.estimatedEndTime
+      estimatedEndTime: input.estimatedEndTime,
+      branding: {
+        organizerName: emptyToUndefined(input.organizerName),
+        careerName: emptyToUndefined(input.careerName),
+        careerLogoUrl: emptyToUndefined(input.careerLogoUrl),
+        paymentQrYapeUrl: emptyToUndefined(input.paymentQrYapeUrl),
+        paymentQrPlinUrl: emptyToUndefined(input.paymentQrPlinUrl),
+        paymentContactPhone: emptyToUndefined(input.paymentContactPhone),
+        paymentContactWhatsappUrl: emptyToUndefined(input.paymentContactWhatsappUrl),
+        themePrimaryColor: input.themePrimaryColor,
+        themeSecondaryColor: input.themeSecondaryColor
+      }
     };
 
     const { error } = await admin.from("events").upsert(
@@ -115,15 +126,6 @@ export async function POST(request: Request) {
         points_draw: normalized.pointsDraw,
         points_loss: normalized.pointsLoss,
         rules_summary: input.rulesSummary || defaultRulesSummary(input.format),
-        organizer_name: emptyToNull(input.organizerName),
-        career_name: emptyToNull(input.careerName),
-        career_logo_url: emptyToNull(input.careerLogoUrl),
-        payment_qr_yape_url: emptyToNull(input.paymentQrYapeUrl),
-        payment_qr_plin_url: emptyToNull(input.paymentQrPlinUrl),
-        payment_contact_phone: emptyToNull(input.paymentContactPhone),
-        payment_contact_whatsapp_url: emptyToNull(input.paymentContactWhatsappUrl),
-        theme_primary_color: input.themePrimaryColor,
-        theme_secondary_color: input.themeSecondaryColor,
         prevent_cross_sport_conflicts: true,
         minimum_rest_minutes: input.matchDuration + input.transitionMinutes,
         event_date: eventDateIso,
@@ -447,9 +449,9 @@ function localDateTimeToIso(value: string) {
   return new Date(`${value}:00-05:00`).toISOString();
 }
 
-function emptyToNull(value: string) {
+function emptyToUndefined(value: string) {
   const trimmed = value.trim();
-  return trimmed ? trimmed : null;
+  return trimmed || undefined;
 }
 
 function slugify(value: string) {

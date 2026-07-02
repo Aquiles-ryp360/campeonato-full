@@ -4,7 +4,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Save } from "lucide-react";
+import { Save, Upload } from "lucide-react";
 import { toast } from "sonner";
 import type {
   EventStatus,
@@ -76,6 +76,8 @@ type WizardDraft = {
   publicLiveScores: boolean;
 };
 
+type AssetField = "careerLogoUrl" | "paymentQrYapeUrl" | "paymentQrPlinUrl";
+
 export function ChampionshipWizard({
   data,
   initialEvent
@@ -88,6 +90,7 @@ export function ChampionshipWizard({
   const [draft, setDraft] = useState<WizardDraft>(() => draftFromEvent(initialEvent));
   const [hydratedDraft, setHydratedDraft] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [uploadingAsset, setUploadingAsset] = useState<AssetField | null>(null);
   const draftKey = initialEvent?.id ? `championship-wizard:${initialEvent.id}` : "championship-wizard:new";
   const isKnockout = draft.format === "single_elimination";
   const usesTablePoints = draft.format !== "single_elimination";
@@ -125,6 +128,36 @@ export function ChampionshipWizard({
 
   function updateDraft(next: Partial<WizardDraft>) {
     setDraft((current) => normalizeDraft({ ...current, ...next }));
+  }
+
+  async function uploadAsset(field: AssetField, file: File | null) {
+    if (!file) return;
+
+    setUploadingAsset(field);
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+      formData.append("field", field);
+
+      const response = await fetch("/api/admin/championship-assets", {
+        method: "POST",
+        body: formData
+      });
+      const payload = (await response.json().catch(() => null)) as
+        | { url?: string; error?: string }
+        | null;
+
+      if (!response.ok || !payload?.url) {
+        throw new Error(payload?.error ?? "No se pudo subir la imagen.");
+      }
+
+      updateDraft({ [field]: payload.url } as Partial<WizardDraft>);
+      toast.success("Imagen subida.");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "No se pudo subir la imagen.");
+    } finally {
+      setUploadingAsset(null);
+    }
   }
 
   async function saveDraft() {
@@ -257,13 +290,34 @@ export function ChampionshipWizard({
                     <input className={inputClass} value={draft.careerName} onChange={(event) => updateDraft({ careerName: event.target.value })} placeholder="Ingenieria Mecanica Electrica" />
                   </Field>
                   <Field label="Logo de la carrera">
-                    <input className={inputClass} value={draft.careerLogoUrl} onChange={(event) => updateDraft({ careerLogoUrl: event.target.value })} placeholder="/epime-09/logo-carrera.png" />
+                    <AssetInput
+                      value={draft.careerLogoUrl}
+                      placeholder="/epime-09/logo-carrera.png"
+                      field="careerLogoUrl"
+                      uploadingAsset={uploadingAsset}
+                      onValueChange={(value) => updateDraft({ careerLogoUrl: value })}
+                      onUpload={uploadAsset}
+                    />
                   </Field>
                   <Field label="QR Yape">
-                    <input className={inputClass} value={draft.paymentQrYapeUrl} onChange={(event) => updateDraft({ paymentQrYapeUrl: event.target.value })} placeholder="/epime-09/qr-yape.png" />
+                    <AssetInput
+                      value={draft.paymentQrYapeUrl}
+                      placeholder="/epime-09/qr-yape.png"
+                      field="paymentQrYapeUrl"
+                      uploadingAsset={uploadingAsset}
+                      onValueChange={(value) => updateDraft({ paymentQrYapeUrl: value })}
+                      onUpload={uploadAsset}
+                    />
                   </Field>
                   <Field label="QR Plin">
-                    <input className={inputClass} value={draft.paymentQrPlinUrl} onChange={(event) => updateDraft({ paymentQrPlinUrl: event.target.value })} placeholder="Opcional" />
+                    <AssetInput
+                      value={draft.paymentQrPlinUrl}
+                      placeholder="Opcional"
+                      field="paymentQrPlinUrl"
+                      uploadingAsset={uploadingAsset}
+                      onValueChange={(value) => updateDraft({ paymentQrPlinUrl: value })}
+                      onUpload={uploadAsset}
+                    />
                   </Field>
                   <Field label="WhatsApp encargado">
                     <input className={inputClass} value={draft.paymentContactPhone} onChange={(event) => updateDraft({ paymentContactPhone: event.target.value })} placeholder="+51923037653" />
@@ -558,7 +612,18 @@ function eventFromDraft(
       courtCount: draft.courtCount,
       minimumRestMinutes: draft.matchDuration + transitionMinutes,
       allowCompactPreview: draft.fixtureCompactPreview,
-      estimatedEndTime
+      estimatedEndTime,
+      branding: {
+        organizerName: draft.organizerName,
+        careerName: draft.careerName,
+        careerLogoUrl: draft.careerLogoUrl,
+        paymentQrYapeUrl: draft.paymentQrYapeUrl,
+        paymentQrPlinUrl: draft.paymentQrPlinUrl,
+        paymentContactPhone: draft.paymentContactPhone,
+        paymentContactWhatsappUrl: draft.paymentContactWhatsappUrl,
+        themePrimaryColor: draft.themePrimaryColor,
+        themeSecondaryColor: draft.themeSecondaryColor
+      }
     }
   };
 }
@@ -705,6 +770,54 @@ function Info({ label, value }: { label: string; value: string }) {
     <div className="rounded-md border border-ink/10 bg-mist/50 px-3 py-2">
       <p className="text-xs font-bold uppercase text-ink/45">{label}</p>
       <p className="mt-1 text-sm font-semibold text-ink">{value}</p>
+    </div>
+  );
+}
+
+function AssetInput({
+  value,
+  placeholder,
+  field,
+  uploadingAsset,
+  onValueChange,
+  onUpload
+}: {
+  value: string;
+  placeholder: string;
+  field: AssetField;
+  uploadingAsset: AssetField | null;
+  onValueChange: (value: string) => void;
+  onUpload: (field: AssetField, file: File | null) => Promise<void>;
+}) {
+  const uploading = uploadingAsset === field;
+
+  return (
+    <div className="grid gap-2 sm:grid-cols-[minmax(0,1fr)_auto]">
+      <input
+        className={inputClass}
+        value={value}
+        onChange={(event) => onValueChange(event.target.value)}
+        placeholder={placeholder}
+      />
+      <label
+        className={`inline-flex min-h-10 cursor-pointer items-center justify-center gap-2 rounded-md border border-ink/10 bg-white px-3 py-2 text-sm font-semibold text-ink transition hover:bg-mist ${
+          uploading ? "pointer-events-none opacity-60" : ""
+        }`}
+      >
+        <Upload className="h-4 w-4" />
+        {uploading ? "Subiendo" : "Subir"}
+        <input
+          className="sr-only"
+          type="file"
+          accept="image/png,image/jpeg,image/webp"
+          onChange={(event) => {
+            const file = event.currentTarget.files?.[0] ?? null;
+            void onUpload(field, file).finally(() => {
+              event.currentTarget.value = "";
+            });
+          }}
+        />
+      </label>
     </div>
   );
 }

@@ -7,10 +7,12 @@ import { tournamentFormatLabel } from "@/lib/domain/tournament-format";
 export function ChampionshipSummaryCards({
   event,
   teams,
+  teamCount = teams.length,
   matches
 }: {
   event: TournamentEvent;
   teams: Team[];
+  teamCount?: number;
   matches: Match[];
 }) {
   const nextMatch = matches
@@ -19,7 +21,7 @@ export function ChampionshipSummaryCards({
 
   return (
     <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-      <Metric label="Equipos inscritos" value={`${teams.length}/${event.maxTeams}`} icon={UsersRound} />
+      <Metric label="Equipos inscritos" value={`${teamCount}/${event.maxTeams}`} icon={UsersRound} />
       <Metric label="Formato" value={tournamentFormatLabel(event.format)} icon={Trophy} tone="blue" />
       <Metric
         label="Fecha base"

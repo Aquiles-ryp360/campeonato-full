@@ -126,6 +126,18 @@ export interface TournamentBases {
   updatedAt?: string;
 }
 
+export interface ChampionshipBranding {
+  organizerName?: string;
+  careerName?: string;
+  careerLogoUrl?: string;
+  paymentQrYapeUrl?: string;
+  paymentQrPlinUrl?: string;
+  paymentContactPhone?: string;
+  paymentContactWhatsappUrl?: string;
+  themePrimaryColor?: string;
+  themeSecondaryColor?: string;
+}
+
 export interface TournamentEvent {
   id: string;
   name: string;
@@ -180,6 +192,7 @@ export interface TournamentEvent {
     minimumRestMinutes: number;
     allowCompactPreview: boolean;
     estimatedEndTime?: string;
+    branding?: ChampionshipBranding;
   };
 }
 

@@ -48,7 +48,7 @@ export const footballEvent: TournamentEvent = {
   status: "registration",
   registrationFee: 35,
   registrationOpenUntil: "2026-07-08T23:59:00-05:00",
-  maxTeams: 8,
+  maxTeams: 12,
   minPlayers: 11,
   maxPlayers: 18,
   pointsWin: 0,

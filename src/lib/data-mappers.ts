@@ -471,6 +471,8 @@ export function mapGroupStanding(row: GroupStandingRow): GroupStanding {
 export function mapEvent(row: EventRow): TournamentEvent {
   const sport = sportKeyFromValue(row.sport) ?? sportKeyFromId(row.sport_id);
   const format = formatKeyFromValue(row.format) ?? formatKeyFromId(row.format_id);
+  const scheduleConfig = row.schedule_config ?? undefined;
+  const branding = scheduleConfig?.branding;
 
   return {
     id: row.id,
@@ -490,15 +492,16 @@ export function mapEvent(row: EventRow): TournamentEvent {
     pointsDraw: row.points_draw,
     pointsLoss: row.points_loss,
     rulesSummary: row.rules_summary ?? "",
-    organizerName: row.organizer_name ?? undefined,
-    careerName: row.career_name ?? undefined,
-    careerLogoUrl: row.career_logo_url ?? undefined,
-    paymentQrYapeUrl: row.payment_qr_yape_url ?? undefined,
-    paymentQrPlinUrl: row.payment_qr_plin_url ?? undefined,
-    paymentContactPhone: row.payment_contact_phone ?? undefined,
-    paymentContactWhatsappUrl: row.payment_contact_whatsapp_url ?? undefined,
-    themePrimaryColor: row.theme_primary_color ?? undefined,
-    themeSecondaryColor: row.theme_secondary_color ?? undefined,
+    organizerName: row.organizer_name ?? branding?.organizerName ?? undefined,
+    careerName: row.career_name ?? branding?.careerName ?? undefined,
+    careerLogoUrl: row.career_logo_url ?? branding?.careerLogoUrl ?? undefined,
+    paymentQrYapeUrl: row.payment_qr_yape_url ?? branding?.paymentQrYapeUrl ?? undefined,
+    paymentQrPlinUrl: row.payment_qr_plin_url ?? branding?.paymentQrPlinUrl ?? undefined,
+    paymentContactPhone: row.payment_contact_phone ?? branding?.paymentContactPhone ?? undefined,
+    paymentContactWhatsappUrl:
+      row.payment_contact_whatsapp_url ?? branding?.paymentContactWhatsappUrl ?? undefined,
+    themePrimaryColor: row.theme_primary_color ?? branding?.themePrimaryColor ?? undefined,
+    themeSecondaryColor: row.theme_secondary_color ?? branding?.themeSecondaryColor ?? undefined,
     preventCrossSportConflicts: row.prevent_cross_sport_conflicts ?? false,
     minimumRestMinutes: row.minimum_rest_minutes ?? 60,
     eventDate: row.event_date ?? undefined,
@@ -512,7 +515,7 @@ export function mapEvent(row: EventRow): TournamentEvent {
     championMatchId: row.champion_match_id ?? undefined,
     championDecidedAt: row.champion_decided_at ?? undefined,
     fixtureCompactPreview: row.fixture_compact_preview ?? undefined,
-    scheduleConfig: row.schedule_config ?? undefined
+    scheduleConfig
   };
 }
 
