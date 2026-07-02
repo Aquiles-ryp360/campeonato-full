@@ -1,7 +1,7 @@
 "use client";
 
-import { useMemo } from "react";
-import { Lock, Send, Snowflake, Wand2 } from "lucide-react";
+import { useMemo, useState } from "react";
+import { AlertTriangle, Info as InfoIcon, Lock, Send, Snowflake, Wand2 } from "lucide-react";
 import type { CompetitionData } from "@/lib/data-mappers";
 import type { TournamentEvent } from "@/lib/types";
 import type { GeneratedBracket } from "@/lib/domain/bracket-generator";
@@ -12,8 +12,10 @@ import {
 import {
   canPublishFixture,
   canRegenerateFixtureManually,
-  detectScheduleConflicts
+  detectScheduleConflicts,
+  type ScheduleConflict
 } from "@/lib/domain/conflict-detector";
+import { isActiveRegistrationTeamStatus } from "@/lib/domain/registration-rules";
 import { Badge, Button, Card, SectionHeader } from "@/components/ui";
 import { DaySchedule } from "@/features/fixture/components/DaySchedule";
 import { fixtureStatusLabel } from "@/lib/utils";
@@ -26,12 +28,16 @@ export function FixtureGenerationPanel({
   data: CompetitionData;
   activeEvent?: TournamentEvent | null;
 }) {
-  const selectedEvent = activeEvent ?? data.events[0] ?? null;
+  const [selectedEventId, setSelectedEventId] = useState(activeEvent?.id ?? data.events[0]?.id ?? "");
+  const selectedEvent =
+    activeEvent ??
+    data.events.find((event) => event.id === selectedEventId) ??
+    data.events[0] ??
+    null;
   const scopedEvents = useMemo(() => {
-    if (!selectedEvent) return data.events;
-    if (activeEvent) return [selectedEvent];
-    return data.events;
-  }, [activeEvent, data.events, selectedEvent]);
+    if (!selectedEvent) return [];
+    return [selectedEvent];
+  }, [selectedEvent]);
   const preview = useMemo(
     () => {
       if (!selectedEvent) return null;
@@ -55,24 +61,27 @@ export function FixtureGenerationPanel({
     [data.matches, data.teams, data.venues, scopedEvents]
   );
   const scopedMatches = useMemo(() => {
-    if (!activeEvent || !selectedEvent) return visibleMatches;
+    if (!selectedEvent) return [];
     return visibleMatches.filter((match) => match.eventId === selectedEvent.id);
-  }, [activeEvent, selectedEvent, visibleMatches]);
+  }, [selectedEvent, visibleMatches]);
   const scopedTeams = useMemo(() => {
-    if (!activeEvent || !selectedEvent) return data.teams;
+    if (!selectedEvent) return [];
     return data.teams.filter((team) => team.eventId === selectedEvent.id);
-  }, [activeEvent, data.teams, selectedEvent]);
+  }, [data.teams, selectedEvent]);
   const scopedTeamIds = useMemo(() => new Set(scopedTeams.map((team) => team.id)), [scopedTeams]);
   const scopedPlayers = useMemo(() => {
-    if (!activeEvent) return data.players;
     return data.players.filter((player) => scopedTeamIds.has(player.teamId));
-  }, [activeEvent, data.players, scopedTeamIds]);
+  }, [data.players, scopedTeamIds]);
   const conflicts = detectScheduleConflicts({
     matches: scopedMatches,
     teams: scopedTeams,
     players: scopedPlayers,
     events: scopedEvents
   });
+  const actionableConflicts = conflicts.filter((conflict) => conflict.severity !== "info");
+  const activeTeamCount = scopedTeams.filter((team) =>
+    isActiveRegistrationTeamStatus(team.status)
+  ).length;
   const bracket = preview?.bracket ?? null;
   const previewSchedule = preview?.schedule ?? null;
 
@@ -82,11 +91,32 @@ export function FixtureGenerationPanel({
         <SectionHeader
           title="Generar fixture"
           description="El admin configura criterios; el sistema genera llave, partidos, horarios y advertencias."
-          action={<Badge tone={conflicts.length > 0 ? "amber" : "green"}>{conflicts.length} conflictos</Badge>}
+          action={
+            <Badge tone={actionableConflicts.length > 0 ? "amber" : "green"}>
+              {actionableConflicts.length} conflictos reales
+            </Badge>
+          }
         />
+        {!activeEvent && data.events.length > 1 ? (
+          <label className="mt-4 block max-w-xl">
+            <span className="text-sm font-semibold text-ink/70">Campeonato</span>
+            <select
+              className="mt-1 min-h-10 w-full rounded-md border border-ink/10 bg-white px-3 py-2 text-sm font-semibold text-ink outline-none transition focus:border-field focus:ring-2 focus:ring-field/20"
+              value={selectedEvent?.id ?? ""}
+              onChange={(event) => setSelectedEventId(event.target.value)}
+            >
+              {data.events.map((event) => (
+                <option key={event.id} value={event.id}>
+                  {event.name}
+                </option>
+              ))}
+            </select>
+          </label>
+        ) : null}
         {selectedEvent ? (
           <div className="mt-4 grid gap-3 md:grid-cols-5">
             <Info label="Estado" value={fixtureStatusLabel(selectedEvent.fixtureStatus)} />
+            <Info label="Equipos inscritos" value={`${activeTeamCount}/${selectedEvent.maxTeams}`} />
             <Info label="Inicio" value={selectedEvent.scheduleConfig?.startTime ?? "09:00"} />
             <Info label="Duracion" value={`${selectedEvent.scheduleConfig?.matchDurationMinutes ?? 20} min`} />
             <Info label="Medio tiempo" value={`Min ${selectedEvent.scheduleConfig?.halfTimeMinute ?? Math.floor((selectedEvent.scheduleConfig?.matchDurationMinutes ?? 20) / 2)}`} />
@@ -105,6 +135,7 @@ export function FixtureGenerationPanel({
             {bracket.warnings.join(" ")}
           </div>
         ) : null}
+        <ConflictSummary conflicts={conflicts} />
         <div className="mt-5 flex flex-wrap items-center gap-3">
           <Button disabled={!selectedEvent || !canRegenerateFixtureManually(selectedEvent.fixtureStatus ?? "draft_auto")}>
             <Wand2 className="h-4 w-4" />
@@ -147,6 +178,53 @@ export function FixtureGenerationPanel({
         venues={data.venues}
         initialEventId={selectedEvent?.id}
       />
+    </div>
+  );
+}
+
+function ConflictSummary({ conflicts }: { conflicts: ScheduleConflict[] }) {
+  const actionable = conflicts.filter((conflict) => conflict.severity !== "info");
+  const infos = conflicts.filter((conflict) => conflict.severity === "info");
+
+  if (actionable.length === 0 && infos.length === 0) {
+    return (
+      <div className="mt-4 rounded-md border border-field/15 bg-field/10 p-3 text-sm font-semibold text-field">
+        Sin choques de cancha, equipo, jugador ni descanso para este campeonato.
+      </div>
+    );
+  }
+
+  return (
+    <div className="mt-4 grid gap-3">
+      {actionable.length === 0 ? (
+        <div className="rounded-md border border-field/15 bg-field/10 p-3 text-sm font-semibold text-field">
+          Sin conflictos reales de horario. Los avisos siguientes son informativos.
+        </div>
+      ) : null}
+      {actionable.map((conflict, index) => (
+        <div
+          key={`${conflict.type}-${index}`}
+          className="rounded-md border border-amber-400/25 bg-amber-100 p-3 text-sm text-amber-950"
+        >
+          <p className="flex items-center gap-2 font-bold">
+            <AlertTriangle className="h-4 w-4" />
+            {conflict.message}
+          </p>
+          <p className="mt-1 text-amber-900">{conflict.suggestion}</p>
+        </div>
+      ))}
+      {infos.map((conflict, index) => (
+        <div
+          key={`${conflict.type}-${index}`}
+          className="rounded-md border border-sky/25 bg-sky/10 p-3 text-sm text-sky-950"
+        >
+          <p className="flex items-center gap-2 font-bold">
+            <InfoIcon className="h-4 w-4" />
+            {conflict.message}
+          </p>
+          <p className="mt-1 text-sky-900">{conflict.suggestion}</p>
+        </div>
+      ))}
     </div>
   );
 }
