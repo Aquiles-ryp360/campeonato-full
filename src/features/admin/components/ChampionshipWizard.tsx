@@ -1,5 +1,7 @@
 "use client";
 
+/* eslint-disable @next/next/no-img-element -- Admin-entered assets can be local paths or external URLs. */
+
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Save } from "lucide-react";
@@ -59,6 +61,15 @@ type WizardDraft = {
   pointsWin: number;
   pointsDraw: number;
   pointsLoss: number;
+  organizerName: string;
+  careerName: string;
+  careerLogoUrl: string;
+  paymentQrYapeUrl: string;
+  paymentQrPlinUrl: string;
+  paymentContactPhone: string;
+  paymentContactWhatsappUrl: string;
+  themePrimaryColor: string;
+  themeSecondaryColor: string;
   startTime: string;
   courtCount: number;
   fixtureCompactPreview: boolean;
@@ -225,6 +236,82 @@ export function ChampionshipWizard({
             <Field label="Descripcion">
               <textarea className={`${inputClass} min-h-24 resize-y`} value={draft.rulesSummary} onChange={(event) => updateDraft({ rulesSummary: event.target.value })} />
             </Field>
+            <div className="md:col-span-2">
+              <div className="rounded-md border border-ink/10 bg-mist/60 p-4">
+                <SectionHeader
+                  title="Marca y pago"
+                  description="Estos datos se muestran en la inscripcion publica del campeonato seleccionado."
+                  action={
+                    <div
+                      className="h-10 w-10 rounded-md border border-ink/10"
+                      style={{ background: draft.themePrimaryColor }}
+                      aria-label="Color principal"
+                    />
+                  }
+                />
+                <div className="mt-5 grid gap-4 md:grid-cols-2">
+                  <Field label="Organizador">
+                    <input className={inputClass} value={draft.organizerName} onChange={(event) => updateDraft({ organizerName: event.target.value })} placeholder="Comision deportiva" />
+                  </Field>
+                  <Field label="Carrera organizadora">
+                    <input className={inputClass} value={draft.careerName} onChange={(event) => updateDraft({ careerName: event.target.value })} placeholder="Ingenieria Mecanica Electrica" />
+                  </Field>
+                  <Field label="Logo de la carrera">
+                    <input className={inputClass} value={draft.careerLogoUrl} onChange={(event) => updateDraft({ careerLogoUrl: event.target.value })} placeholder="/epime-09/logo-carrera.png" />
+                  </Field>
+                  <Field label="QR Yape">
+                    <input className={inputClass} value={draft.paymentQrYapeUrl} onChange={(event) => updateDraft({ paymentQrYapeUrl: event.target.value })} placeholder="/epime-09/qr-yape.png" />
+                  </Field>
+                  <Field label="QR Plin">
+                    <input className={inputClass} value={draft.paymentQrPlinUrl} onChange={(event) => updateDraft({ paymentQrPlinUrl: event.target.value })} placeholder="Opcional" />
+                  </Field>
+                  <Field label="WhatsApp encargado">
+                    <input className={inputClass} value={draft.paymentContactPhone} onChange={(event) => updateDraft({ paymentContactPhone: event.target.value })} placeholder="+51923037653" />
+                  </Field>
+                  <Field label="Link wa.me">
+                    <input className={inputClass} value={draft.paymentContactWhatsappUrl} onChange={(event) => updateDraft({ paymentContactWhatsappUrl: event.target.value })} placeholder="https://wa.me/51923037356?text=..." />
+                  </Field>
+                  <div className="grid grid-cols-2 gap-3">
+                    <Field label="Color principal">
+                      <input
+                        className="h-10 w-full rounded-md border border-ink/10 bg-white p-1"
+                        type="color"
+                        value={draft.themePrimaryColor}
+                        onChange={(event) => updateDraft({ themePrimaryColor: event.target.value })}
+                      />
+                    </Field>
+                    <Field label="Color secundario">
+                      <input
+                        className="h-10 w-full rounded-md border border-ink/10 bg-white p-1"
+                        type="color"
+                        value={draft.themeSecondaryColor}
+                        onChange={(event) => updateDraft({ themeSecondaryColor: event.target.value })}
+                      />
+                    </Field>
+                  </div>
+                </div>
+                <div className="mt-5 flex flex-col gap-4 rounded-md border border-ink/10 bg-white p-4 sm:flex-row sm:items-center">
+                  <div className="grid h-20 w-20 shrink-0 place-items-center rounded-md border border-ink/10 bg-white">
+                    {draft.careerLogoUrl ? (
+                      <img src={draft.careerLogoUrl} alt="" className="max-h-16 max-w-16 object-contain" />
+                    ) : (
+                      <span className="text-xs font-bold text-ink/40">LOGO</span>
+                    )}
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-xs font-bold uppercase" style={{ color: draft.themePrimaryColor }}>
+                      {draft.organizerName || "Organizador"}
+                    </p>
+                    <p className="mt-1 text-lg font-bold text-ink">{draft.name}</p>
+                    <p className="text-sm text-ink/60">{draft.careerName || "Carrera organizadora"}</p>
+                  </div>
+                  <div className="flex h-20 w-full overflow-hidden rounded-md border border-ink/10 sm:w-32">
+                    <div className="flex-1" style={{ background: draft.themePrimaryColor }} />
+                    <div className="flex-1" style={{ background: draft.themeSecondaryColor }} />
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
         </Card>
       ) : null}
@@ -395,6 +482,17 @@ function draftFromEvent(event?: TournamentEvent | null): WizardDraft {
     pointsWin: event?.pointsWin ?? 3,
     pointsDraw: event?.pointsDraw ?? 1,
     pointsLoss: event?.pointsLoss ?? 0,
+    organizerName: event?.organizerName ?? "Comision deportiva de Ingenieria Mecanica Electrica",
+    careerName: event?.careerName ?? "Ingenieria Mecanica Electrica",
+    careerLogoUrl: event?.careerLogoUrl ?? "/epime-09/logo-carrera.png",
+    paymentQrYapeUrl: event?.paymentQrYapeUrl ?? "/epime-09/qr-yape.png",
+    paymentQrPlinUrl: event?.paymentQrPlinUrl ?? "",
+    paymentContactPhone: event?.paymentContactPhone ?? "+51923037653",
+    paymentContactWhatsappUrl:
+      event?.paymentContactWhatsappUrl ??
+      "https://wa.me/51923037356?text=Te%20env%C3%ADo%20la%20captura.%20Por%20favor%2C%20proporci%C3%B3name%20el%20c%C3%B3digo%20%C3%BAnico%20de%20acceso.",
+    themePrimaryColor: event?.themePrimaryColor ?? "#28398f",
+    themeSecondaryColor: event?.themeSecondaryColor ?? "#f4e84a",
     startTime: schedule?.startTime ?? "09:00",
     courtCount,
     fixtureCompactPreview: event?.fixtureCompactPreview ?? true,
@@ -425,6 +523,15 @@ function eventFromDraft(
     pointsDraw: draft.pointsDraw,
     pointsLoss: draft.pointsLoss,
     rulesSummary: draft.rulesSummary,
+    organizerName: draft.organizerName,
+    careerName: draft.careerName,
+    careerLogoUrl: draft.careerLogoUrl,
+    paymentQrYapeUrl: draft.paymentQrYapeUrl,
+    paymentQrPlinUrl: draft.paymentQrPlinUrl,
+    paymentContactPhone: draft.paymentContactPhone,
+    paymentContactWhatsappUrl: draft.paymentContactWhatsappUrl,
+    themePrimaryColor: draft.themePrimaryColor,
+    themeSecondaryColor: draft.themeSecondaryColor,
     preventCrossSportConflicts: event?.preventCrossSportConflicts ?? true,
     minimumRestMinutes: draft.matchDuration + transitionMinutes,
     eventDate: draft.eventDate,
@@ -479,6 +586,8 @@ function normalizeDraft(draft: WizardDraft): WizardDraft {
     pointsWin: isKnockout ? 0 : draft.pointsWin,
     pointsDraw: isKnockout ? 0 : draft.pointsDraw,
     pointsLoss: isKnockout ? 0 : draft.pointsLoss,
+    themePrimaryColor: normalizeHexColor(draft.themePrimaryColor, "#28398f"),
+    themeSecondaryColor: normalizeHexColor(draft.themeSecondaryColor, "#f4e84a"),
     penaltiesEnabled: isKnockout ? draft.penaltiesEnabled : false,
     thirdPlace: draft.format === "league" ? false : draft.thirdPlace,
     allowByes: draft.format === "league" ? false : draft.allowByes
@@ -568,6 +677,10 @@ function formatIdFromKey(format: TournamentFormat) {
 function clampNumber(value: number, min: number, max: number) {
   if (!Number.isFinite(value)) return min;
   return Math.min(max, Math.max(min, Math.round(value)));
+}
+
+function normalizeHexColor(value: string, fallback: string) {
+  return /^#[0-9a-fA-F]{6}$/.test(value) ? value : fallback;
 }
 
 function toDateTimeLocal(value: string) {

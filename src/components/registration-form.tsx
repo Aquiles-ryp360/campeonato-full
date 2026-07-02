@@ -1,7 +1,18 @@
 "use client";
 
+/* eslint-disable @next/next/no-img-element -- Admin-entered assets can be local paths or external URLs. */
+
 import { useMemo, useState } from "react";
-import { Download, FileText, Plus, Smartphone, Trash2, UserPlus } from "lucide-react";
+import {
+  Building2,
+  Download,
+  FileText,
+  MessageCircle,
+  Plus,
+  Smartphone,
+  Trash2,
+  UserPlus
+} from "lucide-react";
 import type { jsPDF as JsPDFDocument } from "jspdf";
 import { toast } from "sonner";
 import { sessionChangeEvent, type DelegateAccess } from "@/lib/auth";
@@ -122,6 +133,10 @@ export function RegistrationForm({
     () => openEvents.find((current) => current.id === eventId) ?? openEvents[0] ?? null,
     [eventId, openEvents]
   );
+  const branding = useMemo(() => getEventBranding(event), [event]);
+  const activePaymentQrUrl =
+    paymentMethod === "plin" ? branding.paymentQrPlinUrl : branding.paymentQrYapeUrl;
+  const activePaymentLabel = paymentMethod === "plin" ? "QR Plin" : "QR Yape";
 
   function updatePlayer(index: number, field: keyof PlayerFormRow, value: string) {
     setPlayers((current) =>
@@ -375,6 +390,48 @@ export function RegistrationForm({
 
   return (
     <form className="space-y-6 pb-20 md:pb-0" onSubmit={submitRegistration}>
+      <div className="overflow-hidden rounded-lg border border-ink/10 bg-white shadow-panel">
+        <div className="flex flex-col gap-4 p-5 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex min-w-0 items-center gap-4">
+            <div className="grid h-20 w-20 shrink-0 place-items-center rounded-md border border-ink/10 bg-white">
+              {branding.careerLogoUrl ? (
+                <img
+                  src={branding.careerLogoUrl}
+                  alt={branding.careerName}
+                  className="max-h-16 max-w-16 object-contain"
+                />
+              ) : (
+                <Building2 className="h-8 w-8 text-ink/35" />
+              )}
+            </div>
+            <div className="min-w-0">
+              <p className="text-xs font-bold uppercase" style={{ color: branding.primaryColor }}>
+                {branding.organizerName}
+              </p>
+              <h1 className="mt-1 text-xl font-bold text-ink sm:text-2xl">{event.name}</h1>
+              <p className="mt-1 text-sm text-ink/60">{branding.careerName}</p>
+            </div>
+          </div>
+          <div className="flex shrink-0 items-center gap-2 rounded-md border border-ink/10 bg-mist px-3 py-2">
+            <span
+              className="h-3 w-3 rounded-full"
+              style={{ backgroundColor: branding.primaryColor }}
+            />
+            <span
+              className="h-3 w-3 rounded-full"
+              style={{ backgroundColor: branding.secondaryColor }}
+            />
+            <span className="text-xs font-bold uppercase text-ink/60">{sportLabel(event.sport)}</span>
+          </div>
+        </div>
+        <div
+          className="h-1.5"
+          style={{
+            background: `linear-gradient(90deg, ${branding.primaryColor}, ${branding.secondaryColor})`
+          }}
+        />
+      </div>
+
       <div className="grid gap-6 lg:grid-cols-[1fr_0.82fr]">
         <Card className="p-5">
           <SectionHeader
@@ -445,7 +502,10 @@ export function RegistrationForm({
           <SectionHeader title="Pago" description="El cobro lo realiza el encargado y entrega un codigo de un solo uso." />
           <div className="mt-5 rounded-lg border border-ink/10 bg-mist p-4">
             <div className="flex items-center gap-3">
-              <div className="grid h-11 w-11 place-items-center rounded-md bg-white text-field">
+              <div
+                className="grid h-11 w-11 place-items-center rounded-md bg-white"
+                style={{ color: branding.primaryColor }}
+              >
                 <Smartphone className="h-5 w-5" />
               </div>
               <div>
@@ -453,33 +513,81 @@ export function RegistrationForm({
                 <p className="text-2xl font-bold text-ink">{formatMoney(event.registrationFee)}</p>
               </div>
             </div>
-            <div className="mt-4 grid grid-cols-2 gap-2">
-              {(["yape", "plin"] as const).map((method) => (
-                <button
-                  type="button"
-                  key={method}
-                  onClick={() => setPaymentMethod(method)}
-                  className={`rounded-md border px-3 py-2 text-sm font-bold uppercase transition ${
-                    paymentMethod === method
-                      ? "border-field bg-field text-white"
-                      : "border-ink/10 bg-white text-ink"
-                  }`}
-                >
-                  {method}
-                </button>
-              ))}
-            </div>
-            <div className="mt-4 space-y-2 text-sm text-ink/65">
-              <p>
-                Cierre: <strong>{formatDateTime(event.registrationOpenUntil)}</strong>
-              </p>
-              <p>
-                Jugadores: <strong>{event.minPlayers}</strong> minimo,{" "}
-                <strong>{event.maxPlayers}</strong> maximo.
-              </p>
-            </div>
-            <div className="mt-4">
-              <Badge tone="amber">El admin carga lotes de codigos y cada codigo se usa una vez</Badge>
+            <div className="mt-4 grid gap-4 sm:grid-cols-[minmax(0,1fr)_156px]">
+              <div>
+                <div className="grid grid-cols-2 gap-2">
+                  {(["yape", "plin"] as const).map((method) => {
+                    const selected = paymentMethod === method;
+                    return (
+                      <button
+                        type="button"
+                        key={method}
+                        onClick={() => setPaymentMethod(method)}
+                        className={`rounded-md border px-3 py-2 text-sm font-bold uppercase transition ${
+                          selected ? "text-white" : "border-ink/10 bg-white text-ink"
+                        }`}
+                        style={
+                          selected
+                            ? {
+                                borderColor: branding.primaryColor,
+                                backgroundColor: branding.primaryColor
+                              }
+                            : undefined
+                        }
+                      >
+                        {method}
+                      </button>
+                    );
+                  })}
+                </div>
+                <div className="mt-4 space-y-2 text-sm text-ink/65">
+                  <p>
+                    Cierre: <strong>{formatDateTime(event.registrationOpenUntil)}</strong>
+                  </p>
+                  <p>
+                    Jugadores: <strong>{event.minPlayers}</strong> minimo,{" "}
+                    <strong>{event.maxPlayers}</strong> maximo.
+                  </p>
+                </div>
+                <div className="mt-4 space-y-3">
+                  <Badge tone="amber">Cada codigo se usa una vez</Badge>
+                  <div className="rounded-md border border-ink/10 bg-white p-3">
+                    <p className="text-sm font-semibold text-ink">Pide el codigo al encargado</p>
+                    <p className="mt-1 text-xs leading-5 text-ink/60">
+                      Envia tu captura de pago por WhatsApp
+                      {branding.paymentContactPhone ? ` al ${branding.paymentContactPhone}` : ""}.
+                    </p>
+                    {branding.paymentContactWhatsappUrl ? (
+                      <a
+                        href={branding.paymentContactWhatsappUrl}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="mt-3 inline-flex min-h-10 items-center justify-center gap-2 rounded-md px-3 py-2 text-sm font-semibold text-white transition hover:opacity-90"
+                        style={{ backgroundColor: branding.primaryColor }}
+                      >
+                        <MessageCircle className="h-4 w-4" />
+                        Pedir codigo
+                      </a>
+                    ) : null}
+                  </div>
+                </div>
+              </div>
+              <div className="rounded-md border border-ink/10 bg-white p-3">
+                {activePaymentQrUrl ? (
+                  <img
+                    src={activePaymentQrUrl}
+                    alt={activePaymentLabel}
+                    className="mx-auto aspect-square w-full object-contain"
+                  />
+                ) : (
+                  <div className="grid aspect-square w-full place-items-center rounded-md bg-mist text-center text-xs font-semibold text-ink/45">
+                    QR no configurado
+                  </div>
+                )}
+                <p className="mt-2 text-center text-xs font-bold uppercase text-ink/55">
+                  {activePaymentLabel}
+                </p>
+              </div>
             </div>
           </div>
         </Card>
@@ -655,7 +763,12 @@ export function RegistrationForm({
       ) : null}
 
       <div className="flex justify-end">
-        <Button type="submit" className="w-full sm:w-auto" disabled={isSubmitting}>
+        <Button
+          type="submit"
+          className="w-full sm:w-auto"
+          style={{ backgroundColor: branding.primaryColor }}
+          disabled={isSubmitting}
+        >
           <UserPlus className="h-4 w-4" />
           {isSubmitting ? "Registrando..." : "Enviar inscripcion"}
         </Button>
@@ -671,8 +784,9 @@ async function generateRegistrationReceiptPdf(receipt: RegistrationReceipt) {
   const margin = 14;
   const contentWidth = pageWidth - margin * 2;
   const generatedDate = formatDateTime(receipt.generatedAt);
+  const primaryRgb = hexToRgb(receipt.event.themePrimaryColor, [23, 33, 31]);
 
-  doc.setFillColor(23, 33, 31);
+  doc.setFillColor(primaryRgb[0], primaryRgb[1], primaryRgb[2]);
   doc.rect(0, 0, pageWidth, 33, "F");
   doc.setTextColor(255, 255, 255);
   doc.setFont("helvetica", "bold");
@@ -680,7 +794,7 @@ async function generateRegistrationReceiptPdf(receipt: RegistrationReceipt) {
   doc.text("Constancia de inscripcion deportiva", margin, 15);
   doc.setFont("helvetica", "normal");
   doc.setFontSize(9);
-  doc.text("Campeonato Carreras", margin, 22);
+  doc.text(receipt.event.organizerName ?? "Campeonato Carreras", margin, 22);
   doc.text(`Generado: ${generatedDate}`, margin, 27);
 
   doc.setTextColor(23, 33, 31);
@@ -820,6 +934,36 @@ function truncateText(doc: JsPDFDocument, value: string, maxWidth: number) {
   }
 
   return `${output}...`;
+}
+
+function getEventBranding(event: TournamentEvent | null) {
+  return {
+    organizerName: event?.organizerName || "Comision deportiva de Ingenieria Mecanica Electrica",
+    careerName: event?.careerName || "Ingenieria Mecanica Electrica",
+    careerLogoUrl: event?.careerLogoUrl || "/epime-09/logo-carrera.png",
+    paymentQrYapeUrl: event?.paymentQrYapeUrl || "/epime-09/qr-yape.png",
+    paymentQrPlinUrl: event?.paymentQrPlinUrl || "",
+    paymentContactPhone: event?.paymentContactPhone || "+51923037653",
+    paymentContactWhatsappUrl:
+      event?.paymentContactWhatsappUrl ||
+      "https://wa.me/51923037356?text=Te%20env%C3%ADo%20la%20captura.%20Por%20favor%2C%20proporci%C3%B3name%20el%20c%C3%B3digo%20%C3%BAnico%20de%20acceso.",
+    primaryColor: normalizeHexColor(event?.themePrimaryColor, "#28398f"),
+    secondaryColor: normalizeHexColor(event?.themeSecondaryColor, "#f4e84a")
+  };
+}
+
+function normalizeHexColor(value: string | undefined, fallback: string) {
+  return value && /^#[0-9a-fA-F]{6}$/.test(value) ? value : fallback;
+}
+
+function hexToRgb(value: string | undefined, fallback: [number, number, number]) {
+  if (!value || !/^#[0-9a-fA-F]{6}$/.test(value)) return fallback;
+
+  return [
+    Number.parseInt(value.slice(1, 3), 16),
+    Number.parseInt(value.slice(3, 5), 16),
+    Number.parseInt(value.slice(5, 7), 16)
+  ] as [number, number, number];
 }
 
 function slugify(value: string) {

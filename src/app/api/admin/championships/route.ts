@@ -32,6 +32,15 @@ const payloadSchema = z.object({
   pointsWin: z.coerce.number().int(),
   pointsDraw: z.coerce.number().int(),
   pointsLoss: z.coerce.number().int(),
+  organizerName: z.string().trim().max(160).optional().default(""),
+  careerName: z.string().trim().max(160).optional().default(""),
+  careerLogoUrl: z.string().trim().max(500).optional().default(""),
+  paymentQrYapeUrl: z.string().trim().max(500).optional().default(""),
+  paymentQrPlinUrl: z.string().trim().max(500).optional().default(""),
+  paymentContactPhone: z.string().trim().max(40).optional().default(""),
+  paymentContactWhatsappUrl: z.string().trim().max(500).optional().default(""),
+  themePrimaryColor: z.string().trim().regex(/^#[0-9a-fA-F]{6}$/).optional().default("#2f6f4e"),
+  themeSecondaryColor: z.string().trim().regex(/^#[0-9a-fA-F]{6}$/).optional().default("#b7e06c"),
   startTime: z.string().trim().regex(/^\d{2}:\d{2}$/),
   courtCount: z.coerce.number().int().min(1).max(3),
   courts: z.array(z.string().trim().min(1)).min(1).max(3),
@@ -106,6 +115,15 @@ export async function POST(request: Request) {
         points_draw: normalized.pointsDraw,
         points_loss: normalized.pointsLoss,
         rules_summary: input.rulesSummary || defaultRulesSummary(input.format),
+        organizer_name: emptyToNull(input.organizerName),
+        career_name: emptyToNull(input.careerName),
+        career_logo_url: emptyToNull(input.careerLogoUrl),
+        payment_qr_yape_url: emptyToNull(input.paymentQrYapeUrl),
+        payment_qr_plin_url: emptyToNull(input.paymentQrPlinUrl),
+        payment_contact_phone: emptyToNull(input.paymentContactPhone),
+        payment_contact_whatsapp_url: emptyToNull(input.paymentContactWhatsappUrl),
+        theme_primary_color: input.themePrimaryColor,
+        theme_secondary_color: input.themeSecondaryColor,
         prevent_cross_sport_conflicts: true,
         minimum_rest_minutes: input.matchDuration + input.transitionMinutes,
         event_date: eventDateIso,
@@ -427,6 +445,11 @@ function dateOnlyToIso(value: string) {
 function localDateTimeToIso(value: string) {
   if (/Z$|[+-]\d{2}:\d{2}$/.test(value)) return new Date(value).toISOString();
   return new Date(`${value}:00-05:00`).toISOString();
+}
+
+function emptyToNull(value: string) {
+  const trimmed = value.trim();
+  return trimmed ? trimmed : null;
 }
 
 function slugify(value: string) {

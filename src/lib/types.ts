@@ -144,6 +144,15 @@ export interface TournamentEvent {
   pointsDraw: number;
   pointsLoss: number;
   rulesSummary: string;
+  organizerName?: string;
+  careerName?: string;
+  careerLogoUrl?: string;
+  paymentQrYapeUrl?: string;
+  paymentQrPlinUrl?: string;
+  paymentContactPhone?: string;
+  paymentContactWhatsappUrl?: string;
+  themePrimaryColor?: string;
+  themeSecondaryColor?: string;
   preventCrossSportConflicts: boolean;
   minimumRestMinutes: number;
   eventDate?: string;

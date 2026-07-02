@@ -194,6 +194,15 @@ export type EventRow = {
   points_draw: number;
   points_loss: number;
   rules_summary: string | null;
+  organizer_name?: string | null;
+  career_name?: string | null;
+  career_logo_url?: string | null;
+  payment_qr_yape_url?: string | null;
+  payment_qr_plin_url?: string | null;
+  payment_contact_phone?: string | null;
+  payment_contact_whatsapp_url?: string | null;
+  theme_primary_color?: string | null;
+  theme_secondary_color?: string | null;
   prevent_cross_sport_conflicts?: boolean | null;
   minimum_rest_minutes?: number | null;
   event_date?: string | null;
@@ -481,6 +490,15 @@ export function mapEvent(row: EventRow): TournamentEvent {
     pointsDraw: row.points_draw,
     pointsLoss: row.points_loss,
     rulesSummary: row.rules_summary ?? "",
+    organizerName: row.organizer_name ?? undefined,
+    careerName: row.career_name ?? undefined,
+    careerLogoUrl: row.career_logo_url ?? undefined,
+    paymentQrYapeUrl: row.payment_qr_yape_url ?? undefined,
+    paymentQrPlinUrl: row.payment_qr_plin_url ?? undefined,
+    paymentContactPhone: row.payment_contact_phone ?? undefined,
+    paymentContactWhatsappUrl: row.payment_contact_whatsapp_url ?? undefined,
+    themePrimaryColor: row.theme_primary_color ?? undefined,
+    themeSecondaryColor: row.theme_secondary_color ?? undefined,
     preventCrossSportConflicts: row.prevent_cross_sport_conflicts ?? false,
     minimumRestMinutes: row.minimum_rest_minutes ?? 60,
     eventDate: row.event_date ?? undefined,

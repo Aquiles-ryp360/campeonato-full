@@ -1,4 +1,5 @@
 import Link from "next/link";
+import type { CSSProperties } from "react";
 import type { LucideIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -35,6 +36,7 @@ export function Button({
   href,
   variant = "primary",
   className,
+  style,
   type = "button",
   form,
   onClick,
@@ -44,6 +46,7 @@ export function Button({
   href?: string;
   variant?: "primary" | "secondary" | "ghost" | "danger";
   className?: string;
+  style?: CSSProperties;
   type?: "button" | "submit";
   form?: string;
   onClick?: () => void;
@@ -65,14 +68,14 @@ export function Button({
 
   if (href) {
     return (
-      <Link href={href} className={classes}>
+      <Link href={href} className={classes} style={style}>
         {children}
       </Link>
     );
   }
 
   return (
-    <button type={type} form={form} className={classes} onClick={onClick} disabled={disabled}>
+    <button type={type} form={form} className={classes} style={style} onClick={onClick} disabled={disabled}>
       {children}
     </button>
   );
