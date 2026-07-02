@@ -12,7 +12,7 @@ export function PlayerTable({
   return (
     <div className="overflow-x-auto">
       <table className="w-full min-w-[520px] text-sm">
-        <thead className="bg-mist text-left text-xs uppercase text-ink/55">
+        <thead className="bg-brand-navy text-left text-xs uppercase text-white">
           <tr>
             <th className="px-4 py-3">Jugador</th>
             <th className="px-3 py-3">Rol</th>
@@ -23,10 +23,10 @@ export function PlayerTable({
             {privateView ? <th className="px-4 py-3">DNI</th> : null}
           </tr>
         </thead>
-        <tbody className="divide-y divide-ink/8">
+        <tbody className="divide-y divide-brand-towerMid/20">
           {players.length > 0 ? (
             players.map((player) => (
-              <tr key={player.id}>
+              <tr key={player.id} className="transition hover:bg-brand-electric/5">
                 <td className="px-4 py-3 font-semibold">
                   {player.firstName} {player.lastName}
                 </td>
@@ -46,7 +46,7 @@ export function PlayerTable({
             <tr>
               <td
                 colSpan={privateView ? 7 : 4}
-                className="px-4 py-8 text-center text-sm text-ink/55"
+                className="px-4 py-8 text-center text-sm font-semibold text-brand-muted"
               >
                 Todavia no hay jugadores registrados.
               </td>

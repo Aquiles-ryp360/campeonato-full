@@ -223,8 +223,8 @@ export function ChampionshipWizard({
               key={label}
               type="button"
               onClick={() => setStep(index)}
-              className={`whitespace-nowrap rounded-md px-3 py-2 text-sm font-semibold ${
-                step === index ? "bg-ink text-white" : "bg-white text-ink/65 hover:bg-mist"
+              className={`whitespace-nowrap rounded-md px-3 py-2 text-sm font-bold transition ${
+                step === index ? "bg-brand-navy text-white" : "bg-white text-brand-muted hover:bg-brand-electric/10 hover:text-brand-electric"
               }`}
             >
               {index + 1}. {label}
@@ -780,8 +780,8 @@ function statusLabel(status: EventStatus) {
 
 function Info({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-md border border-ink/10 bg-mist/50 px-3 py-2">
-      <p className="text-xs font-bold uppercase text-ink/45">{label}</p>
+    <div className="rounded-md border border-brand-towerMid/25 bg-brand-wash/50 px-3 py-2">
+      <p className="text-xs font-black uppercase text-brand-muted">{label}</p>
       <p className="mt-1 text-sm font-semibold text-ink">{value}</p>
     </div>
   );

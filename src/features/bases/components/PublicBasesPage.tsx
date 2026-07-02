@@ -26,15 +26,15 @@ export function PublicBasesPage({
 
   return (
     <div className="space-y-6 pb-20 md:pb-0">
-      <section className="rounded-lg bg-ink p-5 text-white shadow-panel sm:p-7">
+      <section className="rounded-lg bg-technical-blue p-5 text-white shadow-panel sm:p-7">
         <div className="flex flex-wrap items-center gap-2">
           <Badge tone="dark">Bases oficiales</Badge>
           <Badge tone="dark">{context.bases?.published ? "Publicado" : "Pendiente"}</Badge>
         </div>
         <div className="mt-7 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
           <div>
-            <h1 className="text-3xl font-bold sm:text-5xl">Bases oficiales</h1>
-            <p className="mt-3 max-w-2xl text-sm leading-6 text-white/72">
+            <h1 className="text-3xl font-black sm:text-5xl">Bases oficiales</h1>
+            <p className="mt-3 max-w-2xl text-sm leading-6 text-white/70">
               Texto web limpio, preparado para sincronizarse con un PDF oficial cuando el backend lo soporte.
             </p>
           </div>

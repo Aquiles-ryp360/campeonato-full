@@ -35,7 +35,7 @@ export function DelegateMatchesView({
           {next ? (
             <MatchCard match={next} event={event} teams={teams} />
           ) : (
-            <p className="text-sm text-ink/55">Sin proximo partido programado.</p>
+            <p className="text-sm font-semibold text-brand-muted">Sin proximo partido programado.</p>
           )}
         </div>
       </Card>
@@ -55,7 +55,7 @@ export function DelegateMatchesView({
               <MatchCard key={match.id} match={match} event={event} teams={teams} />
             ))
           ) : (
-            <p className="text-sm text-ink/55">Todavia no hay resultados anteriores.</p>
+            <p className="text-sm font-semibold text-brand-muted">Todavia no hay resultados anteriores.</p>
           )}
         </div>
       </Card>

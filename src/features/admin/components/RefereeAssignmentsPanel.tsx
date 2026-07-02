@@ -134,7 +134,7 @@ export function RefereeAssignmentsPanel({
           const saving = savingMatchId === match.id;
 
           return (
-            <div key={match.id} className="grid gap-3 rounded-md border border-ink/10 bg-white p-4 lg:grid-cols-[1fr_240px_220px_auto] lg:items-end">
+            <div key={match.id} className="grid gap-3 rounded-md border border-brand-towerMid/25 bg-white p-4 shadow-insetLine transition hover:border-brand-electric/30 lg:grid-cols-[1fr_240px_220px_auto] lg:items-end">
               <div>
                 <div className="flex flex-wrap items-center gap-2">
                   <Badge tone="neutral">{event?.name ?? "Campeonato"}</Badge>
@@ -145,7 +145,7 @@ export function RefereeAssignmentsPanel({
                 <p className="mt-2 font-bold text-ink">
                   {getMatchSideLabel(match, teams, "home")} vs {getMatchSideLabel(match, teams, "away")}
                 </p>
-                <p className="mt-1 text-xs font-semibold text-ink/55">
+                <p className="mt-1 text-xs font-semibold text-brand-muted">
                   {event?.category ?? "Categoria"} · {match.court} · {formatDateTime(match.scheduledAt)}
                 </p>
               </div>
@@ -194,7 +194,7 @@ export function RefereeAssignmentsPanel({
       </div>
 
       {!loading && sortedMatches.length === 0 ? (
-        <p className="mt-4 text-sm text-ink/55">Genera partidos antes de asignar arbitros.</p>
+        <p className="mt-4 text-sm font-semibold text-brand-muted">Genera partidos antes de asignar arbitros.</p>
       ) : null}
     </Card>
   );

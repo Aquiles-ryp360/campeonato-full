@@ -55,7 +55,7 @@ export function DelegateAlerts({
     <Card className="p-4">
       <div className="space-y-2">
         {alerts.map((alert) => (
-          <div key={alert} className="rounded-md border border-amber-300/30 bg-amber-100 p-3 text-sm text-amber-950">
+          <div key={alert} className="rounded-md border border-brand-yellow/70 bg-brand-yellow/25 p-3 text-sm font-bold text-brand-navy">
             {alert}
           </div>
         ))}

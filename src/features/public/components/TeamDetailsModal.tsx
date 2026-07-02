@@ -33,9 +33,9 @@ export function TeamDetailsModal({
     .sort((a, b) => a.scheduledAt.localeCompare(b.scheduledAt))[0];
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end justify-center bg-ink/55 p-0 sm:items-center sm:p-4">
+    <div className="fixed inset-0 z-50 flex items-end justify-center bg-brand-navy/70 p-0 backdrop-blur-sm sm:items-center sm:p-4">
       <div className="max-h-[92vh] w-full max-w-3xl overflow-hidden rounded-t-lg bg-white shadow-panel sm:rounded-lg">
-        <div className="flex items-start justify-between gap-4 border-b border-ink/10 p-5">
+        <div className="flex items-start justify-between gap-4 border-b border-brand-towerMid/20 p-5">
           <div>
             <div className="flex flex-wrap gap-2">
               <Badge tone={team.status === "approved" ? "green" : "amber"}>
@@ -43,13 +43,13 @@ export function TeamDetailsModal({
               </Badge>
               <Badge tone="blue">{event.name}</Badge>
             </div>
-            <h2 className="mt-3 text-2xl font-bold text-ink">{team.name}</h2>
-            <p className="mt-1 text-sm text-ink/60">{event.category}</p>
+            <h2 className="mt-3 text-2xl font-black text-ink">{team.name}</h2>
+            <p className="mt-1 text-sm font-semibold text-brand-muted">{event.category}</p>
           </div>
           <button
             type="button"
             onClick={onClose}
-            className="grid h-10 w-10 shrink-0 place-items-center rounded-md text-ink/55 transition hover:bg-mist hover:text-ink"
+            className="grid h-10 w-10 shrink-0 place-items-center rounded-md text-brand-muted transition hover:bg-brand-electric/10 hover:text-brand-electric"
             aria-label="Cerrar detalle de equipo"
           >
             <X className="h-5 w-5" />
@@ -59,10 +59,10 @@ export function TeamDetailsModal({
         <div className="max-h-[calc(92vh-96px)] space-y-5 overflow-y-auto p-5">
           <div className="grid gap-4 md:grid-cols-[0.95fr_1.05fr]">
             <DelegateInfo team={team} />
-            <div className="rounded-md border border-ink/10 bg-mist p-4 text-sm">
-              <p className="text-xs font-bold uppercase text-ink/45">Proximo partido</p>
+            <div className="rounded-md border border-brand-towerMid/25 bg-brand-wash p-4 text-sm">
+              <p className="text-xs font-black uppercase text-brand-muted">Proximo partido</p>
               {nextMatch ? (
-                <div className="mt-2 space-y-1 text-ink/70">
+                <div className="mt-2 space-y-1 font-semibold text-brand-muted">
                   <p className="font-bold text-ink">
                     {getMatchSideLabel(nextMatch, teams, "home")} vs{" "}
                     {getMatchSideLabel(nextMatch, teams, "away")}
@@ -71,15 +71,15 @@ export function TeamDetailsModal({
                   <p>{nextMatch.court}</p>
                 </div>
               ) : (
-                <p className="mt-2 text-ink/60">Sin partido programado.</p>
+                <p className="mt-2 font-semibold text-brand-muted">Sin partido programado.</p>
               )}
             </div>
           </div>
 
-          <div className="overflow-hidden rounded-md border border-ink/10">
-            <div className="border-b border-ink/10 bg-mist px-4 py-3">
+          <div className="overflow-hidden rounded-md border border-brand-towerMid/25">
+            <div className="border-b border-brand-towerMid/20 bg-brand-wash px-4 py-3">
               <p className="font-bold text-ink">Jugadores</p>
-              <p className="mt-1 text-xs text-ink/55">
+              <p className="mt-1 text-xs font-semibold text-brand-muted">
                 Vista publica: no se muestran DNI ni documentos.
               </p>
             </div>

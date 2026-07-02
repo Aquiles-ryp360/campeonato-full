@@ -1,4 +1,7 @@
+"use client";
+
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import type { ComponentType, ReactNode } from "react";
 import {
   BarChart3,
@@ -64,27 +67,35 @@ function Header({
   eyebrow: string;
   showPanelLink: boolean;
 }) {
+  const pathname = usePathname();
+
   return (
-    <header className="sticky top-0 z-30 border-b border-ink/10 bg-white/90 backdrop-blur">
+    <header className="sticky top-0 z-30 border-b border-white/10 bg-brand-navy/95 text-white shadow-panel backdrop-blur">
       <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-3 sm:px-6">
-        <Link href="/" className="flex items-center gap-3">
-          <div className="grid h-10 w-10 place-items-center rounded-md bg-ink text-white">
+        <Link href="/" className="flex min-w-0 items-center gap-3">
+          <div className="grid h-10 w-10 shrink-0 place-items-center rounded-md bg-brand-yellow text-brand-navy shadow-lift">
             <Trophy className="h-5 w-5" />
           </div>
-          <div className="leading-tight">
-            <p className="font-bold text-ink">Campeonato Carreras</p>
-            <p className="text-xs text-ink/55">{eyebrow}</p>
+          <div className="min-w-0 leading-tight">
+            <p className="truncate font-black text-white">Campeonato UNA Puno</p>
+            <p className="truncate text-xs font-semibold text-white/60">{eyebrow}</p>
           </div>
         </Link>
         <nav className="hidden items-center justify-end gap-1 md:flex md:flex-wrap">
           {nav.map((item) => {
             const Icon = item.icon;
+            const active = isActivePath(pathname, item.href);
 
             return (
               <Link
                 key={item.href}
                 href={item.href}
-                className="inline-flex items-center gap-2 rounded-md px-3 py-2 text-sm font-semibold text-ink/70 transition hover:bg-mist hover:text-ink"
+                className={`inline-flex items-center gap-2 rounded-md px-3 py-2 text-sm font-bold transition ${
+                  active
+                    ? "bg-white text-brand-navy shadow-insetLine"
+                    : "text-white/70 hover:bg-white/10 hover:text-white"
+                }`}
+                aria-current={active ? "page" : undefined}
               >
                 <Icon className="h-4 w-4" />
                 {item.label}
@@ -107,12 +118,13 @@ function MobileNav({
   showSessionAction: boolean;
   showLogoutAction: boolean;
 }) {
+  const pathname = usePathname();
   const actionCount = (showSessionAction ? 1 : 0) + (showLogoutAction ? 1 : 0);
   const visibleNav = nav.slice(0, Math.max(1, 5 - actionCount));
   const columnCount = Math.min(5, visibleNav.length + actionCount);
 
   return (
-    <nav className="fixed inset-x-0 bottom-0 z-40 border-t border-ink/10 bg-white md:hidden">
+    <nav className="fixed inset-x-0 bottom-0 z-40 border-t border-brand-towerMid/25 bg-white/95 pb-[env(safe-area-inset-bottom)] shadow-panel backdrop-blur md:hidden">
       <div
         className={`grid ${
           columnCount >= 5 ? "grid-cols-5" : columnCount === 4 ? "grid-cols-4" : "grid-cols-3"
@@ -120,14 +132,18 @@ function MobileNav({
       >
         {visibleNav.map((item) => {
           const Icon = item.icon;
+          const active = isActivePath(pathname, item.href);
           return (
             <Link
               key={item.href}
               href={item.href}
-              className="flex flex-col items-center gap-1 px-2 py-2 text-[11px] font-semibold text-ink/70"
+              className={`flex min-h-[58px] min-w-0 flex-col items-center justify-center gap-1 px-1.5 py-2 text-[10.5px] font-bold transition ${
+                active ? "text-brand-electric" : "text-brand-muted hover:text-brand-navy"
+              }`}
+              aria-current={active ? "page" : undefined}
             >
               <Icon className="h-4 w-4" />
-              {item.label}
+              <span className="w-full truncate text-center leading-tight">{item.label}</span>
             </Link>
           );
         })}
@@ -219,3 +235,14 @@ export function RefereeShell({ children }: { children: ReactNode }) {
 }
 
 export const AppShell = PublicShell;
+
+function isActivePath(pathname: string, href: string) {
+  if (href === "/") return pathname === "/";
+  if (pathname === href || pathname.startsWith(`${href}/`)) return true;
+
+  if (href.includes("/fixture")) return pathname.includes("/fixture");
+  if (href.includes("/bases")) return pathname.includes("/bases");
+  if (href.includes("/registro")) return pathname.includes("/registro");
+
+  return false;
+}

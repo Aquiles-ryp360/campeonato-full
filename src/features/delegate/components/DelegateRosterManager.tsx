@@ -209,7 +209,7 @@ export function DelegateRosterManager({
 
   return (
     <Card className="overflow-hidden">
-      <div className="border-b border-ink/10 p-5">
+      <div className="border-b border-brand-towerMid/20 p-5">
         <SectionHeader
           title="Plantel"
           description={`Minimo ${event.minPlayers}, maximo ${event.maxPlayers}. Estado: ${limit}.`}
@@ -360,7 +360,7 @@ export function DelegateRosterManager({
       </form>
       <PlayerTable players={players} privateView />
       {eventStarted ? (
-        <div className="border-t border-ink/10 p-5">
+        <div className="border-t border-brand-towerMid/20 p-5">
           <SectionHeader title="Camisetas" description="Cambio unico por jugador desde el inicio del campeonato." />
           <div className="mt-4 grid gap-3 md:grid-cols-2">
             {players.map((player) => {
@@ -368,13 +368,13 @@ export function DelegateRosterManager({
               return (
                 <div
                   key={player.id}
-                  className="flex flex-col gap-3 rounded-md border border-ink/10 bg-white p-3 sm:flex-row sm:items-center sm:justify-between"
+                  className="flex flex-col gap-3 rounded-md border border-brand-towerMid/25 bg-white p-3 shadow-insetLine sm:flex-row sm:items-center sm:justify-between"
                 >
                   <div>
                     <p className="font-semibold text-ink">
                       {player.firstName} {player.lastName}
                     </p>
-                    <p className="text-xs text-ink/55">
+                    <p className="text-xs font-semibold text-brand-muted">
                       Actual: {player.jerseyNumber ?? "-"} - Cambios usados:{" "}
                       {player.jerseyNumberChangeCount ?? 0}
                     </p>

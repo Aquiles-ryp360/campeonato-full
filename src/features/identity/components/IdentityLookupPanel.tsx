@@ -328,32 +328,32 @@ export function IdentityLookupPanel({
   }
 
   return (
-    <div className="rounded-md border border-ink/10 bg-mist/70 p-3">
+    <div className="rounded-md border border-brand-towerMid/25 bg-brand-wash/70 p-3">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-2">
-          <div className="grid h-9 w-9 place-items-center rounded-md bg-white text-field">
+          <div className="grid h-9 w-9 place-items-center rounded-md bg-white text-brand-electric">
             <IdCard className="h-4 w-4" />
           </div>
           <p className="text-sm font-bold text-ink">Búsqueda rápida</p>
         </div>
-        <div className="grid grid-cols-3 rounded-md border border-ink/10 bg-white p-1 text-xs font-bold">
+        <div className="grid grid-cols-3 rounded-md border border-brand-towerMid/25 bg-white p-1 text-xs font-bold">
           <button
             type="button"
-            className={`rounded px-2 py-1.5 sm:px-3 ${mode === "student" ? "bg-field text-white" : "text-ink/65"}`}
+            className={`rounded px-2 py-1.5 sm:px-3 ${mode === "student" ? "bg-brand-electric text-white" : "text-brand-muted hover:bg-brand-electric/10 hover:text-brand-electric"}`}
             onClick={() => switchMode("student")}
           >
             Búsqueda estudiante
           </button>
           <button
             type="button"
-            className={`rounded px-2 py-1.5 sm:px-3 ${mode === "teacher" ? "bg-field text-white" : "text-ink/65"}`}
+            className={`rounded px-2 py-1.5 sm:px-3 ${mode === "teacher" ? "bg-brand-electric text-white" : "text-brand-muted hover:bg-brand-electric/10 hover:text-brand-electric"}`}
             onClick={() => switchMode("teacher")}
           >
             Búsqueda docente
           </button>
           <button
             type="button"
-            className={`rounded px-2 py-1.5 sm:px-3 ${mode === "national" ? "bg-field text-white" : "text-ink/65"}`}
+            className={`rounded px-2 py-1.5 sm:px-3 ${mode === "national" ? "bg-brand-electric text-white" : "text-brand-muted hover:bg-brand-electric/10 hover:text-brand-electric"}`}
             onClick={() => switchMode("national")}
           >
             Búsqueda nacional
@@ -414,7 +414,7 @@ export function IdentityLookupPanel({
                 autoComplete="off"
               />
             </Field>
-            <div className="inline-flex min-h-10 items-center justify-center gap-2 rounded-md bg-white px-4 py-2 text-sm font-semibold text-ink ring-1 ring-ink/10">
+            <div className="inline-flex min-h-10 items-center justify-center gap-2 rounded-md bg-white px-4 py-2 text-sm font-semibold text-ink ring-1 ring-brand-towerMid/25">
               <Search className="h-4 w-4" />
               {isTeacherSearching ? "Buscando..." : "Sugerencias"}
             </div>
@@ -428,15 +428,15 @@ export function IdentityLookupPanel({
                   type="button"
                   disabled={disabled}
                   onClick={() => applyTeacherResult(teacher)}
-                  className="flex min-h-[68px] w-full items-center justify-between gap-3 rounded-md border border-ink/10 bg-white px-3 py-2 text-left transition hover:border-field/40 hover:bg-white"
+                  className="flex min-h-[68px] w-full items-center justify-between gap-3 rounded-md border border-brand-towerMid/25 bg-white px-3 py-2 text-left transition hover:border-brand-electric/40 hover:bg-white"
                 >
                   <span className="flex min-w-0 items-center gap-3">
-                    <span className="grid h-9 w-9 shrink-0 place-items-center rounded-md bg-field/10 text-field">
+                    <span className="grid h-9 w-9 shrink-0 place-items-center rounded-md bg-brand-electric/10 text-brand-electric">
                       <UserRound className="h-4 w-4" />
                     </span>
                     <span className="min-w-0">
                       <span className="block truncate text-sm font-bold text-ink">{teacher.fullName}</span>
-                      <span className="mt-0.5 block truncate text-xs text-ink/60">
+                      <span className="mt-0.5 block truncate text-xs text-brand-muted">
                         DNI {teacher.dniMasked ?? "no informado"} · {teacher.condition ?? "Clase no informada"} ·{" "}
                         {teacher.dedication ?? "Dedicación no informada"}
                       </span>
@@ -447,7 +447,7 @@ export function IdentityLookupPanel({
               ))}
             </div>
           ) : teacherMessage ? (
-            <p className="mt-3 rounded-md border border-ink/10 bg-white px-3 py-2 text-sm text-ink/65">
+            <p className="mt-3 rounded-md border border-brand-towerMid/25 bg-white px-3 py-2 text-sm font-semibold text-brand-muted">
               {teacherMessage}
             </p>
           ) : null}
@@ -478,23 +478,23 @@ export function IdentityLookupPanel({
       )}
 
       {studentResult?.ok && studentResult.data ? (
-        <div className="mt-3 rounded-md border border-field/20 bg-white p-3">
+        <div className="mt-3 rounded-md border border-brand-electric/20 bg-white p-3">
           <div className="flex flex-wrap items-start justify-between gap-3">
             <div>
               <p className="font-bold text-ink">{studentResult.data.fullName}</p>
-              <p className="mt-1 text-xs text-ink/60">
+              <p className="mt-1 text-xs text-brand-muted">
                 {studentResult.data.escuela ?? "Escuela no informada"} · Código{" "}
                 {studentResult.data.codigoMatricula ?? codigoMatricula}
               </p>
               {studentResult.data.dniMasked ? (
-                <p className="mt-1 text-xs text-ink/60">DNI {studentResult.data.dniMasked}</p>
+                <p className="mt-1 text-xs text-brand-muted">DNI {studentResult.data.dniMasked}</p>
               ) : null}
             </div>
             <Badge tone="green">Datos encontrados</Badge>
           </div>
           <label className="mt-3 flex items-start gap-2 text-sm font-semibold text-ink">
             <input
-              className="mt-1 h-4 w-4 rounded border-ink/20 text-field focus:ring-field"
+              className="mt-1 h-4 w-4 rounded border-brand-towerMid/40 text-brand-electric focus:ring-brand-electric"
               type="checkbox"
               checked={confirmed}
               onChange={(event) => setConfirmed(event.target.checked)}
@@ -511,20 +511,20 @@ export function IdentityLookupPanel({
       ) : null}
 
       {nationalResult?.ok && nationalResult.data ? (
-        <div className="mt-3 rounded-md border border-field/20 bg-white p-3">
+        <div className="mt-3 rounded-md border border-brand-electric/20 bg-white p-3">
           <div className="flex flex-wrap items-start justify-between gap-3">
             <div>
               <p className="font-bold text-ink">{nationalResult.data.fullName}</p>
               {nationalResult.data.dniMasked ? (
-                <p className="mt-1 text-xs text-ink/60">DNI {nationalResult.data.dniMasked}</p>
+                <p className="mt-1 text-xs text-brand-muted">DNI {nationalResult.data.dniMasked}</p>
               ) : null}
-              <p className="mt-1 text-xs text-ink/60">Fuente: Consulta DNI nacional</p>
+              <p className="mt-1 text-xs text-brand-muted">Fuente: Consulta DNI nacional</p>
             </div>
             <Badge tone="blue">Datos encontrados</Badge>
           </div>
           <label className="mt-3 flex items-start gap-2 text-sm font-semibold text-ink">
             <input
-              className="mt-1 h-4 w-4 rounded border-ink/20 text-field focus:ring-field"
+              className="mt-1 h-4 w-4 rounded border-brand-towerMid/40 text-brand-electric focus:ring-brand-electric"
               type="checkbox"
               checked={nationalConfirmed}
               onChange={(event) => setNationalConfirmed(event.target.checked)}

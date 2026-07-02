@@ -74,7 +74,7 @@ export function TeamsReviewTable({ data }: { data: CompetitionData }) {
 
   return (
     <Card className="overflow-hidden">
-      <div className="border-b border-ink/10 p-5">
+      <div className="border-b border-brand-towerMid/20 p-5">
         <SectionHeader
           title="Inscripciones"
           description="Equipos, delegado, pago, codigo y estado de revision en una sola vista."
@@ -83,7 +83,7 @@ export function TeamsReviewTable({ data }: { data: CompetitionData }) {
       </div>
       <div className="overflow-x-auto">
         <table className="w-full min-w-[1180px] text-sm">
-          <thead className="bg-mist text-left text-xs uppercase text-ink/55">
+          <thead className="bg-brand-navy text-left text-xs uppercase text-white">
             <tr>
               <th className="px-5 py-3">Equipo</th>
               <th className="px-3 py-3">Campeonato</th>
@@ -94,7 +94,7 @@ export function TeamsReviewTable({ data }: { data: CompetitionData }) {
               <th className="px-5 py-3">Acciones</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-ink/8">
+          <tbody className="divide-y divide-brand-towerMid/20">
             {data.teams.map((team) => {
               const event = data.events.find((item) => item.id === team.eventId);
               const players = playersByTeam.get(team.id) ?? [];
@@ -111,28 +111,28 @@ export function TeamsReviewTable({ data }: { data: CompetitionData }) {
               const observation = observations[team.id] ?? "";
 
               return (
-                <tr key={team.id} className="align-top">
+                <tr key={team.id} className="align-top transition hover:bg-brand-electric/5">
                   <td className="px-5 py-4">
                     <p className="font-bold text-ink">{team.name}</p>
                     <Badge tone={teamStatusTone(team.status)}>{teamStatusLabel(team.status)}</Badge>
                     {team.adminObservation ? (
-                      <p className="mt-2 max-w-[220px] text-xs text-ink/60">
+                      <p className="mt-2 max-w-[220px] text-xs font-semibold text-brand-muted">
                         {team.adminObservation}
                       </p>
                     ) : null}
                   </td>
                   <td className="px-3 py-4">
                     <p className="font-semibold text-ink">{event?.name ?? "Sin campeonato"}</p>
-                    <p className="mt-1 text-xs text-ink/55">{event?.category}</p>
+                    <p className="mt-1 text-xs font-semibold text-brand-muted">{event?.category}</p>
                   </td>
                   <td className="px-3 py-4">
                     <p className="font-semibold text-ink">{team.delegateName}</p>
-                    <p className="text-xs text-ink/60">{team.delegateEmail}</p>
-                    <p className="text-xs text-ink/60">{team.delegatePhone}</p>
+                    <p className="text-xs text-brand-muted">{team.delegateEmail}</p>
+                    <p className="text-xs text-brand-muted">{team.delegatePhone}</p>
                   </td>
                   <td className="px-3 py-4">
                     <p className="font-bold uppercase text-ink">{team.paymentMethod}</p>
-                    <p className="text-xs text-ink/55">{team.registrationCode}</p>
+                    <p className="text-xs text-brand-muted">{team.registrationCode}</p>
                     <div className="mt-2">
                       <Badge tone={team.paymentStatus === "verified" ? "green" : "amber"}>
                         {team.paymentStatus === "verified" ? "Pago validado" : "Pago pendiente"}
@@ -141,21 +141,21 @@ export function TeamsReviewTable({ data }: { data: CompetitionData }) {
                   </td>
                   <td className="px-3 py-4">
                     <p className="font-bold text-ink">{players.length}</p>
-                    <p className="text-xs text-ink/55">
+                    <p className="text-xs text-brand-muted">
                       Min {event?.minPlayers ?? "-"} / Max {event?.maxPlayers ?? "-"}
                     </p>
                     {players.length > 0 ? (
                       <div className="mt-2 space-y-1">
                         {players.slice(0, 3).map((player) => (
                           <div key={player.id} className="flex flex-wrap items-center gap-1.5">
-                            <span className="max-w-[150px] truncate text-xs text-ink/65">
+                            <span className="max-w-[150px] truncate text-xs text-brand-muted">
                               {player.firstName} {player.lastName}
                             </span>
                             <IdentityBadge player={player} />
                           </div>
                         ))}
                         {players.length > 3 ? (
-                          <p className="text-xs text-ink/55">+{players.length - 3} mas</p>
+                          <p className="text-xs text-brand-muted">+{players.length - 3} mas</p>
                         ) : null}
                       </div>
                     ) : null}
@@ -169,7 +169,7 @@ export function TeamsReviewTable({ data }: { data: CompetitionData }) {
                           </p>
                         ))}
                         {issues.length > 3 ? (
-                          <p className="text-xs text-ink/55">+{issues.length - 3} mas</p>
+                          <p className="text-xs text-brand-muted">+{issues.length - 3} mas</p>
                         ) : null}
                       </div>
                     ) : (
@@ -236,7 +236,7 @@ export function TeamsReviewTable({ data }: { data: CompetitionData }) {
             })}
             {data.teams.length === 0 ? (
               <tr>
-                <td colSpan={7} className="px-5 py-8 text-center text-sm text-ink/55">
+                <td colSpan={7} className="px-5 py-8 text-center text-sm font-semibold text-brand-muted">
                   Todavia no hay inscripciones.
                 </td>
               </tr>

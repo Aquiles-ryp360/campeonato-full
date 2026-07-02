@@ -23,7 +23,7 @@ export function BasesArticle({
 }) {
   return (
     <Card className="overflow-hidden">
-      <div className="border-b border-ink/10 p-5">
+      <div className="border-b border-brand-towerMid/20 p-5">
         <SectionHeader
           eyebrow="Bases oficiales"
           title="Reglamento estructurado"
@@ -33,9 +33,9 @@ export function BasesArticle({
       </div>
       <article className="grid gap-4 p-5 lg:grid-cols-2">
         {createSections(event, bases).map((section) => (
-          <section key={section.title} className="rounded-md border border-ink/10 bg-white p-4">
+          <section key={section.title} className="rounded-md border border-brand-towerMid/25 bg-white p-4 shadow-insetLine">
             <h3 className="font-bold text-ink">{section.title}</h3>
-            <p className="mt-2 text-sm leading-6 text-ink/68">{section.body}</p>
+            <p className="mt-2 text-sm leading-6 text-brand-muted">{section.body}</p>
           </section>
         ))}
       </article>

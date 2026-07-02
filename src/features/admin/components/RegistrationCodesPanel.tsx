@@ -168,7 +168,7 @@ export function RegistrationCodesPanel() {
           </Button>
         </div>
         {selectedEvent ? (
-          <div className="mt-4 flex flex-wrap items-center gap-2 text-sm text-ink/65">
+          <div className="mt-4 flex flex-wrap items-center gap-2 text-sm font-semibold text-brand-muted">
             <KeyRound className="h-4 w-4" />
             <span>{selectedEvent.slug}</span>
             <span>{formatMoney(Number(selectedEvent.registration_fee))}</span>
@@ -177,7 +177,7 @@ export function RegistrationCodesPanel() {
       </Card>
 
       <Card className="overflow-hidden">
-        <div className="border-b border-ink/10 p-5">
+        <div className="border-b border-brand-towerMid/20 p-5">
           <SectionHeader
             title="Lista de codigos"
             action={
@@ -194,7 +194,7 @@ export function RegistrationCodesPanel() {
         </div>
         <div className="overflow-x-auto">
           <table className="w-full min-w-[860px] text-sm">
-            <thead className="bg-mist text-left text-xs uppercase text-ink/55">
+            <thead className="bg-brand-navy text-left text-xs uppercase text-white">
               <tr>
                 <th className="px-5 py-3">Codigo</th>
                 <th className="px-3 py-3">Campeonato</th>
@@ -203,18 +203,18 @@ export function RegistrationCodesPanel() {
                 <th className="px-5 py-3">Estado</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-ink/8">
+            <tbody className="divide-y divide-brand-towerMid/20">
               {visibleCodes.map((code) => {
                 const event = eventById.get(code.event_id);
 
                 return (
-                  <tr key={code.id}>
+                  <tr key={code.id} className="transition hover:bg-brand-electric/5">
                     <td className="px-5 py-4 font-bold text-ink">{code.code}</td>
                     <td className="px-3 py-4">
                       <p className="font-semibold text-ink">{event?.name ?? "Campeonato"}</p>
-                      <p className="text-xs text-ink/55">{event?.slug}</p>
+                      <p className="text-xs text-brand-muted">{event?.slug}</p>
                     </td>
-                    <td className="px-3 py-4 uppercase text-ink/70">{code.method}</td>
+                    <td className="px-3 py-4 font-semibold uppercase text-brand-muted">{code.method}</td>
                     <td className="px-3 py-4">{formatMoney(Number(code.amount))}</td>
                     <td className="px-5 py-4">
                       <Badge tone={code.status === "available" ? "green" : code.status === "used" ? "amber" : "red"}>
@@ -226,7 +226,7 @@ export function RegistrationCodesPanel() {
               })}
               {visibleCodes.length === 0 ? (
                 <tr>
-                  <td colSpan={5} className="px-5 py-8 text-center text-sm text-ink/55">
+                  <td colSpan={5} className="px-5 py-8 text-center text-sm font-semibold text-brand-muted">
                     {loading ? "Cargando codigos..." : "Todavia no hay codigos para este campeonato."}
                   </td>
                 </tr>

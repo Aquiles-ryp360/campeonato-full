@@ -20,7 +20,7 @@ export function RefereeMatchList({ data }: { data: RefereeDashboardData }) {
             const matchTeams = [homeTeam, awayTeam].filter(Boolean) as Team[];
 
             return (
-              <Card key={match.id} className="p-4">
+              <Card key={match.id} className="p-4 transition hover:-translate-y-0.5 hover:border-brand-electric/25 hover:shadow-lift">
                 <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
                   <div className="min-w-0">
                     <div className="flex flex-wrap items-center gap-2">
@@ -36,7 +36,7 @@ export function RefereeMatchList({ data }: { data: RefereeDashboardData }) {
                       {getMatchSideLabel(match, matchTeams, "away")}
                     </h2>
 
-                    <div className="mt-3 grid gap-2 text-sm font-semibold text-ink/62 sm:grid-cols-2 lg:grid-cols-4">
+                    <div className="mt-3 grid gap-2 text-sm font-semibold text-brand-muted sm:grid-cols-2 lg:grid-cols-4">
                       <span className="inline-flex items-center gap-2">
                         <Trophy className="h-4 w-4" />
                         {event?.name ?? "Campeonato"}
@@ -65,7 +65,7 @@ export function RefereeMatchList({ data }: { data: RefereeDashboardData }) {
       ) : (
         <Card className="p-8 text-center">
           <p className="text-lg font-bold text-ink">No hay partidos asignados.</p>
-          <p className="mt-2 text-sm leading-6 text-ink/60">
+          <p className="mt-2 text-sm leading-6 text-brand-muted">
             Si ya deberias arbitrar, pide al admin que asigne tu correo en el fixture.
           </p>
         </Card>

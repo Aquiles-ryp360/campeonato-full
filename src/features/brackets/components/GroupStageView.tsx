@@ -28,7 +28,7 @@ export function GroupStageView({
 }) {
   if (groups.length === 0) {
     return (
-      <Card className="p-6 text-sm text-ink/55">
+      <Card className="p-6 text-sm font-semibold text-brand-muted">
         Los grupos apareceran cuando el administrador cierre la inscripcion y distribuya equipos.
       </Card>
     );
@@ -48,7 +48,7 @@ export function GroupStageView({
       <div className="grid gap-4 lg:grid-cols-2">
         {groups.map((group) => (
           <Card key={group.id} className="overflow-hidden">
-            <div className="flex items-center justify-between gap-3 border-b border-ink/10 bg-mist p-4">
+            <div className="flex items-center justify-between gap-3 border-b border-brand-towerMid/20 bg-brand-wash p-4">
               <h3 className="font-bold text-ink">{group.name}</h3>
               <Badge tone="green">
                 {qualification.directPerGroup} directos
@@ -88,7 +88,7 @@ function GroupTable({
   return (
     <div className="overflow-x-auto">
       <table className="w-full min-w-[560px] text-sm">
-        <thead className="bg-white text-left text-xs uppercase text-ink/55">
+        <thead className="bg-brand-navy text-left text-xs uppercase text-white">
           <tr>
             <th className="px-4 py-3">Equipo</th>
             <th className="px-2 py-3">PJ</th>
@@ -98,7 +98,7 @@ function GroupTable({
             <th className="px-4 py-3">Clasifica</th>
           </tr>
         </thead>
-        <tbody className="divide-y divide-ink/8">
+        <tbody className="divide-y divide-brand-towerMid/20">
           {rows.map((row) => {
             const team = teams.find((item) => item.id === row.teamId);
             return (
@@ -107,7 +107,7 @@ function GroupTable({
                   <button
                     type="button"
                     onClick={() => team && onOpenTeam?.(team)}
-                    className="rounded text-left hover:text-field"
+                    className="rounded text-left hover:text-brand-electric"
                   >
                     {getTeamName(teams, row.teamId)}
                   </button>
@@ -145,10 +145,10 @@ function BestThirdsTable({
 }) {
   return (
     <Card className="overflow-hidden">
-      <div className="flex items-center justify-between gap-3 border-b border-ink/10 bg-amber-100 p-4">
+      <div className="flex items-center justify-between gap-3 border-b border-brand-yellow/50 bg-brand-yellow/20 p-4">
         <div>
           <h3 className="font-bold text-ink">Mejores terceros</h3>
-          <p className="text-sm text-ink/60">
+          <p className="text-sm font-semibold text-brand-muted">
             Completan la llave de {knockoutSize} equipos segun puntos, diferencia y goles a favor.
           </p>
         </div>
@@ -156,7 +156,7 @@ function BestThirdsTable({
       </div>
       <div className="overflow-x-auto">
         <table className="w-full min-w-[560px] text-sm">
-          <thead className="bg-white text-left text-xs uppercase text-ink/55">
+          <thead className="bg-brand-navy text-left text-xs uppercase text-white">
             <tr>
               <th className="px-4 py-3">Equipo</th>
               <th className="px-4 py-3">Grupo</th>
@@ -166,16 +166,16 @@ function BestThirdsTable({
               <th className="px-4 py-3">Pts</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-ink/8">
+          <tbody className="divide-y divide-brand-towerMid/20">
             {candidates.map((row) => {
               const team = teams.find((item) => item.id === row.teamId);
               return (
-                <tr key={`${row.groupId}-${row.teamId}`} className={selected.has(row.teamId) ? "bg-amber-50" : "bg-white"}>
+                <tr key={`${row.groupId}-${row.teamId}`} className={selected.has(row.teamId) ? "bg-brand-yellow/15" : "bg-white"}>
                   <td className="px-4 py-3 font-semibold">
                     <button
                       type="button"
                       onClick={() => team && onOpenTeam?.(team)}
-                      className="rounded text-left hover:text-field"
+                      className="rounded text-left hover:text-brand-electric"
                     >
                       {getTeamName(teams, row.teamId)}
                     </button>
@@ -204,11 +204,11 @@ function QualificationBadge({ row }: { row: GroupStandingDisplayRow }) {
     return <Badge tone="amber">Mejor 3ro</Badge>;
   }
 
-  return <span className="text-xs font-semibold text-ink/45">Pendiente</span>;
+  return <span className="text-xs font-semibold text-brand-muted">Pendiente</span>;
 }
 
 function rowClassName(row: GroupStandingDisplayRow) {
-  if (row.qualificationType === "direct") return "bg-field/5";
-  if (row.qualificationType === "best_third") return "bg-amber-50";
+  if (row.qualificationType === "direct") return "bg-brand-electric/5";
+  if (row.qualificationType === "best_third") return "bg-brand-yellow/15";
   return "bg-white";
 }

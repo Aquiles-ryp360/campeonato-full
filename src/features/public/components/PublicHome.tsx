@@ -140,7 +140,7 @@ export function PublicHome({
               />
             ))
           ) : (
-            <div className="rounded-md border border-dashed border-ink/20 p-6 text-center text-sm text-ink/55 sm:col-span-2 lg:col-span-4">
+            <div className="rounded-md border border-dashed border-brand-towerMid/40 bg-brand-wash/60 p-6 text-center text-sm font-semibold text-brand-muted sm:col-span-2 lg:col-span-4">
               Todavia no hay equipos inscritos en este campeonato.
             </div>
           )}
@@ -174,19 +174,19 @@ function PublicChampionBanner({
   const finalMatch = matches.find((match) => match.id === event.championMatchId);
 
   return (
-    <section className="rounded-md bg-amber-300 p-4 text-ink shadow-panel">
+    <section className="rounded-lg border border-brand-yellow/70 bg-brand-yellow p-4 text-brand-navy shadow-panel">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-center gap-3">
-          <div className="grid h-12 w-12 shrink-0 place-items-center rounded-md bg-ink text-white">
+          <div className="grid h-12 w-12 shrink-0 place-items-center rounded-md bg-brand-navy text-white">
             <Trophy className="h-6 w-6" />
           </div>
           <div>
-            <p className="text-xs font-black uppercase text-ink/65">Campeon</p>
+            <p className="text-xs font-black uppercase text-brand-navy/70">Campeon</p>
             <h2 className="text-2xl font-black">{champion?.name ?? "Equipo campeon"}</h2>
           </div>
         </div>
         {finalMatch ? (
-          <div className="rounded-md bg-white px-3 py-2 text-sm font-black">
+          <div className="rounded-md bg-white px-3 py-2 text-sm font-black shadow-insetLine">
             Final: {getMatchSideLabel(finalMatch, teams, "home")} {formatMatchScore(finalMatch)} {getMatchSideLabel(finalMatch, teams, "away")}
           </div>
         ) : null}
@@ -211,12 +211,12 @@ function PublicLiveMatches({
 
   return (
     <section className="space-y-3">
-      <div className="rounded-md bg-ink p-5 text-white shadow-panel">
+      <div className="rounded-lg bg-technical-blue p-5 text-white shadow-panel">
         <LiveMatchHeader event={event} match={primary} />
         <div className="mt-5 grid grid-cols-[1fr_auto_1fr] items-center gap-3">
           <LiveTeamName name={getMatchSideLabel(primary, teams, "home")} />
-          <div className="rounded-md bg-white px-4 py-3 text-center text-ink">
-            <p className="text-4xl font-black tabular-nums">{formatMatchScore(primary)}</p>
+          <div className="rounded-md bg-white px-4 py-3 text-center text-brand-navy shadow-lift">
+            <p className="text-4xl font-black tabular-nums leading-none">{formatMatchScore(primary)}</p>
           </div>
           <LiveTeamName name={getMatchSideLabel(primary, teams, "away")} align="right" />
         </div>
@@ -231,28 +231,28 @@ function PublicLiveMatches({
       </div>
 
       {secondary.length > 0 ? (
-        <div className="rounded-md border border-ink/10 bg-white p-4">
-          <p className="text-xs font-black uppercase text-ink/45">Tambien en vivo</p>
+        <div className="rounded-lg border border-brand-towerMid/25 bg-white p-4 shadow-panel">
+          <p className="text-xs font-black uppercase text-brand-muted">Tambien en vivo</p>
           <div className="mt-3 grid gap-3 md:grid-cols-2">
             {secondary.map((match) => (
               <article
                 key={match.id}
-                className="rounded-md border border-ink/10 bg-mist p-3 text-left"
+                className="rounded-md border border-brand-towerMid/25 bg-brand-wash p-3 text-left"
               >
                 <div className="flex items-center justify-between gap-2">
                   <Badge tone={match.liveStatus === "under_review" ? "amber" : match.liveStatus === "disputed" ? "red" : "dark"}>
                     {liveStatusDescription(match)}
                   </Badge>
-                  <span className="text-xs font-bold text-ink/55">{match.court}</span>
+                  <span className="text-xs font-bold text-brand-muted">{match.court}</span>
                 </div>
                 <div className="mt-3 grid grid-cols-[1fr_auto_1fr] items-center gap-2">
                   <p className="truncate text-sm font-black text-ink">{getMatchSideLabel(match, teams, "home")}</p>
-                  <p className="rounded bg-ink px-2 py-1 text-lg font-black tabular-nums text-white">
+                  <p className="rounded bg-brand-navy px-2 py-1 text-lg font-black tabular-nums text-white">
                     {formatMatchScore(match)}
                   </p>
                   <p className="truncate text-right text-sm font-black text-ink">{getMatchSideLabel(match, teams, "away")}</p>
                 </div>
-                <p className="mt-2 text-xs font-semibold text-ink/55">{liveClockLabel(match, event)}</p>
+                <p className="mt-2 text-xs font-semibold text-brand-muted">{liveClockLabel(match, event)}</p>
                 <PublicPenaltyStrip
                   match={match}
                   teams={teams}
@@ -313,7 +313,7 @@ function PublicPenaltyRow({
 }) {
   return (
     <div className="grid grid-cols-[80px_1fr] items-center gap-2">
-      <p className={`truncate text-xs font-black ${compact ? "text-ink/65" : "text-white/75"}`}>{name}</p>
+      <p className={`truncate text-xs font-black ${compact ? "text-brand-muted" : "text-white/75"}`}>{name}</p>
       <div className="flex min-h-8 flex-wrap gap-1.5">
         {attempts.length > 0 ? (
           attempts.map((attempt) => {
@@ -354,7 +354,7 @@ function LiveMatchHeader({ event, match }: { event: TournamentEvent; match: Matc
   return (
     <div className="flex flex-wrap items-start justify-between gap-3">
       <div>
-        <p className="text-xs font-black uppercase tracking-wide text-amber-300">{headline}</p>
+        <p className="text-xs font-black uppercase tracking-wide text-brand-yellow">{headline}</p>
         <h2 className="mt-1 text-xl font-black">{event.name}</h2>
         <p className="mt-1 text-sm font-semibold text-white/65">
           {sportLabel(event.sport)} - {event.category}

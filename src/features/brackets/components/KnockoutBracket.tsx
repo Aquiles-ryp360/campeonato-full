@@ -23,7 +23,7 @@ export function KnockoutBracket({
   const rounds = bracket.rounds.filter((round) => round.stage !== "third_place");
 
   return (
-    <div className="overflow-x-auto overscroll-x-contain rounded-md border border-ink/10 bg-ink p-4 text-white">
+    <div className="overflow-x-auto overscroll-x-contain rounded-lg border border-white/10 bg-technical-blue p-4 text-white shadow-panel">
       <div
         className="grid min-w-[760px] gap-4"
         style={{ gridTemplateColumns: `repeat(${Math.max(1, rounds.length)}, minmax(180px, 1fr))` }}
@@ -36,12 +36,12 @@ export function KnockoutBracket({
             </div>
             <div className="flex flex-1 flex-col justify-around gap-4">
               {round.slots.map((slot) => (
-                <div key={slot.id} className="rounded-md border border-white/15 bg-white p-3 text-ink shadow-sm">
+                <div key={slot.id} className="rounded-md border border-white/20 bg-white p-3 text-ink shadow-panel">
                   <div className="mb-2 flex items-center justify-between gap-2">
-                    <span className="rounded bg-ink px-2 py-1 text-[10px] font-black uppercase text-white">
+                    <span className="rounded bg-brand-navy px-2 py-1 text-[10px] font-black uppercase text-white">
                       {slot.label}
                     </span>
-                    <span className="text-[10px] font-bold uppercase text-ink/55">
+                    <span className="text-[10px] font-bold uppercase text-brand-muted">
                       {liveStatusLabel(slot.match?.liveStatus, slot.match?.status)}
                     </span>
                   </div>
@@ -62,11 +62,11 @@ export function KnockoutBracket({
                     onOpenTeam={onOpenTeam}
                   />
                   {provisionalWinnerName(slot.match, teams) ? (
-                    <p className="mt-2 rounded bg-amber-100 px-2 py-1 text-[11px] font-bold text-amber-900">
+                    <p className="mt-2 rounded bg-brand-yellow/30 px-2 py-1 text-[11px] font-bold text-brand-navy">
                       Ganador provisional: {provisionalWinnerName(slot.match, teams)}
                     </p>
                   ) : null}
-                  <p className="mt-3 truncate text-[11px] text-ink/50">
+                  <p className="mt-3 truncate text-[11px] text-brand-muted">
                     {slot.match?.scheduledAt
                       ? `${formatDateTime(slot.match.scheduledAt)} · ${slot.match.court}`
                       : "Horario por definir"}
@@ -79,13 +79,13 @@ export function KnockoutBracket({
       </div>
 
       <div className="mt-5 grid gap-4 md:grid-cols-[1fr_220px]">
-        <div className="flex items-center gap-3 rounded-md border border-white/10 bg-white/8 p-4">
-          <div className="grid h-11 w-11 place-items-center rounded-md bg-amber-300 text-ink">
+        <div className="flex items-center gap-3 rounded-md border border-white/10 bg-white/10 p-4">
+          <div className="grid h-11 w-11 place-items-center rounded-md bg-brand-yellow text-brand-navy">
             <Trophy className="h-5 w-5" />
           </div>
           <div>
             <p className="font-bold">Llave dinamica</p>
-            <p className="text-sm text-white/65">
+            <p className="text-sm text-white/70">
               {bracketSummary(bracket)}
             </p>
           </div>
@@ -129,7 +129,7 @@ function TeamLine({
 
   if (!team) {
     return (
-      <div className="mb-1 flex min-h-9 items-center justify-between gap-2 rounded bg-mist px-2 text-sm text-ink/55">
+      <div className="mb-1 flex min-h-9 items-center justify-between gap-2 rounded bg-brand-wash px-2 text-sm text-brand-muted">
         <span className="truncate">{fallback}</span>
         {score ? <span className="font-black tabular-nums text-ink">{score}</span> : null}
       </div>
@@ -140,7 +140,7 @@ function TeamLine({
     <button
       type="button"
       onClick={() => onOpenTeam?.(team)}
-      className="mb-1 flex min-h-9 w-full items-center justify-between gap-2 rounded bg-mist px-2 text-left text-sm font-semibold hover:bg-field/10 hover:text-field"
+      className="mb-1 flex min-h-9 w-full items-center justify-between gap-2 rounded bg-brand-wash px-2 text-left text-sm font-semibold hover:bg-brand-electric/10 hover:text-brand-electric"
     >
       <span className="flex min-w-0 items-center gap-2">
         <span className="h-3 w-3 shrink-0 rounded-sm" style={{ backgroundColor: team.primaryColor }} />

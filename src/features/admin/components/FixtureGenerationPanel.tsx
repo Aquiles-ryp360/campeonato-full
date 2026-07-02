@@ -131,7 +131,7 @@ export function FixtureGenerationPanel({
           </div>
         ) : null}
         {bracket?.warnings.length ? (
-          <div className="mt-4 rounded-md border border-amber-400/25 bg-amber-100 p-3 text-sm font-semibold text-amber-900">
+          <div className="mt-4 rounded-md border border-brand-yellow/70 bg-brand-yellow/25 p-3 text-sm font-bold text-brand-navy">
             {bracket.warnings.join(" ")}
           </div>
         ) : null}
@@ -153,7 +153,7 @@ export function FixtureGenerationPanel({
             <Lock className="h-4 w-4" />
             Bloquear
           </Button>
-          <span className="text-sm text-ink/60">
+          <span className="text-sm font-semibold text-brand-muted">
             {previewSchedule?.slots.length ?? 0} slots generados para la vista previa.
           </span>
         </div>
@@ -247,8 +247,8 @@ function bracketMainLabel(bracket: GeneratedBracket | null) {
 
 function Info({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-md border border-ink/10 bg-white p-3">
-      <p className="text-xs font-bold uppercase text-ink/45">{label}</p>
+    <div className="rounded-md border border-brand-towerMid/25 bg-white p-3 shadow-insetLine">
+      <p className="text-xs font-black uppercase text-brand-muted">{label}</p>
       <p className="mt-1 text-sm font-bold text-ink">{value}</p>
     </div>
   );

@@ -16,11 +16,11 @@ export function IdentityConsentBlock({
   const [termsOpen, setTermsOpen] = useState(false);
 
   return (
-    <div className="rounded-md border border-field/20 bg-field/5 px-3 py-2">
+    <div className="rounded-md border border-brand-electric/20 bg-brand-electric/5 px-3 py-2">
       <div className="flex flex-col gap-2 text-sm sm:flex-row sm:items-center sm:justify-between">
         <label className="flex items-start gap-2 font-semibold text-ink sm:items-center">
           <input
-            className="mt-0.5 h-4 w-4 rounded border-ink/20 text-field focus:ring-field sm:mt-0"
+            className="mt-0.5 h-4 w-4 rounded border-brand-towerMid/40 text-brand-electric focus:ring-brand-electric sm:mt-0"
             type="checkbox"
             checked={accepted}
             disabled={disabled}
@@ -30,7 +30,7 @@ export function IdentityConsentBlock({
         </label>
         <button
           type="button"
-          className="text-left text-xs font-bold text-field hover:text-field/80 sm:text-right"
+          className="text-left text-xs font-bold text-brand-electric hover:text-brand-institutional sm:text-right"
           onClick={() => setTermsOpen(true)}
         >
           Ver términos

@@ -113,14 +113,14 @@ export function DaySchedule({
             </select>
           </Field>
           <Field label="Vista">
-            <div className="grid grid-cols-2 rounded-md border border-ink/10 bg-white p-1">
+            <div className="grid grid-cols-2 rounded-md border border-brand-towerMid/25 bg-white p-1">
               {(["hour", "court"] as const).map((mode) => (
                 <button
                   key={mode}
                   type="button"
                   onClick={() => setView(mode)}
-                  className={`inline-flex min-h-8 items-center justify-center gap-1 rounded px-2 text-sm font-semibold ${
-                    view === mode ? "bg-ink text-white" : "text-ink/65 hover:bg-mist"
+                  className={`inline-flex min-h-8 items-center justify-center gap-1 rounded px-2 text-sm font-bold ${
+                    view === mode ? "bg-brand-navy text-white" : "text-brand-muted hover:bg-brand-electric/10 hover:text-brand-electric"
                   }`}
                 >
                   <Filter className="h-3.5 w-3.5" />
@@ -136,10 +136,10 @@ export function DaySchedule({
         view === "hour" ? (
           <div className="space-y-5">
             {Array.from(new Set(filteredMatches.map((match) => timeKey(match.scheduledAt)))).map((time) => (
-              <section key={time} className="grid gap-3 rounded-md border border-ink/10 bg-white/70 p-4 lg:grid-cols-[90px_1fr]">
+              <section key={time} className="grid gap-3 rounded-lg border border-brand-towerMid/25 bg-white p-4 shadow-insetLine lg:grid-cols-[90px_1fr]">
                 <div>
-                  <p className="text-2xl font-bold text-ink">{time}</p>
-                  <p className="text-xs font-semibold uppercase text-ink/45">Hora</p>
+                  <p className="text-2xl font-black text-ink">{time}</p>
+                  <p className="text-xs font-black uppercase text-brand-electric">Hora</p>
                 </div>
                 <div className="grid gap-3 lg:grid-cols-2">
                   {filteredMatches
@@ -176,7 +176,7 @@ export function DaySchedule({
           </div>
         )
       ) : (
-        <Card className="p-8 text-center text-sm text-ink/55">
+        <Card className="p-8 text-center text-sm font-semibold text-brand-muted">
           {emptyMessage}
         </Card>
       )}

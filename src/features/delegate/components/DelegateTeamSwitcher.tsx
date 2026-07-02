@@ -17,7 +17,7 @@ export function DelegateTeamSwitcher({
 
   return (
     <select
-      className="min-h-10 rounded-md border border-ink/10 bg-white px-3 py-2 text-sm font-bold text-ink outline-none focus:ring-2 focus:ring-field/20"
+      className="min-h-10 max-w-full rounded-md border border-brand-towerMid/35 bg-white px-3 py-2 text-sm font-bold text-ink outline-none focus:border-brand-electric focus:ring-2 focus:ring-brand-electric/20"
       value={value}
       onChange={(event) => onChange(event.target.value)}
       aria-label="Cambiar equipo delegado"

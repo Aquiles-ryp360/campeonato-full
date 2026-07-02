@@ -25,10 +25,10 @@ export function EnrollmentFilePicker({
       />
       <label
         htmlFor={id}
-        className={`flex min-h-10 w-full cursor-pointer items-center justify-center gap-2 rounded-md border border-ink/10 px-3 py-2 text-sm font-semibold transition ${
+        className={`flex min-h-10 w-full cursor-pointer items-center justify-center gap-2 rounded-md border border-brand-towerMid/35 px-3 py-2 text-sm font-bold transition ${
           fileName
-            ? "bg-field/10 text-field hover:bg-field/15"
-            : "bg-white text-ink hover:bg-mist"
+            ? "bg-brand-electric/10 text-brand-electric hover:bg-brand-electric/15"
+            : "bg-white text-ink hover:bg-brand-wash"
         } ${disabled ? "pointer-events-none opacity-60" : ""}`}
       >
         <Upload className="h-4 w-4 shrink-0" />

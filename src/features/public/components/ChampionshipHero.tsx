@@ -28,21 +28,29 @@ export function ChampionshipHero({
   const slug = championshipSlug(event);
 
   return (
-    <section className="rounded-lg bg-ink p-5 text-white shadow-panel sm:p-7">
-      <div className="flex flex-wrap items-center gap-2">
+    <section className="relative overflow-hidden rounded-lg bg-technical-blue p-5 text-white shadow-panel sm:p-7">
+      <div
+        aria-hidden="true"
+        className="absolute inset-y-0 right-0 hidden w-2/5 opacity-25 lg:block"
+        style={{
+          background:
+            "repeating-linear-gradient(135deg, transparent 0 18px, rgba(240,232,52,0.45) 18px 20px, transparent 20px 38px)"
+        }}
+      />
+      <div className="relative flex flex-wrap items-center gap-2">
         <Badge tone="dark">{sportDisplayName(event)}</Badge>
         <Badge tone={eventStatusTone(event.status)}>{eventStatusLabel(event.status)}</Badge>
         <Badge tone="amber">{fixtureStatusLabel(event.fixtureStatus)}</Badge>
         <Badge tone="dark">{tournamentFormatLabel(event.format)}</Badge>
       </div>
 
-      <div className="mt-7 flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
+      <div className="relative mt-7 flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
         <div className="min-w-0">
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-            <h1 className="text-3xl font-bold sm:text-5xl">{event.name}</h1>
+          <div className="flex flex-col gap-3 lg:flex-row lg:items-center">
+            <h1 className="max-w-4xl text-3xl font-black leading-tight sm:text-5xl">{event.name}</h1>
             <ChampionshipSwitcher events={events} value={event.id} onChange={onChangeEvent} />
           </div>
-          <p className="mt-3 max-w-3xl text-sm leading-6 text-white/72">
+          <p className="mt-3 max-w-3xl text-sm leading-6 text-white/70">
             {event.rulesSummary || "Campeonato deportivo configurable con fixture, bases e inscripciones."}
           </p>
           <div className="mt-4 flex flex-wrap gap-3 text-xs font-semibold text-white/70">
@@ -52,7 +60,7 @@ export function ChampionshipHero({
           </div>
         </div>
 
-        <div className="flex flex-wrap gap-2">
+        <div className="flex flex-wrap gap-2 lg:justify-end">
           <Button href={`/c/${slug}/fixture`} variant="secondary">
             <CalendarDays className="h-4 w-4" />
             Fixture del dia
@@ -61,11 +69,11 @@ export function ChampionshipHero({
             <FileText className="h-4 w-4" />
             Bases
           </Button>
-          <Button href={`/c/${slug}/registro`} variant="secondary">
+          <Button href={`/c/${slug}/registro`} variant="highlight">
             <UserPlus className="h-4 w-4" />
             Inscribir equipo
           </Button>
-          <Button href="#formato" variant="ghost" className="bg-white/10 text-white hover:bg-white/15">
+          <Button href="#formato" variant="ghost" className="bg-white/10 text-white hover:bg-white/15 hover:text-white">
             <ListChecks className="h-4 w-4" />
             Ver formato
           </Button>

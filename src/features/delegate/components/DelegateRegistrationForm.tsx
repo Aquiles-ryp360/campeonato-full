@@ -121,7 +121,7 @@ export function DelegateRegistrationForm({
           <input className={inputClass} defaultValue={team.status} disabled />
         </Field>
       </div>
-      <div className="mt-4 rounded-md bg-mist p-4 text-sm text-ink/65">
+      <div className="mt-4 rounded-md border border-brand-towerMid/25 bg-brand-wash p-4 text-sm font-semibold text-brand-muted">
         Observaciones del admin: {team.adminObservation || "sin observaciones registradas."}
       </div>
       <div className="mt-5 flex justify-end">

@@ -68,7 +68,7 @@ export function ResultEntryPanel({ data }: { data: CompetitionData }) {
 
   return (
     <Card className="overflow-hidden">
-      <div className="border-b border-ink/10 p-5">
+      <div className="border-b border-brand-towerMid/20 p-5">
         <SectionHeader title="Resultados" description="Resultados oficiales cargados por arbitro y correcciones por controversia." />
       </div>
       <div className="grid gap-4 p-5">
@@ -76,13 +76,13 @@ export function ResultEntryPanel({ data }: { data: CompetitionData }) {
           <form
             key={match.id}
             onSubmit={(event) => correctResult(event, match.id)}
-            className="grid gap-3 rounded-md border border-ink/10 bg-white p-4 md:grid-cols-[1fr_90px_90px_90px_90px_auto] md:items-end"
+            className="grid gap-3 rounded-md border border-brand-towerMid/25 bg-white p-4 shadow-insetLine transition hover:border-brand-electric/30 md:grid-cols-[1fr_90px_90px_90px_90px_auto] md:items-end"
           >
             <div>
               <p className="font-bold text-ink">
                 {getTeamName(data.teams, match.homeTeamId)} vs {getTeamName(data.teams, match.awayTeamId)}
               </p>
-              <p className="mt-1 text-xs text-ink/55">{match.court} - {liveStatusLabel(match.liveStatus, match.status)}</p>
+              <p className="mt-1 text-xs font-semibold text-brand-muted">{match.court} - {liveStatusLabel(match.liveStatus, match.status)}</p>
             </div>
             <Field label="Local">
               <input name="homeScore" className={inputClass} type="number" min={0} defaultValue={match.homeScore ?? 0} />
@@ -114,7 +114,7 @@ export function ResultEntryPanel({ data }: { data: CompetitionData }) {
           </form>
         ))}
         {data.matches.length === 0 ? (
-          <p className="text-sm text-ink/55">Todavia no hay partidos para registrar resultados.</p>
+          <p className="text-sm font-semibold text-brand-muted">Todavia no hay partidos para registrar resultados.</p>
         ) : null}
       </div>
     </Card>

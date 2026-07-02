@@ -17,10 +17,10 @@ export function DelegateNotices({
       <Card className="p-5">
         <SectionHeader title="Avisos importantes" description="Comunicados, observaciones, cambios de horario y sanciones." />
         <div className="mt-4 grid gap-3">
-          <div className="rounded-md border border-ink/10 bg-white p-4 text-sm text-ink/70">
+          <div className="rounded-md border border-brand-towerMid/25 bg-white p-4 text-sm font-semibold text-brand-muted shadow-insetLine">
             Observaciones de inscripcion para {team.name}: sin observaciones vigentes.
           </div>
-          <div className="rounded-md border border-ink/10 bg-white p-4 text-sm text-ink/70">
+          <div className="rounded-md border border-brand-towerMid/25 bg-white p-4 text-sm font-semibold text-brand-muted shadow-insetLine">
             Cambios de horario: se notificaran aqui cuando administracion actualice el fixture.
           </div>
         </div>

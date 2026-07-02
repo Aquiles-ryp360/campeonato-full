@@ -15,21 +15,21 @@ export function TermsIdentityLookupModal({
   if (!open) return null;
 
   return (
-    <div className="fixed inset-0 z-50 grid place-items-center bg-ink/45 p-4">
+    <div className="fixed inset-0 z-50 grid place-items-center bg-brand-navy/70 p-4 backdrop-blur-sm">
       <div className="max-h-[88vh] w-full max-w-2xl overflow-y-auto rounded-lg bg-white shadow-panel">
-        <div className="sticky top-0 flex items-center justify-between border-b border-ink/10 bg-white px-5 py-4">
-          <h2 className="text-lg font-bold text-ink">Uso de datos para inscripción y autollenado</h2>
+        <div className="sticky top-0 flex items-center justify-between border-b border-brand-towerMid/20 bg-white px-5 py-4">
+          <h2 className="text-lg font-black text-ink">Uso de datos para inscripción y autollenado</h2>
           <button
             type="button"
             onClick={onClose}
-            className="grid h-9 w-9 place-items-center rounded-md text-ink/55 hover:bg-mist hover:text-ink"
+            className="grid h-9 w-9 place-items-center rounded-md text-brand-muted hover:bg-brand-electric/10 hover:text-brand-electric"
             aria-label="Cerrar términos"
           >
             <X className="h-4 w-4" />
           </button>
         </div>
 
-        <div className="space-y-4 px-5 py-4 text-sm leading-6 text-ink/72">
+        <div className="space-y-4 px-5 py-4 text-sm leading-6 text-brand-muted">
           <section>
             <h3 className="font-bold text-ink">Finalidad</h3>
             <p>
@@ -88,7 +88,7 @@ export function TermsIdentityLookupModal({
           </section>
         </div>
 
-        <div className="sticky bottom-0 flex justify-end border-t border-ink/10 bg-white px-5 py-4">
+        <div className="sticky bottom-0 flex justify-end border-t border-brand-towerMid/20 bg-white px-5 py-4">
           <Button type="button" onClick={onAccept}>
             Acepto y continuar
           </Button>

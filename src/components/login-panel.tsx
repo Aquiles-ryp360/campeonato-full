@@ -110,7 +110,7 @@ export function LoginPanel() {
   }
 
   return (
-    <div className="grid gap-6 lg:grid-cols-[0.9fr_1.1fr]">
+    <div className="grid gap-6 pb-20 md:pb-0 lg:grid-cols-[0.9fr_1.1fr]">
       <Card className="p-5">
         <SectionHeader
           eyebrow="Acceso"
@@ -133,7 +133,7 @@ export function LoginPanel() {
               <Mail className="h-4 w-4" />
               {isGoogleSubmitting ? "Abriendo Google..." : "Entrar con Google"}
             </Button>
-            <p className="text-sm leading-6 text-ink/62">
+            <p className="text-sm leading-6 text-brand-muted">
               Si eres delegado o arbitro, el correo debe coincidir con la inscripcion o
               con una asignacion de partido. Otros correos entran como visitante.
             </p>
@@ -173,7 +173,7 @@ export function LoginPanel() {
       <div className="space-y-4">
         <Card className="p-5">
           <div className="flex items-start gap-3">
-            <div className="grid h-11 w-11 shrink-0 place-items-center rounded-md bg-field/10 text-field">
+            <div className="grid h-11 w-11 shrink-0 place-items-center rounded-md bg-brand-electric/10 text-brand-electric">
               <ShieldCheck className="h-5 w-5" />
             </div>
             <div>
@@ -182,16 +182,16 @@ export function LoginPanel() {
                 <Badge tone="green">Control total</Badge>
               </div>
               {supabaseConfigured ? (
-                <p className="mt-3 text-sm leading-6 text-ink/62">
+                <p className="mt-3 text-sm leading-6 text-brand-muted">
                   El admin entra con Google solo si su correo esta registrado como
                   administrador en el sistema.
                 </p>
               ) : (
                 <>
-                  <p className="mt-2 text-sm text-ink/65">
+                  <p className="mt-2 text-sm text-brand-muted">
                     Usuario demo: <strong>{demoAdminCredentials.username}</strong>
                   </p>
-                  <p className="mt-1 text-sm text-ink/65">
+                  <p className="mt-1 text-sm text-brand-muted">
                     Contrasena: <strong>{demoAdminCredentials.password}</strong>
                   </p>
                 </>
@@ -202,7 +202,7 @@ export function LoginPanel() {
 
         <Card className="p-5">
           <div className="flex items-start gap-3">
-            <div className="grid h-11 w-11 shrink-0 place-items-center rounded-md bg-sky/10 text-sky-900">
+            <div className="grid h-11 w-11 shrink-0 place-items-center rounded-md bg-brand-institutional/10 text-brand-institutional">
               <UserRoundCheck className="h-5 w-5" />
             </div>
             <div>
@@ -211,16 +211,16 @@ export function LoginPanel() {
                 <Badge tone="blue">Equipo</Badge>
               </div>
               {supabaseConfigured ? (
-                <p className="mt-3 text-sm leading-6 text-ink/62">
+                <p className="mt-3 text-sm leading-6 text-brand-muted">
                   El delegado usa el mismo correo Google/Gmail que dejo en la inscripcion.
                   Al coincidir, el sistema vincula su usuario con su equipo.
                 </p>
               ) : (
                 <>
-                  <p className="mt-2 text-sm text-ink/65">
+                  <p className="mt-2 text-sm text-brand-muted">
                     Usuario demo: <strong>{demoDelegateCredentials.username}</strong>
                   </p>
-                  <p className="mt-1 text-sm text-ink/65">
+                  <p className="mt-1 text-sm text-brand-muted">
                     Contrasena demo: <strong>{demoDelegateCredentials.password}</strong>
                   </p>
                 </>
@@ -231,7 +231,7 @@ export function LoginPanel() {
 
         <Card className="p-5">
           <div className="flex items-start gap-3">
-            <div className="grid h-11 w-11 shrink-0 place-items-center rounded-md bg-field/10 text-field">
+            <div className="grid h-11 w-11 shrink-0 place-items-center rounded-md bg-brand-electric/10 text-brand-electric">
               <ShieldCheck className="h-5 w-5" />
             </div>
             <div>
@@ -239,7 +239,7 @@ export function LoginPanel() {
                 <p className="font-bold text-ink">Arbitro</p>
                 <Badge tone="green">Partidos asignados</Badge>
               </div>
-              <p className="mt-3 text-sm leading-6 text-ink/62">
+              <p className="mt-3 text-sm leading-6 text-brand-muted">
                 El arbitro entra con el correo asignado por el admin y solo ve los
                 partidos vinculados a ese correo.
               </p>
@@ -249,12 +249,12 @@ export function LoginPanel() {
 
         <Card className="p-5">
           <div className="flex items-start gap-3">
-            <div className="grid h-11 w-11 shrink-0 place-items-center rounded-md bg-amber-100 text-amber-900">
+            <div className="grid h-11 w-11 shrink-0 place-items-center rounded-md bg-brand-yellow/25 text-brand-navy">
               <KeyRound className="h-5 w-5" />
             </div>
             <div>
               <p className="font-bold text-ink">Seguridad</p>
-              <p className="mt-2 text-sm leading-6 text-ink/62">
+              <p className="mt-2 text-sm leading-6 text-brand-muted">
                 Tener Gmail no da permisos automaticos. Si el correo no es admin,
                 delegado ni arbitro asignado, se mantiene como visitante.
               </p>

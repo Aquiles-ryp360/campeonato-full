@@ -31,7 +31,7 @@ export function BasesStatusCard({
 
 export function BasesEmptyState() {
   return (
-    <Card className="p-6 text-sm text-ink/55">
+    <Card className="p-6 text-sm font-semibold text-brand-muted">
       Todavia no hay bases oficiales cargadas. El administrador podra subir un PDF o pegar el
       texto estructurado desde el panel.
     </Card>

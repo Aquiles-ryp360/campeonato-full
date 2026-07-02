@@ -55,7 +55,7 @@ export function AuthGate({
   if (!ready) {
     return (
       <Card className="p-6">
-        <p className="text-sm font-semibold text-ink/60">Validando acceso...</p>
+        <p className="text-sm font-semibold text-brand-muted">Validando acceso...</p>
       </Card>
     );
   }
@@ -65,12 +65,12 @@ export function AuthGate({
       <Card className="p-6">
         <div className="flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-start gap-3">
-            <div className="grid h-11 w-11 shrink-0 place-items-center rounded-md bg-amber-100 text-amber-900">
+            <div className="grid h-11 w-11 shrink-0 place-items-center rounded-md bg-brand-yellow/25 text-brand-navy">
               <LockKeyhole className="h-5 w-5" />
             </div>
             <div>
               <p className="text-xl font-bold text-ink">Acceso restringido</p>
-              <p className="mt-1 max-w-2xl text-sm leading-6 text-ink/65">
+              <p className="mt-1 max-w-2xl text-sm leading-6 text-brand-muted">
                 Inicia sesion como {roleLabel(role)} para
                 ver este panel.
               </p>
@@ -95,7 +95,7 @@ export function SessionActions({ showPanelLink = true }: { showPanelLink?: boole
     return (
       <Link
         href="/login"
-        className="inline-flex min-h-10 items-center justify-center gap-2 rounded-md bg-ink px-4 py-2 text-sm font-semibold text-white transition hover:bg-ink/90"
+        className="inline-flex min-h-10 items-center justify-center gap-2 rounded-md bg-brand-yellow px-4 py-2 text-sm font-bold text-brand-navy transition hover:bg-brand-yellowHover"
       >
         <LogIn className="h-4 w-4" />
         Ingresar
@@ -133,7 +133,7 @@ export function SessionActions({ showPanelLink = true }: { showPanelLink?: boole
       {showPanelLink ? (
         <Link
           href={panelHref}
-          className="inline-flex min-h-10 items-center justify-center gap-2 rounded-md bg-field px-4 py-2 text-sm font-semibold text-white transition hover:bg-field/90"
+          className="inline-flex min-h-10 items-center justify-center gap-2 rounded-md bg-brand-electric px-4 py-2 text-sm font-bold text-white transition hover:bg-brand-institutional"
           title={`${session.displayName} (${session.role})`}
         >
           <PanelIcon className="h-4 w-4" />
@@ -141,7 +141,7 @@ export function SessionActions({ showPanelLink = true }: { showPanelLink?: boole
         </Link>
       ) : (
         <span
-          className="inline-flex min-h-10 items-center justify-center gap-2 rounded-md bg-field/10 px-4 py-2 text-sm font-semibold text-field"
+          className="inline-flex min-h-10 items-center justify-center gap-2 rounded-md bg-white/10 px-4 py-2 text-sm font-bold text-white"
           title={`${session.displayName} (${session.role})`}
         >
           <UserRound className="h-4 w-4" />
@@ -158,7 +158,7 @@ export function SessionActions({ showPanelLink = true }: { showPanelLink?: boole
           clearStoredSession();
           window.location.href = "/";
         }}
-        className="inline-flex min-h-10 items-center justify-center gap-2 rounded-md bg-mist px-4 py-2 text-sm font-semibold text-ink transition hover:bg-white"
+        className="inline-flex min-h-10 items-center justify-center gap-2 rounded-md bg-white/10 px-4 py-2 text-sm font-bold text-white transition hover:bg-white/15"
       >
         <LogOut className="h-4 w-4" />
         Salir
@@ -201,10 +201,10 @@ export function MobileSessionAction() {
   return (
     <Link
       href={href}
-      className="flex flex-col items-center gap-1 px-2 py-2 text-[11px] font-semibold text-ink/70"
+      className="flex min-h-[58px] min-w-0 flex-col items-center justify-center gap-1 px-1.5 py-2 text-[10.5px] font-bold text-brand-muted"
     >
       <Icon className="h-4 w-4" />
-      {label}
+      <span className="w-full truncate text-center leading-tight">{label}</span>
     </Link>
   );
 }
@@ -225,10 +225,10 @@ export function MobileLogoutAction() {
         clearStoredSession();
         window.location.href = "/";
       }}
-      className="flex flex-col items-center gap-1 px-2 py-2 text-[11px] font-semibold text-red-800"
+      className="flex min-h-[58px] min-w-0 flex-col items-center justify-center gap-1 px-1.5 py-2 text-[10.5px] font-bold text-red-800"
     >
       <LogOut className="h-4 w-4" />
-      Salir
+      <span className="w-full truncate text-center leading-tight">Salir</span>
     </button>
   );
 }

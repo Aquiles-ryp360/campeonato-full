@@ -11,18 +11,18 @@ export function Badge({
   tone?: "neutral" | "green" | "amber" | "red" | "blue" | "dark";
 }) {
   const tones = {
-    neutral: "border-ink/10 bg-white text-ink",
-    green: "border-field/15 bg-field/10 text-field",
-    amber: "border-amber-400/25 bg-amber-100 text-amber-900",
+    neutral: "border-brand-towerMid/35 bg-white text-brand-muted",
+    green: "border-green-600/20 bg-green-600/10 text-green-800",
+    amber: "border-brand-yellow/70 bg-brand-yellow/25 text-brand-navy",
     red: "border-coral/25 bg-coral/10 text-red-800",
-    blue: "border-sky/25 bg-sky/10 text-sky-900",
-    dark: "border-ink bg-ink text-white"
+    blue: "border-brand-electric/20 bg-brand-electric/10 text-brand-electric",
+    dark: "border-brand-navy bg-brand-navy text-white"
   };
 
   return (
     <span
       className={cn(
-        "inline-flex items-center rounded-full border px-2.5 py-1 text-xs font-semibold",
+        "inline-flex items-center rounded-full border px-2.5 py-1 text-xs font-bold",
         tones[tone]
       )}
     >
@@ -44,7 +44,7 @@ export function Button({
 }: {
   children: React.ReactNode;
   href?: string;
-  variant?: "primary" | "secondary" | "ghost" | "danger";
+  variant?: "primary" | "secondary" | "ghost" | "danger" | "highlight";
   className?: string;
   style?: CSSProperties;
   type?: "button" | "submit";
@@ -53,14 +53,15 @@ export function Button({
   disabled?: boolean;
 }) {
   const variants = {
-    primary: "bg-ink text-white hover:bg-ink/90",
-    secondary: "bg-white text-ink ring-1 ring-ink/10 hover:bg-mist",
-    ghost: "bg-transparent text-ink hover:bg-white/70",
-    danger: "bg-coral/10 text-red-800 ring-1 ring-coral/25 hover:bg-coral/15"
+    primary: "bg-brand-electric text-white shadow-lift hover:bg-brand-institutional",
+    secondary: "bg-white text-brand-navy ring-1 ring-brand-electric/20 hover:bg-brand-electric/10 hover:text-brand-electric",
+    ghost: "bg-transparent text-brand-navy hover:bg-brand-electric/10 hover:text-brand-electric",
+    danger: "bg-coral/10 text-red-800 ring-1 ring-coral/25 hover:bg-coral/15",
+    highlight: "bg-brand-yellow text-brand-navy shadow-lift hover:bg-brand-yellowHover"
   };
   const classes = cn(
-    "inline-flex min-h-10 items-center justify-center gap-2 rounded-md px-4 py-2 text-sm font-semibold transition",
-    "focus:outline-none focus:ring-2 focus:ring-field focus:ring-offset-2",
+    "inline-flex min-h-10 items-center justify-center gap-2 rounded-md px-4 py-2 text-sm font-bold transition",
+    "focus:outline-none focus:ring-2 focus:ring-brand-electric focus:ring-offset-2 focus:ring-offset-brand-cold",
     "disabled:pointer-events-none disabled:opacity-60",
     variants[variant],
     className
@@ -91,7 +92,7 @@ export function Card({
   return (
     <section
       className={cn(
-        "rounded-lg border border-ink/10 bg-white/92 shadow-panel backdrop-blur",
+        "rounded-lg border border-brand-towerMid/25 bg-white shadow-panel backdrop-blur",
         className
       )}
     >
@@ -115,13 +116,13 @@ export function SectionHeader({
     <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
       <div className="space-y-1">
         {eyebrow ? (
-          <p className="text-xs font-bold uppercase text-field">
+          <p className="text-xs font-black uppercase text-brand-electric">
             {eyebrow}
           </p>
         ) : null}
-        <h2 className="text-2xl font-bold text-ink">{title}</h2>
+        <h2 className="text-2xl font-black text-ink">{title}</h2>
         {description ? (
-          <p className="max-w-2xl text-sm leading-6 text-ink/65">{description}</p>
+          <p className="max-w-2xl text-sm leading-6 text-brand-muted">{description}</p>
         ) : null}
       </div>
       {action}
@@ -141,18 +142,18 @@ export function Metric({
   tone?: "green" | "amber" | "blue" | "red";
 }) {
   const tones = {
-    green: "bg-field/10 text-field",
-    amber: "bg-amber-100 text-amber-900",
-    blue: "bg-sky/10 text-sky-900",
+    green: "bg-green-600/10 text-green-800",
+    amber: "bg-brand-yellow/35 text-brand-navy",
+    blue: "bg-brand-electric/10 text-brand-electric",
     red: "bg-coral/10 text-red-800"
   };
 
   return (
-    <Card className="p-4">
+    <Card className="p-4 transition hover:-translate-y-0.5 hover:border-brand-electric/25 hover:shadow-lift">
       <div className="flex items-center justify-between gap-4">
         <div>
-          <p className="text-sm text-ink/60">{label}</p>
-          <p className="mt-1 text-2xl font-bold text-ink">{value}</p>
+          <p className="text-sm font-semibold text-brand-muted">{label}</p>
+          <p className="mt-1 text-2xl font-black text-ink">{value}</p>
         </div>
         <div className={cn("grid h-10 w-10 place-items-center rounded-md", tones[tone])}>
           <Icon className="h-5 w-5" />
@@ -171,11 +172,11 @@ export function Field({
 }) {
   return (
     <label className="space-y-1.5">
-      <span className="text-sm font-semibold text-ink/80">{label}</span>
+      <span className="text-sm font-bold text-ink">{label}</span>
       {children}
     </label>
   );
 }
 
 export const inputClass =
-  "min-h-10 w-full rounded-md border border-ink/10 bg-white px-3 py-2 text-sm text-ink outline-none transition placeholder:text-ink/35 focus:border-field focus:ring-2 focus:ring-field/20";
+  "min-h-10 w-full rounded-md border border-brand-towerMid/35 bg-white px-3 py-2 text-sm text-ink outline-none transition placeholder:text-brand-muted/55 focus:border-brand-electric focus:ring-2 focus:ring-brand-electric/20";

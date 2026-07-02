@@ -64,7 +64,7 @@ export function FormatRenderer({
       <div className="space-y-6">
         {event.format === "league" ? (
           <Card className="overflow-hidden">
-            <div className="border-b border-ink/10 p-5">
+            <div className="border-b border-brand-towerMid/20 p-5">
               <SectionHeader title="Tabla de posiciones" description={event.rulesSummary} />
             </div>
             <StandingsTable
@@ -141,7 +141,7 @@ export function FormatRenderer({
               />
             ))
           ) : (
-            <div className="rounded-md border border-dashed border-ink/20 p-6 text-center text-sm text-ink/55">
+            <div className="rounded-md border border-dashed border-brand-towerMid/40 bg-brand-wash/60 p-6 text-center text-sm font-semibold text-brand-muted">
               No hay partidos programados.
             </div>
           )}

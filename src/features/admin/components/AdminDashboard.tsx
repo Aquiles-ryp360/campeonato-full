@@ -34,9 +34,9 @@ export function AdminDashboard({ data }: { data: CompetitionData }) {
         <SectionHeader title="Campeonatos" action={<Button href="/admin/campeonatos" variant="secondary">Gestionar</Button>} />
         <div className="mt-4 grid gap-3 md:grid-cols-3">
           {data.events.map((event) => (
-            <div key={event.id} className="rounded-md border border-ink/10 bg-white p-4">
+            <div key={event.id} className="rounded-md border border-brand-towerMid/25 bg-white p-4 shadow-insetLine">
               <p className="font-bold text-ink">{event.name}</p>
-              <p className="mt-1 text-sm text-ink/55">{event.category}</p>
+              <p className="mt-1 text-sm font-semibold text-brand-muted">{event.category}</p>
             </div>
           ))}
         </div>

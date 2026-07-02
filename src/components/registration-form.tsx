@@ -412,10 +412,10 @@ export function RegistrationForm({
 
   return (
     <form className="space-y-6 pb-20 md:pb-0" onSubmit={submitRegistration}>
-      <div className="overflow-hidden rounded-lg border border-ink/10 bg-white shadow-panel">
+      <div className="overflow-hidden rounded-lg border border-brand-towerMid/25 bg-white shadow-panel">
         <div className="flex flex-col gap-4 p-5 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex min-w-0 items-center gap-4">
-            <div className="grid h-20 w-20 shrink-0 place-items-center rounded-md border border-ink/10 bg-white">
+            <div className="grid h-20 w-20 shrink-0 place-items-center rounded-md border border-brand-towerMid/25 bg-white shadow-insetLine">
               {branding.careerLogoUrl ? (
                 <img
                   src={branding.careerLogoUrl}
@@ -423,7 +423,7 @@ export function RegistrationForm({
                   className="max-h-16 max-w-16 object-contain"
                 />
               ) : (
-                <Building2 className="h-8 w-8 text-ink/35" />
+                <Building2 className="h-8 w-8 text-brand-muted" />
               )}
             </div>
             <div className="min-w-0">
@@ -431,10 +431,10 @@ export function RegistrationForm({
                 {branding.organizerName}
               </p>
               <h1 className="mt-1 text-xl font-bold text-ink sm:text-2xl">{event.name}</h1>
-              <p className="mt-1 text-sm text-ink/60">{branding.careerName}</p>
+              <p className="mt-1 text-sm font-semibold text-brand-muted">{branding.careerName}</p>
             </div>
           </div>
-          <div className="flex shrink-0 items-center gap-2 rounded-md border border-ink/10 bg-mist px-3 py-2">
+          <div className="flex shrink-0 items-center gap-2 rounded-md border border-brand-towerMid/25 bg-brand-wash px-3 py-2">
             <span
               className="h-3 w-3 rounded-full"
               style={{ backgroundColor: branding.primaryColor }}
@@ -443,8 +443,8 @@ export function RegistrationForm({
               className="h-3 w-3 rounded-full"
               style={{ backgroundColor: branding.secondaryColor }}
             />
-            <span className="text-xs font-bold uppercase text-ink/60">{sportLabel(event.sport)}</span>
-            <span className="text-xs font-bold uppercase text-ink/60">
+            <span className="text-xs font-bold uppercase text-brand-muted">{sportLabel(event.sport)}</span>
+            <span className="text-xs font-bold uppercase text-brand-muted">
               {currentTeamCount}/{event.maxTeams}
             </span>
           </div>
@@ -525,7 +525,7 @@ export function RegistrationForm({
 
         <Card className="p-5">
           <SectionHeader title="Pago" description="El cobro lo realiza el encargado y entrega un codigo de un solo uso." />
-          <div className="mt-5 rounded-lg border border-ink/10 bg-mist p-4">
+          <div className="mt-5 rounded-lg border border-brand-towerMid/25 bg-brand-wash p-4 shadow-insetLine">
             <div className="flex items-center gap-3">
               <div
                 className="grid h-11 w-11 place-items-center rounded-md bg-white"
@@ -534,8 +534,8 @@ export function RegistrationForm({
                 <Smartphone className="h-5 w-5" />
               </div>
               <div>
-                <p className="text-sm text-ink/60">Monto de inscripcion</p>
-                <p className="text-2xl font-bold text-ink">{formatMoney(event.registrationFee)}</p>
+                <p className="text-sm font-semibold text-brand-muted">Monto de inscripcion</p>
+                <p className="text-2xl font-black text-ink">{formatMoney(event.registrationFee)}</p>
               </div>
             </div>
             <div className="mt-4 grid gap-4 sm:grid-cols-[minmax(0,1fr)_156px]">
@@ -549,7 +549,9 @@ export function RegistrationForm({
                         key={method}
                         onClick={() => setPaymentMethod(method)}
                         className={`rounded-md border px-3 py-2 text-sm font-bold uppercase transition ${
-                          selected ? "text-white" : "border-ink/10 bg-white text-ink"
+                          selected
+                            ? "text-white"
+                            : "border-brand-towerMid/25 bg-white text-ink hover:border-brand-electric/35"
                         }`}
                         style={
                           selected
@@ -565,7 +567,7 @@ export function RegistrationForm({
                     );
                   })}
                 </div>
-                <div className="mt-4 space-y-2 text-sm text-ink/65">
+                <div className="mt-4 space-y-2 text-sm font-semibold text-brand-muted">
                   <p>
                     Cierre: <strong>{formatDateTime(event.registrationOpenUntil)}</strong>
                   </p>
@@ -585,9 +587,9 @@ export function RegistrationForm({
                 ) : null}
                 <div className="mt-4 space-y-3">
                   <Badge tone="amber">Cada codigo se usa una vez</Badge>
-                  <div className="rounded-md border border-ink/10 bg-white p-3">
+                  <div className="rounded-md border border-brand-towerMid/25 bg-white p-3 shadow-insetLine">
                     <p className="text-sm font-semibold text-ink">Pide el codigo al encargado</p>
-                    <p className="mt-1 text-xs leading-5 text-ink/60">
+                    <p className="mt-1 text-xs leading-5 text-brand-muted">
                       Envia tu captura de pago por WhatsApp
                       {branding.paymentContactPhone ? ` al ${branding.paymentContactPhone}` : ""}.
                     </p>
@@ -606,7 +608,7 @@ export function RegistrationForm({
                   </div>
                 </div>
               </div>
-              <div className="rounded-md border border-ink/10 bg-white p-3">
+              <div className="rounded-md border border-brand-towerMid/25 bg-white p-3 shadow-insetLine">
                 {activePaymentQrUrl ? (
                   <img
                     src={activePaymentQrUrl}
@@ -614,11 +616,11 @@ export function RegistrationForm({
                     className="mx-auto aspect-square w-full object-contain"
                   />
                 ) : (
-                  <div className="grid aspect-square w-full place-items-center rounded-md bg-mist text-center text-xs font-semibold text-ink/45">
+                  <div className="grid aspect-square w-full place-items-center rounded-md bg-brand-wash text-center text-xs font-semibold text-brand-muted">
                     QR no configurado
                   </div>
                 )}
-                <p className="mt-2 text-center text-xs font-bold uppercase text-ink/55">
+                <p className="mt-2 text-center text-xs font-bold uppercase text-brand-muted">
                   {activePaymentLabel}
                 </p>
               </div>
@@ -654,7 +656,7 @@ export function RegistrationForm({
 
         <div className="mt-5 space-y-3">
           {players.map((player, index) => (
-            <div key={index} className="rounded-md border border-ink/10 bg-white p-4">
+            <div key={index} className="rounded-md border border-brand-towerMid/25 bg-white p-4 shadow-insetLine">
               <div className="mb-3 flex items-center justify-between gap-3">
                 <div className="flex items-center gap-2">
                   <p className="font-semibold text-ink">Jugador {index + 1}</p>
@@ -666,7 +668,7 @@ export function RegistrationForm({
                   <button
                     type="button"
                     onClick={() => removePlayer(index)}
-                    className="grid h-9 w-9 place-items-center rounded-md text-ink/55 hover:bg-red-50 hover:text-red-700"
+                    className="grid h-9 w-9 place-items-center rounded-md text-brand-muted hover:bg-red-50 hover:text-red-700"
                     aria-label="Eliminar jugador"
                   >
                     <Trash2 className="h-4 w-4" />
@@ -761,15 +763,15 @@ export function RegistrationForm({
         <Card className="p-5">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div className="flex items-start gap-3">
-              <div className="grid h-11 w-11 shrink-0 place-items-center rounded-md bg-field/10 text-field">
+              <div className="grid h-11 w-11 shrink-0 place-items-center rounded-md bg-brand-electric/10 text-brand-electric">
                 <FileText className="h-5 w-5" />
               </div>
               <div>
                 <p className="font-bold text-ink">Constancia generada</p>
-                <p className="mt-1 text-sm text-ink/60">
+                <p className="mt-1 text-sm text-brand-muted">
                   PDF A4 con datos del equipo, delegado, codigo y plantilla.
                 </p>
-                <div className="mt-3 grid gap-2 text-sm text-ink/70 sm:grid-cols-2">
+                <div className="mt-3 grid gap-2 text-sm text-brand-muted sm:grid-cols-2">
                   <p>
                     Correo de acceso:{" "}
                     <strong className="text-ink">{lastReceipt.delegateAccess.email}</strong>
@@ -829,10 +831,10 @@ async function generateRegistrationReceiptPdf(receipt: RegistrationReceipt) {
   doc.text("Constancia de inscripcion deportiva", margin, 15);
   doc.setFont("helvetica", "normal");
   doc.setFontSize(9);
-  doc.text(receipt.event.organizerName ?? "Campeonato Carreras", margin, 22);
+  doc.text(receipt.event.organizerName ?? "Campeonato UNA Puno", margin, 22);
   doc.text(`Generado: ${generatedDate}`, margin, 27);
 
-  doc.setTextColor(23, 33, 31);
+  doc.setTextColor(17, 20, 45);
   doc.setFont("helvetica", "bold");
   doc.setFontSize(12);
   doc.text(receipt.event.name, margin, 45);
@@ -885,7 +887,7 @@ async function generateRegistrationReceiptPdf(receipt: RegistrationReceipt) {
   ];
 
   let rowY = tableY + 8;
-  doc.setFillColor(238, 243, 240);
+  doc.setFillColor(238, 241, 245);
   doc.rect(margin, rowY - 5, contentWidth, 8, "F");
   doc.setFont("helvetica", "bold");
   doc.setFontSize(8);
@@ -895,7 +897,7 @@ async function generateRegistrationReceiptPdf(receipt: RegistrationReceipt) {
   receipt.players.forEach((player, index) => {
     rowY += 9;
     if (index % 2 === 0) {
-      doc.setFillColor(248, 250, 249);
+      doc.setFillColor(248, 250, 255);
       doc.rect(margin, rowY - 5.5, contentWidth, 8.5, "F");
     }
 
@@ -910,7 +912,7 @@ async function generateRegistrationReceiptPdf(receipt: RegistrationReceipt) {
   });
 
   const footerY = 266;
-  doc.setDrawColor(205, 213, 209);
+  doc.setDrawColor(167, 169, 172);
   doc.line(margin, footerY, margin + 72, footerY);
   doc.line(pageWidth - margin - 72, footerY, pageWidth - margin, footerY);
   doc.setFont("helvetica", "normal");
@@ -919,7 +921,7 @@ async function generateRegistrationReceiptPdf(receipt: RegistrationReceipt) {
   doc.text("Validacion del organizador", pageWidth - margin - 61, footerY + 6);
 
   doc.setFontSize(8);
-  doc.setTextColor(95, 108, 103);
+  doc.setTextColor(95, 100, 117);
   doc.text(
     "Esta constancia resume la inscripcion registrada por el delegado. La validacion final queda a cargo de administracion.",
     margin,
@@ -941,16 +943,16 @@ function drawInfoBox(
   rows: Array<[string, string]>
 ) {
   const boxHeight = 16 + rows.length * 5;
-  doc.setDrawColor(221, 228, 224);
-  doc.setFillColor(248, 250, 249);
+  doc.setDrawColor(167, 169, 172);
+  doc.setFillColor(248, 250, 255);
   doc.roundedRect(x, y, width, boxHeight, 2, 2, "FD");
   doc.setFont("helvetica", "bold");
   doc.setFontSize(9);
-  doc.setTextColor(47, 111, 78);
+  doc.setTextColor(47, 70, 255);
   doc.text(title, x + 4, y + 7);
 
   doc.setFont("helvetica", "normal");
-  doc.setTextColor(23, 33, 31);
+  doc.setTextColor(17, 20, 45);
   rows.forEach(([label, value], index) => {
     const rowY = y + 14 + index * 5;
     doc.setFont("helvetica", "bold");

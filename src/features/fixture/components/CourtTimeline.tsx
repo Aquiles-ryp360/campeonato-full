@@ -24,9 +24,9 @@ export function CourtTimeline({
   return (
     <section className="space-y-3">
       <div className="flex items-center gap-2">
-        <span className="h-2 w-2 rounded-full bg-field" />
+        <span className="h-2 w-2 rounded-full bg-brand-electric" />
         <h3 className="font-bold text-ink">{court}</h3>
-        <span className="text-xs text-ink/45">{matches.length} partidos</span>
+        <span className="text-xs font-semibold text-brand-muted">{matches.length} partidos</span>
       </div>
       <div className="grid gap-3">
         {matches.map((match) => (

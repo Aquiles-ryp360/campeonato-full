@@ -128,10 +128,10 @@ export function RefereeLiveMatch({ data }: { data: RefereeLiveMatchData }) {
 
   return (
     <div className="mx-auto max-w-4xl space-y-4 pb-24 md:pb-4">
-      <div className="sticky top-[65px] z-20 rounded-md border border-ink/10 bg-white p-3 shadow-panel">
+      <div className="sticky top-[65px] z-20 rounded-lg border border-brand-towerMid/25 bg-white p-3 shadow-panel">
         <div className="flex flex-wrap items-center justify-between gap-2">
           <Badge tone={statusBadgeTone(status)}>{statusLabel(status)}</Badge>
-          <span className="inline-flex items-center gap-2 text-sm font-bold text-ink/65">
+          <span className="inline-flex items-center gap-2 text-sm font-bold text-brand-muted">
             <Clock className="h-4 w-4" />
             {formatDateTime(match.scheduledAt)}
           </span>
@@ -139,7 +139,7 @@ export function RefereeLiveMatch({ data }: { data: RefereeLiveMatchData }) {
 
         <div className="mt-3 grid grid-cols-[1fr_auto_1fr] items-center gap-3">
           <ScoreTeam name={homeName} align="left" />
-          <div className="rounded-md bg-ink px-4 py-3 text-center text-white">
+          <div className="rounded-md bg-brand-navy px-4 py-3 text-center text-white shadow-lift">
             <p className="text-4xl font-black tabular-nums">
               {homeScore} - {awayScore}
             </p>
@@ -160,12 +160,12 @@ export function RefereeLiveMatch({ data }: { data: RefereeLiveMatchData }) {
           />
         ) : (
           <div className="mt-3 grid grid-cols-2 gap-2 text-center">
-            <div className="rounded-md bg-mist p-3">
-              <p className="text-xs font-bold uppercase text-ink/45">Cronometro</p>
+            <div className="rounded-md bg-brand-wash p-3">
+              <p className="text-xs font-black uppercase text-brand-muted">Cronometro</p>
               <p className="text-3xl font-black tabular-nums text-ink">{timer.display}</p>
             </div>
-            <div className="rounded-md bg-mist p-3">
-              <p className="text-xs font-bold uppercase text-ink/45">Minuto</p>
+            <div className="rounded-md bg-brand-wash p-3">
+              <p className="text-xs font-black uppercase text-brand-muted">Minuto</p>
               <p className="text-3xl font-black tabular-nums text-ink">{timer.minute}</p>
             </div>
           </div>
@@ -175,9 +175,9 @@ export function RefereeLiveMatch({ data }: { data: RefereeLiveMatchData }) {
       <Card className="p-4">
         <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
           <div>
-            <p className="text-xs font-bold uppercase text-field">Partido en vivo</p>
+            <p className="text-xs font-black uppercase text-brand-electric">Partido en vivo</p>
             <h1 className="mt-1 text-2xl font-black text-ink">{data.event.name}</h1>
-            <p className="mt-1 text-sm font-semibold text-ink/60">
+            <p className="mt-1 text-sm font-semibold text-brand-muted">
               {data.event.category} - {match.court}
             </p>
           </div>
@@ -201,12 +201,12 @@ export function RefereeLiveMatch({ data }: { data: RefereeLiveMatchData }) {
       {status === "pending_tiebreak" ? (
         <Card className="p-4">
           <div className="flex items-start gap-3">
-            <div className="grid h-11 w-11 place-items-center rounded-md bg-amber-100 text-amber-900">
+            <div className="grid h-11 w-11 place-items-center rounded-md bg-brand-yellow/25 text-brand-navy">
               <AlertTriangle className="h-5 w-5" />
             </div>
             <div className="flex-1">
               <h2 className="text-xl font-black text-ink">Empate en eliminacion directa</h2>
-              <p className="mt-1 text-sm text-ink/60">Debe definirse ganador por penales.</p>
+              <p className="mt-1 text-sm text-brand-muted">Debe definirse ganador por penales.</p>
               <Button className="mt-4 w-full md:w-auto" disabled={Boolean(busyAction)} onClick={() => runAction("start_penalties")}>
                 <Flag className="h-4 w-4" />
                 {busyAction?.startsWith("start_penalties") ? "Entrando..." : "Ir a penales"}
@@ -219,7 +219,7 @@ export function RefereeLiveMatch({ data }: { data: RefereeLiveMatchData }) {
       {["referee_submitted", "submitted", "corrected", "under_review", "validated"].includes(status) ? (
         <Card className="p-4">
           <h2 className="text-xl font-black text-ink">Resultado enviado</h2>
-          <p className="mt-1 text-sm text-ink/60">
+          <p className="mt-1 text-sm text-brand-muted">
             Marcador final: {homeName} {formatMatchScore(match)} {awayName}
           </p>
           {match.winnerTeamId ? (
@@ -227,7 +227,7 @@ export function RefereeLiveMatch({ data }: { data: RefereeLiveMatchData }) {
               Ganador{match.winMethod === "penalties" ? " por penales" : ""}: {winnerName(match.winnerTeamId, data)}
             </p>
           ) : null}
-          <p className={`mt-3 text-sm font-semibold ${status === "under_review" ? "text-amber-900" : "text-green-800"}`}>
+          <p className={`mt-3 text-sm font-semibold ${status === "under_review" ? "text-brand-navy" : "text-green-800"}`}>
             Estado visual: {statusLabel(status)}.
           </p>
         </Card>
@@ -306,7 +306,7 @@ function PreMatchPanel({ data }: { data: RefereeLiveMatchData }) {
   return (
     <Card className="p-4">
       <h2 className="text-xl font-black text-ink">Antes del partido</h2>
-      <div className="mt-3 grid gap-3 text-sm font-semibold text-ink/65 sm:grid-cols-2">
+      <div className="mt-3 grid gap-3 text-sm font-semibold text-brand-muted sm:grid-cols-2">
         <Info label="Campeonato" value={data.event.name} />
         <Info label="Categoria" value={data.event.category} />
         <Info label="Cancha" value={data.match.court} />
@@ -314,7 +314,7 @@ function PreMatchPanel({ data }: { data: RefereeLiveMatchData }) {
       </div>
       <div className="mt-4">
         <p className="text-sm font-bold text-ink">Jugadores habilitados</p>
-        <p className="mt-1 text-sm text-ink/60">{enabledPlayers.length} jugadores disponibles.</p>
+        <p className="mt-1 text-sm text-brand-muted">{enabledPlayers.length} jugadores disponibles.</p>
       </div>
     </Card>
   );
@@ -332,13 +332,13 @@ function PenaltyShootoutPanel({
   const nextTeamName = summary.nextSide === "home" ? homeName : awayName;
 
   return (
-    <div className="mt-3 rounded-md border border-ink/10 bg-mist p-3">
+    <div className="mt-3 rounded-md border border-brand-towerMid/25 bg-brand-wash p-3">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div>
-          <p className="text-xs font-black uppercase text-ink/45">Penales</p>
+          <p className="text-xs font-black uppercase text-brand-muted">Penales</p>
           <p className="text-sm font-black text-ink">Patea: {nextTeamName}</p>
         </div>
-        <div className="rounded-md bg-ink px-3 py-2 text-center text-white">
+        <div className="rounded-md bg-brand-navy px-3 py-2 text-center text-white">
           <p className="text-xs font-bold uppercase text-white/60">Parcial</p>
           <p className="text-2xl font-black tabular-nums">{summary.homeScore} - {summary.awayScore}</p>
         </div>
@@ -391,7 +391,7 @@ function PenaltyShootoutRow({
             );
           })
         ) : (
-          <span className="text-xs font-semibold text-ink/45">Sin tiros</span>
+          <span className="text-xs font-semibold text-brand-muted">Sin tiros</span>
         )}
       </div>
       <Badge tone="neutral">{count}</Badge>
@@ -410,12 +410,12 @@ function SuspensionsPanel({ data }: { data: RefereeLiveMatchData }) {
           {data.suspensions.map((suspension) => {
             const player = players.find((item) => item.id === suspension.playerId);
             return (
-              <div key={suspension.id} className="flex items-center justify-between gap-3 rounded-md bg-mist p-3">
+              <div key={suspension.id} className="flex items-center justify-between gap-3 rounded-md bg-brand-wash p-3">
                 <div>
                   <p className="font-bold text-ink">
                     {playerNumber(player)} - {playerName(player)}
                   </p>
-                  <p className="text-xs font-semibold text-ink/55">{suspension.reason}</p>
+                  <p className="text-xs font-semibold text-brand-muted">{suspension.reason}</p>
                 </div>
                 <Badge tone="red">{suspension.matchesRemaining} partido</Badge>
               </div>
@@ -423,7 +423,7 @@ function SuspensionsPanel({ data }: { data: RefereeLiveMatchData }) {
           })}
         </div>
       ) : (
-        <p className="mt-3 text-sm text-ink/60">No hay jugadores suspendidos para este partido.</p>
+        <p className="mt-3 text-sm text-brand-muted">No hay jugadores suspendidos para este partido.</p>
       )}
     </Card>
   );
@@ -512,7 +512,7 @@ function TeamActionPanel({
             type="button"
             onClick={() => setExpanded((current) => !current)}
             disabled={secondaryDisabled || panelDisabled}
-            className="mt-3 min-h-11 w-full rounded-md border border-ink/10 bg-white text-sm font-black text-ink disabled:opacity-50"
+            className="mt-3 min-h-11 w-full rounded-md border border-brand-towerMid/25 bg-white text-sm font-black text-ink transition hover:border-brand-electric/35 hover:text-brand-electric disabled:opacity-50"
           >
             Mas acciones
           </button>
@@ -552,16 +552,16 @@ function PlayerPicker({
   onSelect: (player?: Player) => void;
 }) {
   return (
-    <div className="fixed inset-0 z-50 flex items-end justify-center bg-ink/55 p-0 sm:items-center sm:p-4">
+    <div className="fixed inset-0 z-50 flex items-end justify-center bg-brand-navy/70 p-0 backdrop-blur-sm sm:items-center sm:p-4">
       <div className="max-h-[85vh] w-full max-w-lg overflow-y-auto rounded-t-lg bg-white p-4 shadow-panel sm:rounded-lg">
         <div className="flex items-start justify-between gap-3">
           <div>
-            <p className="text-xs font-bold uppercase text-field">{picker.team.name}</p>
+            <p className="text-xs font-black uppercase text-brand-electric">{picker.team.name}</p>
             <h2 className="text-xl font-black text-ink">{picker.title}</h2>
           </div>
           <button
             type="button"
-            className="grid h-10 w-10 place-items-center rounded-md hover:bg-mist"
+            className="grid h-10 w-10 place-items-center rounded-md text-brand-muted hover:bg-brand-electric/10 hover:text-brand-electric"
             onClick={onClose}
             aria-label="Cerrar"
           >
@@ -578,7 +578,7 @@ function PlayerPicker({
                 type="button"
                 onClick={() => onSelect(player)}
                 disabled={suspended}
-                className="flex min-h-14 items-center justify-between gap-3 rounded-md border border-ink/10 bg-white px-3 py-2 text-left font-bold text-ink disabled:bg-mist disabled:text-ink/40"
+                className="flex min-h-14 items-center justify-between gap-3 rounded-md border border-brand-towerMid/25 bg-white px-3 py-2 text-left font-bold text-ink transition hover:border-brand-electric/35 disabled:bg-brand-wash disabled:text-ink/40"
               >
                 <span>{playerNumber(player)} - {playerName(player)}</span>
                 {suspended ? <Badge tone="red">Suspendido</Badge> : null}
@@ -588,7 +588,7 @@ function PlayerPicker({
           <button
             type="button"
             onClick={() => onSelect(undefined)}
-            className="min-h-14 rounded-md bg-ink px-3 py-2 text-sm font-black text-white"
+            className="min-h-14 rounded-md bg-brand-navy px-3 py-2 text-sm font-black text-white hover:bg-brand-electric"
           >
             Sin jugador asignado
           </button>
@@ -612,24 +612,24 @@ function EventHistory({ data }: { data: RefereeLiveMatchData }) {
             const team = teams.find((item) => item.id === event.teamId);
             const player = players.find((item) => item.id === event.playerId);
             return (
-              <div key={event.id} className={`rounded-md bg-mist p-3 ${event.correctedAt ? "opacity-50" : ""}`}>
+              <div key={event.id} className={`rounded-md bg-brand-wash p-3 ${event.correctedAt ? "opacity-50" : ""}`}>
                 <div className="flex items-center justify-between gap-3">
                   <p className="font-bold text-ink">{eventLabel(event.eventType)}</p>
                   <Badge tone={event.correctedAt ? "red" : "neutral"}>
                     {event.penaltyOrder ? `Penal #${event.penaltyOrder}` : `Min ${event.minute}`}
                   </Badge>
                 </div>
-                <p className="mt-1 text-sm text-ink/60">
+                <p className="mt-1 text-sm text-brand-muted">
                   {team?.name ?? "Sin equipo"} {player ? `- ${playerNumber(player)} ${playerName(player)}` : ""}
                   {!player && event.jerseyNumber ? ` - ${event.jerseyNumber}` : ""}
                 </p>
-                {event.notes ? <p className="mt-1 text-sm text-ink/55">{event.notes}</p> : null}
+                {event.notes ? <p className="mt-1 text-sm text-brand-muted">{event.notes}</p> : null}
               </div>
             );
           })}
         </div>
       ) : (
-        <p className="mt-3 text-sm text-ink/60">Todavia no hay eventos registrados.</p>
+        <p className="mt-3 text-sm text-brand-muted">Todavia no hay eventos registrados.</p>
       )}
     </Card>
   );
@@ -657,11 +657,11 @@ function ActionButton({
   tone?: "dark" | "green" | "amber" | "red" | "neutral";
 }) {
   const tones = {
-    dark: "bg-ink text-white",
+    dark: "bg-brand-navy text-white hover:bg-brand-electric",
     green: "bg-green-600 text-white",
-    amber: "bg-amber-100 text-amber-950",
+    amber: "bg-brand-yellow text-brand-navy",
     red: "bg-coral/10 text-red-800",
-    neutral: "bg-mist text-ink"
+    neutral: "bg-brand-wash text-ink"
   };
 
   return (
@@ -683,7 +683,7 @@ function SmallAction({ label, disabled, onClick }: { label: string; disabled?: b
       type="button"
       disabled={disabled}
       onClick={onClick}
-      className="min-h-11 rounded-md bg-mist px-3 py-2 text-sm font-bold text-ink disabled:opacity-45"
+      className="min-h-11 rounded-md bg-brand-wash px-3 py-2 text-sm font-bold text-ink transition hover:bg-brand-electric/10 hover:text-brand-electric disabled:opacity-45"
     >
       {label}
     </button>
@@ -692,8 +692,8 @@ function SmallAction({ label, disabled, onClick }: { label: string; disabled?: b
 
 function Info({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-md bg-mist p-3">
-      <p className="text-xs font-bold uppercase text-ink/45">{label}</p>
+    <div className="rounded-md bg-brand-wash p-3">
+      <p className="text-xs font-black uppercase text-brand-muted">{label}</p>
       <p className="mt-1 font-bold text-ink">{value}</p>
     </div>
   );

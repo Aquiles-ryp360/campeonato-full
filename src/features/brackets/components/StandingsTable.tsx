@@ -12,7 +12,7 @@ export function StandingsTable({
   return (
     <div className="overflow-x-auto">
       <table className="w-full min-w-[620px] text-sm">
-        <thead className="bg-mist text-left text-xs uppercase text-ink/55">
+        <thead className="bg-brand-navy text-left text-xs uppercase text-white">
           <tr>
             <th className="px-5 py-3">Equipo</th>
             <th className="px-3 py-3">PJ</th>
@@ -23,17 +23,17 @@ export function StandingsTable({
             <th className="px-5 py-3">Pts</th>
           </tr>
         </thead>
-        <tbody className="divide-y divide-ink/8">
+        <tbody className="divide-y divide-brand-towerMid/20">
           {rows.length > 0 ? (
             rows.map((row, index) => (
-              <tr key={row.teamId} className="bg-white">
+              <tr key={row.teamId} className={index < 3 ? "bg-brand-electric/5" : "bg-white"}>
                 <td className="px-5 py-3 font-semibold">
                   <button
                     type="button"
                     onClick={() => onOpenTeam?.(row.teamId)}
-                    className="rounded text-left hover:text-field"
+                    className="rounded text-left hover:text-brand-electric"
                   >
-                    <span className="mr-3 text-ink/40">{index + 1}</span>
+                    <span className="mr-3 text-brand-muted">{index + 1}</span>
                     {row.teamName}
                   </button>
                 </td>
@@ -47,7 +47,7 @@ export function StandingsTable({
             ))
           ) : (
             <tr>
-              <td colSpan={7} className="px-5 py-8 text-center text-sm text-ink/55">
+              <td colSpan={7} className="px-5 py-8 text-center text-sm text-brand-muted">
                 Todavia no hay datos para calcular posiciones.
               </td>
             </tr>
@@ -66,9 +66,9 @@ export function TeamStandingSummary({
   return (
     <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
       {teams.map((team) => (
-        <div key={team.id} className="rounded-md border border-ink/10 bg-white p-4">
+        <div key={team.id} className="rounded-md border border-brand-towerMid/25 bg-white p-4 shadow-insetLine">
           <p className="truncate font-bold text-ink">{team.name}</p>
-          <p className="mt-1 text-xs text-ink/55">{team.academicCareer ?? team.delegateName}</p>
+          <p className="mt-1 text-xs font-semibold text-brand-muted">{team.academicCareer ?? team.delegateName}</p>
         </div>
       ))}
     </div>

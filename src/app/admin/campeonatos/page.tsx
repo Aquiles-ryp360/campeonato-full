@@ -24,10 +24,10 @@ export default async function AdminChampionshipsPage() {
       />
       <div className="grid gap-4 md:grid-cols-3">
         {data.events.map((event) => (
-          <Card key={event.id} className="flex h-full flex-col p-5">
+          <Card key={event.id} className="flex h-full flex-col p-5 transition hover:-translate-y-0.5 hover:border-brand-electric/25 hover:shadow-lift">
             <p className="font-bold text-ink">{event.name}</p>
-            <p className="mt-1 text-sm text-ink/55">{event.category}</p>
-            <div className="mt-4 space-y-1 text-sm text-ink/65">
+            <p className="mt-1 text-sm font-semibold text-brand-muted">{event.category}</p>
+            <div className="mt-4 space-y-1 text-sm font-semibold text-brand-muted">
               <p>{eventStatusLabel(event.status)}</p>
               <p>{formatMoney(event.registrationFee)}</p>
               <p>{event.maxTeams} equipos max.</p>
