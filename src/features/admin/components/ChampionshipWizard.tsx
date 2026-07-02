@@ -91,7 +91,8 @@ export function ChampionshipWizard({
   const [hydratedDraft, setHydratedDraft] = useState(false);
   const [saving, setSaving] = useState(false);
   const [uploadingAsset, setUploadingAsset] = useState<AssetField | null>(null);
-  const draftKey = initialEvent?.id ? `championship-wizard:${initialEvent.id}` : "championship-wizard:new";
+  const shouldStoreDraftLocally = !initialEvent;
+  const draftKey = "championship-wizard:new";
   const isKnockout = draft.format === "single_elimination";
   const usesTablePoints = draft.format !== "single_elimination";
   const courts = useMemo(() => buildCourts(draft.courtCount), [draft.courtCount]);
@@ -109,6 +110,16 @@ export function ChampionshipWizard({
   );
 
   useEffect(() => {
+    if (!shouldStoreDraftLocally) {
+      if (initialEvent?.id) {
+        window.localStorage.removeItem(`championship-wizard:${initialEvent.id}`);
+      }
+
+      setDraft(draftFromEvent(initialEvent));
+      setHydratedDraft(true);
+      return;
+    }
+
     const rawDraft = window.localStorage.getItem(draftKey);
     if (rawDraft) {
       try {
@@ -119,12 +130,12 @@ export function ChampionshipWizard({
     }
 
     setHydratedDraft(true);
-  }, [draftKey, initialEvent]);
+  }, [draftKey, initialEvent, shouldStoreDraftLocally]);
 
   useEffect(() => {
-    if (!hydratedDraft) return;
+    if (!hydratedDraft || !shouldStoreDraftLocally) return;
     window.localStorage.setItem(draftKey, JSON.stringify(draft));
-  }, [draft, draftKey, hydratedDraft]);
+  }, [draft, draftKey, hydratedDraft, shouldStoreDraftLocally]);
 
   function updateDraft(next: Partial<WizardDraft>) {
     setDraft((current) => normalizeDraft({ ...current, ...next }));
@@ -185,7 +196,9 @@ export function ChampionshipWizard({
         throw new Error(payload.error ?? "No se pudo guardar el campeonato.");
       }
 
-      window.localStorage.removeItem(draftKey);
+      if (shouldStoreDraftLocally) {
+        window.localStorage.removeItem(draftKey);
+      }
       toast.success(draft.status === "draft" ? "Borrador guardado." : "Campeonato guardado.");
       router.refresh();
       router.push(`/admin/campeonatos/${payload.id}`);
