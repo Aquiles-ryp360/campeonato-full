@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { sendDelegateAccessEmail } from "@/lib/mail";
 import { createSupabaseAdminClient } from "@/lib/supabase-admin";
+import { identityConsentTextVersion, maskDni } from "@/lib/identity/identity-lookup";
 import {
   findCrossTeamDuplicate,
   findDuplicateNormalizedValue,
@@ -23,9 +24,18 @@ const playerSchema = z.object({
   lastName: z.string().trim().min(1, "Ingresa apellidos del jugador."),
   dni: z.string().trim().min(1, "Ingresa DNI del jugador."),
   studentCode: z.string().trim().min(1, "Ingresa codigo del jugador."),
+  codigoCarrera: z.string().trim().optional().default(""),
+  escuela: z.string().trim().optional().default(""),
   enrollmentFile: z.string().trim().optional().default(""),
   semester: z.string().trim().min(1, "Ingresa ciclo o semestre del jugador."),
-  lineupRole: z.enum(["starter", "substitute"]).default("starter")
+  lineupRole: z.enum(["starter", "substitute"]).default("starter"),
+  documentType: z.enum(["DNI", "UNAP_CODE", "MANUAL"]).default("MANUAL"),
+  identitySource: z
+    .enum(["manual", "unap_tramites", "dni_provider", "unap_docentes", "peruapi"])
+    .default("manual"),
+  verificationStatus: z
+    .enum(["unverified", "auto_filled", "confirmed", "manual_review"])
+    .default("unverified")
 });
 
 const registrationSchema = z.object({
@@ -36,6 +46,12 @@ const registrationSchema = z.object({
   delegateEmail: z.string().trim().email("Ingresa un correo valido.").toLowerCase(),
   paymentMethod: z.enum(["yape", "plin"]),
   registrationCode: z.string().trim().min(3, "Ingresa el codigo unico."),
+  dataConsentAccepted: z.literal(true, {
+    errorMap: () => ({
+      message: "Acepta y confirma que cuentas con autorización para registrar estos datos."
+    })
+  }),
+  dataConsentTextVersion: z.string().trim().default(identityConsentTextVersion),
   players: z.array(playerSchema).min(1, "Registra al menos un jugador.")
 });
 
@@ -152,6 +168,9 @@ async function parseRegistrationRequest(request: Request): Promise<ParsedRegistr
     delegateEmail: stringFormValue(formData, "delegateEmail"),
     paymentMethod: stringFormValue(formData, "paymentMethod"),
     registrationCode: stringFormValue(formData, "registrationCode"),
+    dataConsentAccepted: stringFormValue(formData, "dataConsentAccepted") === "true",
+    dataConsentTextVersion:
+      stringFormValue(formData, "dataConsentTextVersion") || identityConsentTextVersion,
     players
   };
 
@@ -294,10 +313,20 @@ async function registerDelegateTeam(
         first_name: player.firstName,
         last_name: player.lastName,
         dni: player.dni,
+        dni_masked: maskDni(player.dni),
         student_code: player.studentCode,
+        codigo_carrera: player.codigoCarrera || null,
+        escuela: player.escuela || null,
         enrollment_file: uploadedFiles[index].dbPath,
         semester: player.semester,
-        lineup_role: player.lineupRole
+        lineup_role: player.lineupRole,
+        document_type: player.documentType,
+        identity_source: player.identitySource,
+        identity_verified_at:
+          player.identitySource === "manual" ? null : new Date().toISOString(),
+        data_consent_accepted_at: new Date().toISOString(),
+        data_consent_text_version: input.dataConsentTextVersion,
+        verification_status: player.verificationStatus
       }))
     );
 

@@ -4,7 +4,15 @@ import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Plus, Save } from "lucide-react";
 import { toast } from "sonner";
-import type { Player, PlayerRole, Team, TournamentEvent } from "@/lib/types";
+import type {
+  DocumentType,
+  IdentitySource,
+  Player,
+  PlayerRole,
+  Team,
+  TournamentEvent,
+  VerificationStatus
+} from "@/lib/types";
 import { canEditRoster } from "@/lib/domain/permissions";
 import {
   canChangeJerseyNumberAfterStart,
@@ -14,6 +22,16 @@ import {
   validateJerseyNumber
 } from "@/lib/domain/registration-rules";
 import { Button, Card, Field, SectionHeader, inputClass } from "@/components/ui";
+import { defaultUnapCareerCode, defaultUnapCareerName, unapCareers } from "@/data/unapCareers";
+import {
+  identityConsentTextVersion
+} from "@/lib/identity/identity-lookup";
+import { IdentityConsentBlock } from "@/features/identity/components/IdentityConsentBlock";
+import {
+  IdentityLookupPanel,
+  type IdentityLookupApplyPayload
+} from "@/features/identity/components/IdentityLookupPanel";
+import { EnrollmentFilePicker } from "@/components/enrollment-file-picker";
 import { PlayerTable } from "@/features/teams/components/PlayerTable";
 
 const footballPositions = ["Arquero", "Defensa", "Medio", "Delantero"];
@@ -24,10 +42,15 @@ const emptyDraft = {
   lastName: "",
   dni: "",
   studentCode: "",
+  codigoCarrera: defaultUnapCareerCode,
+  escuela: defaultUnapCareerName,
   semester: "",
   lineupRole: "starter" as PlayerRole,
   jerseyNumber: "",
-  position: ""
+  position: "",
+  documentType: "MANUAL" as DocumentType,
+  identitySource: "manual" as IdentitySource,
+  verificationStatus: "unverified" as VerificationStatus
 };
 
 export function DelegateRosterManager({
@@ -47,6 +70,7 @@ export function DelegateRosterManager({
   const [draft, setDraft] = useState(emptyDraft);
   const [enrollmentFile, setEnrollmentFile] = useState<File | null>(null);
   const [isAdding, setIsAdding] = useState(false);
+  const [identityConsentAccepted, setIdentityConsentAccepted] = useState(true);
   const [savingJerseyPlayerId, setSavingJerseyPlayerId] = useState<string | null>(null);
   const [jerseyValues, setJerseyValues] = useState<Record<string, string>>(() =>
     Object.fromEntries(players.map((player) => [player.id, String(player.jerseyNumber ?? "")]))
@@ -62,9 +86,30 @@ export function DelegateRosterManager({
     setDraft((current) => ({ ...current, [field]: value }));
   }
 
+  function updateCareer(careerCode: string) {
+    const career = unapCareers.find((item) => item.code === careerCode);
+    setDraft((current) => ({
+      ...current,
+      codigoCarrera: careerCode,
+      escuela: careerCode ? career?.name ?? "" : "DOCENTE UNA"
+    }));
+  }
+
+  function applyIdentityLookup(payload: IdentityLookupApplyPayload) {
+    setDraft((current) => ({
+      ...current,
+      ...payload
+    }));
+  }
+
   async function addPlayer(submitEvent: React.FormEvent<HTMLFormElement>) {
     submitEvent.preventDefault();
     if (!canAddMore) return;
+
+    if (!identityConsentAccepted) {
+      toast.error("Acepta y confirma que cuentas con autorización para registrar estos datos.");
+      return;
+    }
 
     if (!enrollmentFile) {
       toast.error("Selecciona la ficha de matricula del jugador.");
@@ -98,6 +143,8 @@ export function DelegateRosterManager({
       formData.append("teamId", team.id);
       Object.entries(draft).forEach(([key, value]) => formData.append(key, value));
       formData.append("enrollmentFile", enrollmentFile);
+      formData.append("dataConsentAccepted", String(identityConsentAccepted));
+      formData.append("dataConsentTextVersion", identityConsentTextVersion);
 
       const response = await fetch("/api/delegate/players", {
         method: "POST",
@@ -180,6 +227,21 @@ export function DelegateRosterManager({
         />
       </div>
       <form id="delegate-add-player-form" className="p-5" onSubmit={addPlayer}>
+        <div className="mb-4 space-y-4">
+          <IdentityConsentBlock
+            accepted={identityConsentAccepted}
+            onAcceptedChange={setIdentityConsentAccepted}
+            disabled={!canAddMore || isAdding}
+          />
+          <IdentityLookupPanel
+            consentAccepted={identityConsentAccepted}
+            disabled={!canAddMore || isAdding}
+            currentStudentCode={draft.studentCode}
+            currentCareerCode={draft.codigoCarrera}
+            onApply={applyIdentityLookup}
+          />
+        </div>
+
         <div className="grid gap-3 md:grid-cols-4">
           <Field label="Nombres">
             <input
@@ -208,14 +270,34 @@ export function DelegateRosterManager({
               placeholder="DNI"
             />
           </Field>
-          <Field label="Codigo">
+          <Field label="Código / referencia">
             <input
               className={inputClass}
               value={draft.studentCode}
               onChange={(changeEvent) => updateDraft("studentCode", changeEvent.target.value)}
               disabled={!canAddMore}
-              placeholder="Codigo"
+              placeholder="Código / referencia"
             />
+          </Field>
+          <Field label="Escuela">
+            <select
+              className={inputClass}
+              disabled={!canAddMore}
+              value={draft.codigoCarrera}
+              onChange={(changeEvent) => updateCareer(changeEvent.target.value)}
+            >
+              <option value="">Docente / no aplica</option>
+              <option value={defaultUnapCareerCode}>INGENIERÍA MECÁNICA ELÉCTRICA</option>
+              <option value="__select_other__" disabled>
+                Seleccionar otra carrera
+              </option>
+              {unapCareers.filter((career) => career.code !== defaultUnapCareerCode).map((career) => (
+                <option key={career.code} value={career.code}>
+                  {career.name}
+                </option>
+              ))}
+              <option value="">Manual / no aplica</option>
+            </select>
           </Field>
           <Field label="Ciclo/Semestre">
             <input
@@ -267,12 +349,11 @@ export function DelegateRosterManager({
             </select>
           </Field>
           <Field label="Ficha de matricula">
-            <input
-              className={inputClass}
+            <EnrollmentFilePicker
+              id="delegate-enrollment-file"
+              fileName={enrollmentFile?.name ?? ""}
               disabled={!canAddMore}
-              type="file"
-              accept="application/pdf,image/jpeg,image/png"
-              onChange={(changeEvent) => setEnrollmentFile(changeEvent.target.files?.[0] ?? null)}
+              onFileChange={setEnrollmentFile}
             />
           </Field>
         </div>

@@ -1,5 +1,6 @@
 import type { Player } from "@/lib/types";
 import { playerRoleLabel } from "@/lib/utils";
+import { Badge } from "@/components/ui";
 
 export function PlayerTable({
   players,
@@ -17,6 +18,7 @@ export function PlayerTable({
             <th className="px-3 py-3">Rol</th>
             <th className="px-3 py-3">Camiseta</th>
             <th className="px-3 py-3">Posicion</th>
+            {privateView ? <th className="px-3 py-3">Identidad</th> : null}
             {privateView ? <th className="px-3 py-3">Codigo</th> : null}
             {privateView ? <th className="px-4 py-3">DNI</th> : null}
           </tr>
@@ -31,6 +33,11 @@ export function PlayerTable({
                 <td className="px-3 py-3">{playerRoleLabel(player.lineupRole)}</td>
                 <td className="px-3 py-3">{player.jerseyNumber ?? "-"}</td>
                 <td className="px-3 py-3">{player.position ?? "-"}</td>
+                {privateView ? (
+                  <td className="px-3 py-3">
+                    <IdentityBadge player={player} />
+                  </td>
+                ) : null}
                 {privateView ? <td className="px-3 py-3">{player.studentCode}</td> : null}
                 {privateView ? <td className="px-4 py-3">{player.dni}</td> : null}
               </tr>
@@ -38,7 +45,7 @@ export function PlayerTable({
           ) : (
             <tr>
               <td
-                colSpan={privateView ? 6 : 4}
+                colSpan={privateView ? 7 : 4}
                 className="px-4 py-8 text-center text-sm text-ink/55"
               >
                 Todavia no hay jugadores registrados.
@@ -49,4 +56,28 @@ export function PlayerTable({
       </table>
     </div>
   );
+}
+
+function IdentityBadge({ player }: { player: Player }) {
+  if (player.verificationStatus === "manual_review") {
+    return <Badge tone="amber">Pendiente de revision</Badge>;
+  }
+
+  if (player.identitySource === "unap_tramites") {
+    return <Badge tone="green">Autollenado UNA</Badge>;
+  }
+
+  if (player.identitySource === "dni_provider") {
+    return <Badge tone="blue">Autollenado DNI</Badge>;
+  }
+
+  if (player.identitySource === "peruapi") {
+    return <Badge tone="blue">DNI nacional</Badge>;
+  }
+
+  if (player.identitySource === "unap_docentes") {
+    return <Badge tone="green">Docente UNA</Badge>;
+  }
+
+  return <Badge tone="neutral">Manual</Badge>;
 }

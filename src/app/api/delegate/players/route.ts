@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { createSupabaseAdminClient } from "@/lib/supabase-admin";
+import { identityConsentTextVersion, maskDni } from "@/lib/identity/identity-lookup";
 import { requireDelegateTeamAccess, ServerAccessError } from "@/lib/server-access";
 import {
   canChangeJerseyNumberAfterStart,
@@ -26,10 +27,25 @@ const addPlayerSchema = z.object({
   lastName: z.string().trim().min(1, "Ingresa apellidos del jugador."),
   dni: z.string().trim().min(1, "Ingresa DNI del jugador."),
   studentCode: z.string().trim().min(1, "Ingresa codigo del jugador."),
+  codigoCarrera: z.string().trim().optional().default(""),
+  escuela: z.string().trim().optional().default(""),
   semester: z.string().trim().min(1, "Ingresa ciclo o semestre del jugador."),
   lineupRole: z.enum(["starter", "substitute"]).default("starter"),
   jerseyNumber: z.string().trim().optional().default(""),
-  position: z.string().trim().max(60).optional().default("")
+  position: z.string().trim().max(60).optional().default(""),
+  documentType: z.enum(["DNI", "UNAP_CODE", "MANUAL"]).default("MANUAL"),
+  identitySource: z
+    .enum(["manual", "unap_tramites", "dni_provider", "unap_docentes", "peruapi"])
+    .default("manual"),
+  verificationStatus: z
+    .enum(["unverified", "auto_filled", "confirmed", "manual_review"])
+    .default("unverified"),
+  dataConsentAccepted: z.literal(true, {
+    errorMap: () => ({
+      message: "Acepta y confirma que cuentas con autorización para registrar estos datos."
+    })
+  }),
+  dataConsentTextVersion: z.string().trim().default(identityConsentTextVersion)
 });
 
 const jerseyUpdateSchema = z.object({
@@ -60,6 +76,16 @@ type PlayerRow = {
   team_id: string;
   dni: string;
   student_code: string;
+  codigo_carrera?: string | null;
+  escuela?: string | null;
+  document_type?: Player["documentType"] | null;
+  dni_masked?: string | null;
+  identity_source?: Player["identitySource"] | null;
+  identity_verified_at?: string | null;
+  data_consent_accepted_at?: string | null;
+  data_consent_text_version?: string | null;
+  registered_by_delegate_id?: string | null;
+  verification_status?: Player["verificationStatus"] | null;
   jersey_number: number | null;
   jersey_number_change_count: number | null;
 };
@@ -143,12 +169,23 @@ export async function POST(request: Request) {
         first_name: input.firstName,
         last_name: input.lastName,
         dni: input.dni,
+        dni_masked: maskDni(input.dni),
         student_code: input.studentCode,
+        codigo_carrera: input.codigoCarrera || null,
+        escuela: input.escuela || null,
         semester: input.semester,
         enrollment_file: uploaded.dbPath,
         lineup_role: input.lineupRole,
         jersey_number: jerseyNumber,
-        position: input.position || null
+        position: input.position || null,
+        document_type: input.documentType,
+        identity_source: input.identitySource,
+        identity_verified_at:
+          input.identitySource === "manual" ? null : new Date().toISOString(),
+        data_consent_accepted_at: new Date().toISOString(),
+        data_consent_text_version: input.dataConsentTextVersion,
+        registered_by_delegate_id: access.user.id,
+        verification_status: input.verificationStatus
       });
 
       if (error) {
@@ -260,10 +297,18 @@ async function parseAddPlayerRequest(request: Request) {
     lastName: stringFormValue(formData, "lastName"),
     dni: stringFormValue(formData, "dni"),
     studentCode: stringFormValue(formData, "studentCode"),
+    codigoCarrera: stringFormValue(formData, "codigoCarrera"),
+    escuela: stringFormValue(formData, "escuela"),
     semester: stringFormValue(formData, "semester"),
     lineupRole: stringFormValue(formData, "lineupRole") || "starter",
     jerseyNumber: stringFormValue(formData, "jerseyNumber"),
-    position: stringFormValue(formData, "position")
+    position: stringFormValue(formData, "position"),
+    documentType: stringFormValue(formData, "documentType") || "MANUAL",
+    identitySource: stringFormValue(formData, "identitySource") || "manual",
+    verificationStatus: stringFormValue(formData, "verificationStatus") || "unverified",
+    dataConsentAccepted: stringFormValue(formData, "dataConsentAccepted") === "true",
+    dataConsentTextVersion:
+      stringFormValue(formData, "dataConsentTextVersion") || identityConsentTextVersion
   };
 
   const parsed = addPlayerSchema.safeParse(body);
@@ -313,7 +358,9 @@ async function findTeamPlayers(
 ) {
   const { data, error } = await admin
     .from("players")
-    .select("id, team_id, dni, student_code, jersey_number, jersey_number_change_count")
+    .select(
+      "id, team_id, dni, student_code, codigo_carrera, escuela, document_type, dni_masked, identity_source, identity_verified_at, data_consent_accepted_at, data_consent_text_version, registered_by_delegate_id, verification_status, jersey_number, jersey_number_change_count"
+    )
     .eq("team_id", teamId);
 
   if (error) throw new ServerAccessError(error.message, 500);
@@ -325,6 +372,16 @@ async function findTeamPlayers(
     lastName: "",
     dni: player.dni,
     studentCode: player.student_code,
+    codigoCarrera: player.codigo_carrera ?? undefined,
+    escuela: player.escuela ?? undefined,
+    documentType: player.document_type ?? undefined,
+    dniMasked: player.dni_masked ?? undefined,
+    identitySource: player.identity_source ?? undefined,
+    identityVerifiedAt: player.identity_verified_at ?? undefined,
+    dataConsentAcceptedAt: player.data_consent_accepted_at ?? undefined,
+    dataConsentTextVersion: player.data_consent_text_version ?? undefined,
+    registeredByDelegateId: player.registered_by_delegate_id ?? undefined,
+    verificationStatus: player.verification_status ?? undefined,
     enrollmentFile: "",
     semester: "",
     lineupRole: "starter",

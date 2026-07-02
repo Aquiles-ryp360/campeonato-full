@@ -144,6 +144,21 @@ export function TeamsReviewTable({ data }: { data: CompetitionData }) {
                     <p className="text-xs text-ink/55">
                       Min {event?.minPlayers ?? "-"} / Max {event?.maxPlayers ?? "-"}
                     </p>
+                    {players.length > 0 ? (
+                      <div className="mt-2 space-y-1">
+                        {players.slice(0, 3).map((player) => (
+                          <div key={player.id} className="flex flex-wrap items-center gap-1.5">
+                            <span className="max-w-[150px] truncate text-xs text-ink/65">
+                              {player.firstName} {player.lastName}
+                            </span>
+                            <IdentityBadge player={player} />
+                          </div>
+                        ))}
+                        {players.length > 3 ? (
+                          <p className="text-xs text-ink/55">+{players.length - 3} mas</p>
+                        ) : null}
+                      </div>
+                    ) : null}
                   </td>
                   <td className="px-3 py-4">
                     {issues.length > 0 ? (
@@ -248,4 +263,28 @@ function actionLabel(action: TeamAction) {
     reject: "Equipo rechazado."
   };
   return labels[action];
+}
+
+function IdentityBadge({ player }: { player: CompetitionData["players"][number] }) {
+  if (player.verificationStatus === "manual_review") {
+    return <Badge tone="amber">Pendiente de revisión</Badge>;
+  }
+
+  if (player.identitySource === "unap_tramites") {
+    return <Badge tone="green">Autollenado UNA</Badge>;
+  }
+
+  if (player.identitySource === "dni_provider") {
+    return <Badge tone="blue">Autollenado DNI</Badge>;
+  }
+
+  if (player.identitySource === "peruapi") {
+    return <Badge tone="blue">DNI nacional</Badge>;
+  }
+
+  if (player.identitySource === "unap_docentes") {
+    return <Badge tone="green">Docente UNA</Badge>;
+  }
+
+  return <Badge tone="neutral">Manual</Badge>;
 }

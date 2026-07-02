@@ -10,8 +10,22 @@ import {
   isRegistrationOpen,
   validateEnrollmentFileMeta
 } from "@/lib/domain/registration-rules";
-import type { PlayerRole, TournamentEvent } from "@/lib/types";
+import type {
+  DocumentType,
+  IdentitySource,
+  PlayerRole,
+  TournamentEvent,
+  VerificationStatus
+} from "@/lib/types";
 import { formatDateTime, formatMoney, playerRoleLabel, sportLabel } from "@/lib/utils";
+import { defaultUnapCareerCode, defaultUnapCareerName, unapCareers } from "@/data/unapCareers";
+import { identityConsentTextVersion } from "@/lib/identity/identity-lookup";
+import { IdentityConsentBlock } from "@/features/identity/components/IdentityConsentBlock";
+import {
+  IdentityLookupPanel,
+  type IdentityLookupApplyPayload
+} from "@/features/identity/components/IdentityLookupPanel";
+import { EnrollmentFilePicker } from "@/components/enrollment-file-picker";
 import { Badge, Button, Card, Field, SectionHeader, inputClass } from "./ui";
 
 interface PlayerFormRow {
@@ -19,10 +33,15 @@ interface PlayerFormRow {
   lastName: string;
   dni: string;
   studentCode: string;
+  codigoCarrera: string;
+  escuela: string;
   enrollmentFile: string;
   enrollmentFileObject: File | null;
   semester: string;
   lineupRole: PlayerRole;
+  documentType: DocumentType;
+  identitySource: IdentitySource;
+  verificationStatus: VerificationStatus;
 }
 
 const emptyPlayer: PlayerFormRow = {
@@ -30,10 +49,15 @@ const emptyPlayer: PlayerFormRow = {
   lastName: "",
   dni: "",
   studentCode: "",
+  codigoCarrera: defaultUnapCareerCode,
+  escuela: defaultUnapCareerName,
   enrollmentFile: "",
   enrollmentFileObject: null,
   semester: "",
-  lineupRole: "starter"
+  lineupRole: "starter",
+  documentType: "MANUAL",
+  identitySource: "manual",
+  verificationStatus: "unverified"
 };
 
 const playerRoleOptions: Array<{ value: PlayerRole; label: string }> = [
@@ -87,6 +111,7 @@ export function RegistrationForm({
   const [registrationCode, setRegistrationCode] = useState("");
   const [lastReceipt, setLastReceipt] = useState<RegistrationReceipt | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [identityConsentAccepted, setIdentityConsentAccepted] = useState(true);
   const [players, setPlayers] = useState<PlayerFormRow[]>([
     { ...emptyPlayer },
     { ...emptyPlayer },
@@ -102,6 +127,34 @@ export function RegistrationForm({
     setPlayers((current) =>
       current.map((player, playerIndex) =>
         playerIndex === index ? { ...player, [field]: value } : player
+      )
+    );
+  }
+
+  function updatePlayerCareer(index: number, careerCode: string) {
+    const career = unapCareers.find((item) => item.code === careerCode);
+    setPlayers((current) =>
+      current.map((player, playerIndex) =>
+        playerIndex === index
+          ? {
+              ...player,
+              codigoCarrera: careerCode,
+              escuela: careerCode ? career?.name ?? "" : "DOCENTE UNA"
+            }
+          : player
+      )
+    );
+  }
+
+  function applyIdentityLookup(index: number, payload: IdentityLookupApplyPayload) {
+    setPlayers((current) =>
+      current.map((player, playerIndex) =>
+        playerIndex === index
+          ? {
+              ...player,
+              ...payload
+            }
+          : player
       )
     );
   }
@@ -162,12 +215,19 @@ export function RegistrationForm({
       return;
     }
 
+    if (!identityConsentAccepted) {
+      toast.error("Acepta y confirma que cuentas con autorización para registrar estos datos.");
+      return;
+    }
+
     const playersWithAnyData = players.filter(
       (player) =>
         player.firstName ||
         player.lastName ||
         player.dni ||
         player.studentCode ||
+        player.codigoCarrera ||
+        player.escuela ||
         player.semester ||
         player.enrollmentFileObject
     );
@@ -231,12 +291,19 @@ export function RegistrationForm({
             lastName: player.lastName,
             dni: player.dni,
             studentCode: player.studentCode,
+            codigoCarrera: player.codigoCarrera,
+            escuela: player.escuela,
             enrollmentFile: player.enrollmentFile,
             semester: player.semester,
-            lineupRole: player.lineupRole
+            lineupRole: player.lineupRole,
+            documentType: player.documentType,
+            identitySource: player.identitySource,
+            verificationStatus: player.verificationStatus
           }))
         )
       );
+      formData.append("dataConsentAccepted", String(identityConsentAccepted));
+      formData.append("dataConsentTextVersion", identityConsentTextVersion);
       completedPlayers.forEach((player, index) => {
         if (player.enrollmentFileObject) {
           formData.append(`enrollmentFile-${index}`, player.enrollmentFileObject);
@@ -434,6 +501,14 @@ export function RegistrationForm({
           }
         />
 
+        <div className="mt-5">
+          <IdentityConsentBlock
+            accepted={identityConsentAccepted}
+            onAcceptedChange={setIdentityConsentAccepted}
+            disabled={isSubmitting}
+          />
+        </div>
+
         <div className="mt-5 space-y-3">
           {players.map((player, index) => (
             <div key={index} className="rounded-md border border-ink/10 bg-white p-4">
@@ -454,6 +529,15 @@ export function RegistrationForm({
                     <Trash2 className="h-4 w-4" />
                   </button>
                 ) : null}
+              </div>
+              <div className="mb-3">
+                <IdentityLookupPanel
+                  consentAccepted={identityConsentAccepted}
+                  disabled={isSubmitting}
+                  currentStudentCode={player.studentCode}
+                  currentCareerCode={player.codigoCarrera}
+                  onApply={(payload) => applyIdentityLookup(index, payload)}
+                />
               </div>
               <div className="grid gap-3 md:grid-cols-3">
                 <input
@@ -478,22 +562,31 @@ export function RegistrationForm({
                   className={inputClass}
                   value={player.studentCode}
                   onChange={(changeEvent) => updatePlayer(index, "studentCode", changeEvent.target.value)}
-                  placeholder="Codigo"
+                  placeholder="Código / referencia"
                 />
-                <input
+                <select
                   className={inputClass}
-                  value={player.enrollmentFile}
-                  readOnly
-                  placeholder="Ficha de matricula"
-                  title="Nombre del archivo seleccionado"
-                />
-                <input
-                  className={inputClass}
-                  type="file"
-                  accept="application/pdf,image/jpeg,image/png"
-                  onChange={(changeEvent) =>
-                    updatePlayerFile(index, changeEvent.target.files?.[0] ?? null)
-                  }
+                  value={player.codigoCarrera}
+                  onChange={(changeEvent) => updatePlayerCareer(index, changeEvent.target.value)}
+                  aria-label={`Escuela del jugador ${index + 1}`}
+                >
+                  <option value="">Docente / no aplica</option>
+                  <option value={defaultUnapCareerCode}>INGENIERÍA MECÁNICA ELÉCTRICA</option>
+                  <option value="__select_other__" disabled>
+                    Seleccionar otra carrera
+                  </option>
+                  {unapCareers.filter((career) => career.code !== defaultUnapCareerCode).map((career) => (
+                    <option key={career.code} value={career.code}>
+                      {career.name}
+                    </option>
+                  ))}
+                  <option value="">Manual / no aplica</option>
+                </select>
+                <EnrollmentFilePicker
+                  id={`public-enrollment-file-${index}`}
+                  fileName={player.enrollmentFile}
+                  disabled={isSubmitting}
+                  onFileChange={(file) => updatePlayerFile(index, file)}
                 />
                 <input
                   className={inputClass}
@@ -636,7 +729,7 @@ async function generateRegistrationReceiptPdf(receipt: RegistrationReceipt) {
     { label: "#", x: margin, width: 8 },
     { label: "Jugador", x: margin + 9, width: 52 },
     { label: "DNI", x: margin + 62, width: 24 },
-    { label: "Codigo", x: margin + 87, width: 28 },
+    { label: "Ref.", x: margin + 87, width: 28 },
     { label: "Rol", x: margin + 116, width: 22 },
     { label: "Ciclo", x: margin + 139, width: 22 },
     { label: "Ficha", x: margin + 162, width: 20 }

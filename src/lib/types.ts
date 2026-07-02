@@ -63,6 +63,17 @@ export type MatchPeriod =
 
 export type PlayerRole = "starter" | "substitute";
 
+export type DocumentType = "DNI" | "UNAP_CODE" | "MANUAL";
+
+export type IdentitySource =
+  | "manual"
+  | "unap_tramites"
+  | "dni_provider"
+  | "unap_docentes"
+  | "peruapi";
+
+export type VerificationStatus = "unverified" | "auto_filled" | "confirmed" | "manual_review";
+
 export type FixtureStatus = "draft_auto" | "draft_review" | "published" | "locked";
 
 export type SeedingMode = "random" | "registration_order" | "manual" | "ranking";
@@ -197,10 +208,20 @@ export interface Player {
   firstName: string;
   lastName: string;
   dni: string;
+  dniMasked?: string;
   studentCode: string;
+  codigoCarrera?: string;
+  escuela?: string;
   enrollmentFile: string;
   semester: string;
   lineupRole: PlayerRole;
+  documentType?: DocumentType;
+  identitySource?: IdentitySource;
+  identityVerifiedAt?: string;
+  dataConsentAcceptedAt?: string;
+  dataConsentTextVersion?: string;
+  registeredByDelegateId?: string;
+  verificationStatus?: VerificationStatus;
   jerseyNumber?: number;
   jerseyNumberChangeCount?: number;
   jerseyNumberChangedAt?: string;

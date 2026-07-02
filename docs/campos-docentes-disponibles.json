@@ -1,0 +1,50 @@
+{
+  "source": "sictransparencia_unap_plana_docente",
+  "endpoint": "/plana-docente/docente/lista",
+  "page": "https://sictransparencia.unap.edu.pe/plana-docente",
+  "periodsEndpoint": "/periodos/get?yearDifference=2",
+  "selectedPeriodObserved": {
+    "text": "2026-I",
+    "termId": "08de416c-dede-444c-83dd-ff3ee6aedfdf"
+  },
+  "confirmedFields": ["id", "name", "dni", "condition", "dedication"],
+  "fieldsFromInfoEndpoint": [
+    "fullName",
+    "specialty",
+    "institution",
+    "institutionType",
+    "expeditionDate",
+    "country",
+    "department",
+    "province",
+    "district"
+  ],
+  "laborDatatableFieldsInPublicJs": [
+    "resolutionNumber",
+    "scaleResolutionType",
+    "beginDate",
+    "endDate",
+    "documentType",
+    "laborPosition",
+    "category",
+    "observations"
+  ],
+  "unsupportedFields": ["codigo_docente", "faculty", "school", "facultad", "escuela", "departamento_laboral"],
+  "sensitiveFieldsNotTested": [
+    "telefono",
+    "celular",
+    "direccion",
+    "domicilio",
+    "correo_personal",
+    "password",
+    "cuenta",
+    "salario",
+    "sueldo"
+  ],
+  "canSearchByDni": false,
+  "canSearchByName": true,
+  "canSearchByTeacherCode": false,
+  "columnSearchHonored": false,
+  "infoButtonUsefulForAutofill": false,
+  "recommendedIdentifier": "nombre_con_seleccion_manual"
+}

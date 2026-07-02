@@ -86,10 +86,20 @@ const privatePlayerColumns = `
   first_name,
   last_name,
   dni,
+  dni_masked,
   student_code,
+  codigo_carrera,
+  escuela,
   enrollment_file,
   semester,
   lineup_role,
+  document_type,
+  identity_source,
+  identity_verified_at,
+  data_consent_accepted_at,
+  data_consent_text_version,
+  registered_by_delegate_id,
+  verification_status,
   jersey_number,
   jersey_number_change_count,
   jersey_number_changed_at,
@@ -116,8 +126,13 @@ const publicPlayerColumns = `
   first_name,
   last_name,
   student_code,
+  codigo_carrera,
+  escuela,
   semester,
   lineup_role,
+  document_type,
+  identity_source,
+  verification_status,
   jersey_number,
   jersey_number_change_count,
   jersey_number_changed_at,
@@ -182,7 +197,7 @@ export async function getPublicCompetitionData({
   ] = await Promise.all([
     supabase.from("events").select("*").order("created_at", { ascending: true }),
     supabase.from("teams").select(publicTeamColumns).order("created_at", { ascending: true }),
-    supabase.from("players").select(playerSelect).order("created_at", { ascending: true }),
+    supabase.from("players").select(playerSelect as "*").order("created_at", { ascending: true }),
     supabase.from("matches").select("*").order("scheduled_at", { ascending: true }),
     supabase.from("sports").select("*").order("name", { ascending: true }),
     supabase.from("competition_formats").select("*").order("name", { ascending: true }),
@@ -204,11 +219,13 @@ export async function getPublicCompetitionData({
         .select(includePrivatePlayerFields ? legacyPrivatePlayerColumns : legacyPublicPlayerColumns)
         .order("created_at", { ascending: true })
     : playersResponse;
+  const teamsFallbackResolved = Boolean(teamsResponse.error && !safeTeamsResponse.error);
+  const playersFallbackResolved = Boolean(playersResponse.error && !safePlayersResponse.error);
 
   logSupabaseError("events", eventsResponse.error);
-  logSupabaseError("teams", teamsResponse.error);
+  logSupabaseError("teams", teamsFallbackResolved ? null : teamsResponse.error);
   logSupabaseError("teams legacy retry", safeTeamsResponse.error);
-  logSupabaseError("players", playersResponse.error);
+  logSupabaseError("players", playersFallbackResolved ? null : playersResponse.error);
   logSupabaseError("players legacy retry", safePlayersResponse.error);
   logSupabaseError("matches", matchesResponse.error);
   logSupabaseError("sports", sportsResponse.error);

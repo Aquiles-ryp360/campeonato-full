@@ -246,10 +246,20 @@ export type PlayerRow = {
   first_name: string;
   last_name: string;
   dni: string;
+  dni_masked?: string | null;
   student_code: string;
+  codigo_carrera?: string | null;
+  escuela?: string | null;
   enrollment_file: string | null;
   semester: string | null;
   lineup_role: Player["lineupRole"] | null;
+  document_type?: Player["documentType"] | null;
+  identity_source?: Player["identitySource"] | null;
+  identity_verified_at?: string | null;
+  data_consent_accepted_at?: string | null;
+  data_consent_text_version?: string | null;
+  registered_by_delegate_id?: string | null;
+  verification_status?: Player["verificationStatus"] | null;
   jersey_number?: number | null;
   jersey_number_change_count?: number | null;
   jersey_number_changed_at?: string | null;
@@ -530,10 +540,20 @@ export function mapPlayer(row: PlayerRow): Player {
     firstName: row.first_name,
     lastName: row.last_name,
     dni: row.dni,
+    dniMasked: row.dni_masked ?? undefined,
     studentCode: row.student_code,
+    codigoCarrera: row.codigo_carrera ?? undefined,
+    escuela: row.escuela ?? undefined,
     enrollmentFile: row.enrollment_file ?? "",
     semester: row.semester ?? "",
     lineupRole: row.lineup_role ?? "starter",
+    documentType: row.document_type ?? undefined,
+    identitySource: row.identity_source ?? undefined,
+    identityVerifiedAt: row.identity_verified_at ?? undefined,
+    dataConsentAcceptedAt: row.data_consent_accepted_at ?? undefined,
+    dataConsentTextVersion: row.data_consent_text_version ?? undefined,
+    registeredByDelegateId: row.registered_by_delegate_id ?? undefined,
+    verificationStatus: row.verification_status ?? undefined,
     jerseyNumber: row.jersey_number ?? undefined,
     jerseyNumberChangeCount: row.jersey_number_change_count ?? undefined,
     jerseyNumberChangedAt: row.jersey_number_changed_at ?? undefined,
