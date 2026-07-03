@@ -15,3 +15,15 @@ client_secret_*.json
 supabase/.branches
 supabase/.temp
 .env*
+
+# OS/editor artifacts
+desktop.ini
+*.tex~*
+
+# LaTeX build artifacts
+*.aux
+*.log
+*.out
+*.toc
+*.synctex.gz
+*.synctex(busy).gz

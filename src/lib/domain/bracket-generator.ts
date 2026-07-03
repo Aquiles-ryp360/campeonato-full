@@ -5,6 +5,7 @@ export interface BracketOptions {
   format?: TournamentFormat;
   maxTeams?: number;
   thirdPlace?: boolean;
+  allowByes?: boolean;
   seedingMode?: SeedingMode;
   randomSeed?: string;
   manualSeeds?: string[];
@@ -72,6 +73,10 @@ export function nextPowerOfTwo(value: number) {
   return 2 ** Math.ceil(Math.log2(value));
 }
 
+function isPowerOfTwo(value: number) {
+  return value >= 2 && Number.isInteger(value) && (value & (value - 1)) === 0;
+}
+
 export function generateKnockoutBracket({
   teams,
   matches = [],
@@ -86,6 +91,7 @@ export function generateKnockoutBracket({
 } & Partial<BracketOptions>): GeneratedBracket {
   const resolvedEventId = eventId ?? teams[0]?.eventId ?? "event";
   const thirdPlace = options.thirdPlace ?? includeThirdPlace ?? true;
+  const allowByes = options.allowByes ?? true;
   const fixtureStatus = options.fixtureStatus ?? "draft_auto";
   const orderedTeams = seedTeams(teams, {
     seedingMode: options.seedingMode ?? "registration_order",
@@ -107,10 +113,27 @@ export function generateKnockoutBracket({
     };
   }
 
+  if (!allowByes && !isPowerOfTwo(orderedTeams.length)) {
+    return {
+      rounds: [],
+      matches: [],
+      bracketSize: 0,
+      lowerPowerOfTwo: 0,
+      preliminaryMatches: 0,
+      preliminaryTeams: 0,
+      byeCount: 0,
+      status: "incomplete",
+      warnings: [
+        `La eliminacion directa sin byes requiere 2, 4, 8, 16 o 32 equipos; hay ${orderedTeams.length}.`
+      ]
+    };
+  }
+
   const generated = createGeneratedMatches({
     eventId: resolvedEventId,
     teams: orderedTeams,
     thirdPlace,
+    maxTeams: options.maxTeams,
     fixtureStatus
   });
   const effectiveMatches = matches.length > 0 ? mergeExistingMatches(generated.matches, matches, resolvedEventId) : generated.matches;
@@ -139,11 +162,13 @@ function createGeneratedMatches({
   eventId,
   teams,
   thirdPlace,
+  maxTeams,
   fixtureStatus
 }: {
   eventId: string;
   teams: Team[];
   thirdPlace: boolean;
+  maxTeams?: number;
   fixtureStatus: FixtureStatus;
 }) {
   const teamCount = teams.length;
@@ -154,6 +179,10 @@ function createGeneratedMatches({
   const seedEntrants = new Map<number, Entrant>();
   const preliminary: Match[] = [];
   const warnings: string[] = [];
+
+  if (typeof maxTeams === "number" && teamCount > maxTeams) {
+    warnings.push(`Hay ${teamCount} equipos inscritos, pero el maximo configurado es ${maxTeams}.`);
+  }
 
   for (let seed = 1; seed <= directSeedCount; seed += 1) {
     const team = teams[seed - 1];

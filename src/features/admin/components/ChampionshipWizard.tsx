@@ -30,7 +30,7 @@ const steps = [
   "Generar fixture"
 ];
 
-const transitionMinutes = 10;
+const defaultTransitionMinutes = 10;
 
 type WizardDraft = {
   id?: string;
@@ -72,6 +72,7 @@ type WizardDraft = {
   themeSecondaryColor: string;
   startTime: string;
   courtCount: number;
+  transitionMinutes: number;
   fixtureCompactPreview: boolean;
   publicLiveScores: boolean;
 };
@@ -101,8 +102,8 @@ export function ChampionshipWizard({
     [draft.format, draft.groupCount, draft.maxTeams, draft.thirdPlace]
   );
   const estimatedEndTime = useMemo(
-    () => estimateEndTime(draft.startTime, estimatedMatches, draft.courtCount, draft.matchDuration),
-    [draft.courtCount, draft.matchDuration, draft.startTime, estimatedMatches]
+    () => estimateEndTime(draft.startTime, estimatedMatches, draft.courtCount, draft.matchDuration, draft.transitionMinutes),
+    [draft.courtCount, draft.matchDuration, draft.startTime, draft.transitionMinutes, estimatedMatches]
   );
   const fixturePreviewEvent = useMemo(
     () => eventFromDraft(draft, initialEvent, estimatedEndTime),
@@ -186,7 +187,7 @@ export function ChampionshipWizard({
         body: JSON.stringify({
           ...draft,
           courts,
-          transitionMinutes,
+          transitionMinutes: draft.transitionMinutes,
           estimatedEndTime
         })
       });
@@ -488,7 +489,8 @@ export function ChampionshipWizard({
           onCourtCountChange={(value) => updateDraft({ courtCount: value })}
           matchDuration={draft.matchDuration}
           halfTimeMinute={draft.halfTimeMinute}
-          transitionMinutes={transitionMinutes}
+          transitionMinutes={draft.transitionMinutes}
+          onTransitionMinutesChange={(value) => updateDraft({ transitionMinutes: value })}
           matchStartToleranceMinutes={draft.matchStartToleranceMinutes}
           onMatchStartToleranceMinutesChange={(value) => updateDraft({ matchStartToleranceMinutes: value })}
           fixtureCompactPreview={draft.fixtureCompactPreview}
@@ -562,6 +564,7 @@ function draftFromEvent(event?: TournamentEvent | null): WizardDraft {
     themeSecondaryColor: event?.themeSecondaryColor ?? "#f4e84a",
     startTime: schedule?.startTime ?? "09:00",
     courtCount,
+    transitionMinutes: schedule?.transitionMinutes ?? defaultTransitionMinutes,
     fixtureCompactPreview: event?.fixtureCompactPreview ?? true,
     publicLiveScores: event?.publicLiveScores ?? true
   });
@@ -600,7 +603,7 @@ function eventFromDraft(
     themePrimaryColor: draft.themePrimaryColor,
     themeSecondaryColor: draft.themeSecondaryColor,
     preventCrossSportConflicts: event?.preventCrossSportConflicts ?? true,
-    minimumRestMinutes: draft.matchDuration + transitionMinutes,
+    minimumRestMinutes: draft.matchDuration + draft.transitionMinutes,
     eventDate: draft.eventDate,
     fixtureStatus: event?.fixtureStatus ?? "draft_auto",
     seedingMode: draft.seedingMode,
@@ -620,10 +623,10 @@ function eventFromDraft(
       additionalTimeAllowedMinutes: draft.additionalTimeAllowedMinutes,
       matchStartToleranceMinutes: draft.matchStartToleranceMinutes,
       allowManualFinish: draft.allowManualFinish,
-      transitionMinutes,
+      transitionMinutes: draft.transitionMinutes,
       courts: buildCourts(draft.courtCount),
       courtCount: draft.courtCount,
-      minimumRestMinutes: draft.matchDuration + transitionMinutes,
+      minimumRestMinutes: draft.matchDuration + draft.transitionMinutes,
       allowCompactPreview: draft.fixtureCompactPreview,
       estimatedEndTime,
       branding: {
@@ -659,6 +662,7 @@ function normalizeDraft(draft: WizardDraft): WizardDraft {
     halfTimeBreakMinutes: clampNumber(draft.halfTimeBreakMinutes, 0, 60),
     additionalTimeAllowedMinutes: clampNumber(draft.additionalTimeAllowedMinutes, 0, 60),
     matchStartToleranceMinutes: clampNumber(draft.matchStartToleranceMinutes, 0, 120),
+    transitionMinutes: clampNumber(draft.transitionMinutes, 0, 60),
     walkoverMinutes: clampNumber(draft.walkoverMinutes, 0, 60),
     registrationFee: Math.max(0, Number.isFinite(draft.registrationFee) ? draft.registrationFee : 0),
     pointsWin: isKnockout ? 0 : draft.pointsWin,
@@ -727,7 +731,13 @@ function estimateMatchCount(format: TournamentFormat, maxTeams: number, thirdPla
   return Math.ceil(groupStageMatches + knockoutMatches);
 }
 
-function estimateEndTime(startTime: string, matches: number, courtCount: number, matchDuration: number) {
+function estimateEndTime(
+  startTime: string,
+  matches: number,
+  courtCount: number,
+  matchDuration: number,
+  transitionMinutes: number
+) {
   const [hour = 9, minute = 0] = startTime.split(":").map(Number);
   const waves = Math.max(1, Math.ceil(matches / Math.max(1, courtCount)));
   const totalMinutes = waves * matchDuration + Math.max(0, waves - 1) * transitionMinutes;

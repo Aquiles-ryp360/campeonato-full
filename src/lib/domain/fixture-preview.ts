@@ -31,6 +31,8 @@ export function buildEventFixturePreview({
     teams: eventTeams,
     matches: eventMatches,
     thirdPlace: event.thirdPlace ?? true,
+    maxTeams: event.maxTeams,
+    allowByes: event.allowByes ?? true,
     seedingMode: event.seedingMode ?? "registration_order",
     fixtureStatus: event.fixtureStatus ?? "draft_auto"
   });

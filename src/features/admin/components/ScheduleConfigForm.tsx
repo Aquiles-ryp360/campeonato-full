@@ -8,6 +8,7 @@ export function ScheduleConfigForm({
   matchDuration,
   halfTimeMinute,
   transitionMinutes,
+  onTransitionMinutesChange,
   matchStartToleranceMinutes,
   onMatchStartToleranceMinutesChange,
   fixtureCompactPreview,
@@ -24,6 +25,7 @@ export function ScheduleConfigForm({
   matchDuration: number;
   halfTimeMinute: number;
   transitionMinutes: number;
+  onTransitionMinutesChange: (value: number) => void;
   matchStartToleranceMinutes: number;
   onMatchStartToleranceMinutesChange: (value: number) => void;
   fixtureCompactPreview: boolean;
@@ -65,7 +67,16 @@ export function ScheduleConfigForm({
         </Field>
         <Info label="Duracion partido" value={`${matchDuration} min`} />
         <Info label="Medio tiempo" value={`Minuto ${halfTimeMinute}`} />
-        <Info label="Pausa entre partidos" value={`${transitionMinutes} min`} />
+        <Field label="Pausa entre partidos">
+          <input
+            className={inputClass}
+            type="number"
+            min={0}
+            max={60}
+            value={transitionMinutes}
+            onChange={(event) => onTransitionMinutesChange(Number(event.target.value))}
+          />
+        </Field>
         <Field label="Tolerancia de inicio">
           <input
             className={inputClass}

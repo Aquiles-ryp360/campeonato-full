@@ -84,6 +84,10 @@ export function FixtureGenerationPanel({
   ).length;
   const bracket = preview?.bracket ?? null;
   const previewSchedule = preview?.schedule ?? null;
+  const configurationWarnings = selectedEvent
+    ? buildConfigurationWarnings(selectedEvent, activeTeamCount)
+    : [];
+  const warnings = [...configurationWarnings, ...(bracket?.warnings ?? [])];
 
   return (
     <div className="space-y-6">
@@ -115,8 +119,21 @@ export function FixtureGenerationPanel({
         ) : null}
         {selectedEvent ? (
           <div className="mt-4 grid gap-3 md:grid-cols-5">
-            <Info label="Estado" value={fixtureStatusLabel(selectedEvent.fixtureStatus)} />
+            <Info label="Formato" value={formatLabel(selectedEvent.format)} />
+            <Info label="Deporte" value={sportLabel(selectedEvent.sport)} />
+            <Info label="Categoria" value={selectedEvent.category || "Por definir"} />
+            <Info label="Estado fixture" value={fixtureStatusLabel(selectedEvent.fixtureStatus)} />
             <Info label="Equipos inscritos" value={`${activeTeamCount}/${selectedEvent.maxTeams}`} />
+            <Info label="Maximo equipos" value={`${selectedEvent.maxTeams}`} />
+            <Info label="Jugadores" value={`${selectedEvent.minPlayers}-${selectedEvent.maxPlayers} por equipo`} />
+            <Info label="Fecha" value={dateLabel(selectedEvent.eventDate)} />
+            <Info label="Cierre inscripcion" value={dateTimeLabel(selectedEvent.registrationOpenUntil)} />
+            <Info label="Sembrado" value={seedingLabel(selectedEvent.seedingMode)} />
+            <Info label="Byes" value={yesNo(selectedEvent.allowByes ?? false)} />
+            <Info label="Tercer lugar" value={yesNo(selectedEvent.thirdPlace ?? false)} />
+            <Info label="Penales" value={yesNo(selectedEvent.penaltiesEnabled ?? false)} />
+            <Info label="Marcador publico" value={yesNo(selectedEvent.publicLiveScores ?? false)} />
+            <Info label="Fixture compacto" value={yesNo(selectedEvent.fixtureCompactPreview ?? false)} />
             <Info label="Inicio" value={selectedEvent.scheduleConfig?.startTime ?? "09:00"} />
             <Info label="Duracion" value={`${selectedEvent.scheduleConfig?.matchDurationMinutes ?? 20} min`} />
             <Info label="Medio tiempo" value={`Min ${selectedEvent.scheduleConfig?.halfTimeMinute ?? Math.floor((selectedEvent.scheduleConfig?.matchDurationMinutes ?? 20) / 2)}`} />
@@ -130,9 +147,9 @@ export function FixtureGenerationPanel({
             <Info label="Llave principal" value={bracketMainLabel(bracket)} />
           </div>
         ) : null}
-        {bracket?.warnings.length ? (
+        {warnings.length ? (
           <div className="mt-4 rounded-md border border-brand-yellow/70 bg-brand-yellow/25 p-3 text-sm font-bold text-brand-navy">
-            {bracket.warnings.join(" ")}
+            {warnings.join(" ")}
           </div>
         ) : null}
         <ConflictSummary conflicts={conflicts} />
@@ -180,6 +197,88 @@ export function FixtureGenerationPanel({
       />
     </div>
   );
+}
+
+function buildConfigurationWarnings(event: TournamentEvent, activeTeamCount: number) {
+  const warnings: string[] = [];
+
+  if (event.format === "single_elimination" && event.allowByes === false) {
+    if (!isPowerOfTwo(event.maxTeams)) {
+      warnings.push(
+        `Configuracion incompatible: ${event.maxTeams} equipos maximos sin byes no arma una llave exacta; activa byes o usa 2, 4, 8, 16 o 32.`
+      );
+    }
+
+    if (activeTeamCount >= 2 && activeTeamCount !== event.maxTeams && !isPowerOfTwo(activeTeamCount)) {
+      warnings.push(
+        `Con ${activeTeamCount} inscritos y byes desactivados tampoco se puede generar llave directa exacta.`
+      );
+    }
+  }
+
+  return warnings;
+}
+
+function isPowerOfTwo(value: number) {
+  return value >= 2 && Number.isInteger(value) && (value & (value - 1)) === 0;
+}
+
+function formatLabel(format: TournamentEvent["format"]) {
+  const labels: Record<TournamentEvent["format"], string> = {
+    league: "Liga por puntos",
+    single_elimination: "Eliminacion directa",
+    groups_then_knockout: "Grupos + eliminacion"
+  };
+
+  return labels[format];
+}
+
+function sportLabel(sport: TournamentEvent["sport"]) {
+  const labels: Record<TournamentEvent["sport"], string> = {
+    futsal: "Futsal",
+    futbol: "Futbol",
+    voley: "Voley"
+  };
+
+  return labels[sport];
+}
+
+function seedingLabel(value: TournamentEvent["seedingMode"]) {
+  const labels: Record<NonNullable<TournamentEvent["seedingMode"]>, string> = {
+    registration_order: "Orden de inscripcion",
+    random: "Sorteo aleatorio",
+    manual: "Manual",
+    ranking: "Ranking previo"
+  };
+
+  return value ? labels[value] : "Orden de inscripcion";
+}
+
+function yesNo(value: boolean) {
+  return value ? "Si" : "No";
+}
+
+function dateLabel(value?: string) {
+  if (!value) return "Por definir";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return value.slice(0, 10);
+
+  return new Intl.DateTimeFormat("es-PE", {
+    dateStyle: "medium",
+    timeZone: "America/Lima"
+  }).format(date);
+}
+
+function dateTimeLabel(value?: string) {
+  if (!value) return "Por definir";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return value;
+
+  return new Intl.DateTimeFormat("es-PE", {
+    dateStyle: "medium",
+    timeStyle: "short",
+    timeZone: "America/Lima"
+  }).format(date);
 }
 
 function ConflictSummary({ conflicts }: { conflicts: ScheduleConflict[] }) {

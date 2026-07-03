@@ -45,6 +45,21 @@ test("knockout bracket for 12 teams creates preliminaries and direct byes", () =
   assert.equal(bracket.rounds.find((round) => round.stage === "quarter_finals")?.slots.length, 4);
 });
 
+test("knockout bracket respects disabled byes", () => {
+  const teams = Array.from({ length: 12 }, (_, index) => team(index + 1));
+  const bracket = generateKnockoutBracket({
+    eventId: baseEvent.id,
+    teams,
+    thirdPlace: true,
+    allowByes: false,
+    maxTeams: 12
+  });
+
+  assert.equal(bracket.status, "incomplete");
+  assert.equal(bracket.matches.length, 0);
+  assert.match(bracket.warnings.join(" "), /sin byes/);
+});
+
 test("group qualification adds best thirds to complete knockout size", () => {
   const groups: Group[] = ["A", "B", "C"].map((name, index) => ({
     id: `group-${name}`,
