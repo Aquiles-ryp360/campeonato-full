@@ -55,3 +55,13 @@ test("prefers explicit branding columns over schedule_config fallback", () => {
   assert.equal(event.careerLogoUrl, "/column-logo.png");
   assert.equal(event.paymentQrYapeUrl, "/column-yape.png");
 });
+
+test("normalizes whatsapp url to the configured phone", () => {
+  const event = mapEvent({
+    ...baseEventRow,
+    payment_contact_phone: "+51923037653",
+    payment_contact_whatsapp_url: "https://wa.me/51923037356?text=Hola"
+  });
+
+  assert.equal(event.paymentContactWhatsappUrl, "https://wa.me/51923037653?text=Hola");
+});

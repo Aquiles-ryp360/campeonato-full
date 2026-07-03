@@ -473,6 +473,7 @@ export function mapEvent(row: EventRow): TournamentEvent {
   const format = formatKeyFromValue(row.format) ?? formatKeyFromId(row.format_id);
   const scheduleConfig = row.schedule_config ?? undefined;
   const branding = scheduleConfig?.branding;
+  const paymentContactPhone = row.payment_contact_phone ?? branding?.paymentContactPhone ?? undefined;
 
   return {
     id: row.id,
@@ -497,9 +498,11 @@ export function mapEvent(row: EventRow): TournamentEvent {
     careerLogoUrl: row.career_logo_url ?? branding?.careerLogoUrl ?? undefined,
     paymentQrYapeUrl: row.payment_qr_yape_url ?? branding?.paymentQrYapeUrl ?? undefined,
     paymentQrPlinUrl: row.payment_qr_plin_url ?? branding?.paymentQrPlinUrl ?? undefined,
-    paymentContactPhone: row.payment_contact_phone ?? branding?.paymentContactPhone ?? undefined,
-    paymentContactWhatsappUrl:
-      row.payment_contact_whatsapp_url ?? branding?.paymentContactWhatsappUrl ?? undefined,
+    paymentContactPhone,
+    paymentContactWhatsappUrl: normalizeWhatsAppUrl(
+      paymentContactPhone,
+      row.payment_contact_whatsapp_url ?? branding?.paymentContactWhatsappUrl ?? undefined
+    ),
     themePrimaryColor: row.theme_primary_color ?? branding?.themePrimaryColor ?? undefined,
     themeSecondaryColor: row.theme_secondary_color ?? branding?.themeSecondaryColor ?? undefined,
     preventCrossSportConflicts: row.prevent_cross_sport_conflicts ?? false,
@@ -517,6 +520,25 @@ export function mapEvent(row: EventRow): TournamentEvent {
     fixtureCompactPreview: row.fixture_compact_preview ?? undefined,
     scheduleConfig
   };
+}
+
+function normalizeWhatsAppUrl(phone: string | undefined, url: string | undefined) {
+  if (!phone) return url;
+
+  const digits = phone.replace(/\D/g, "");
+  if (!digits) return url;
+
+  if (!url) return `https://wa.me/${digits}`;
+
+  try {
+    const parsed = new URL(url);
+    if (!parsed.hostname.endsWith("wa.me")) return url;
+
+    parsed.pathname = `/${digits}`;
+    return parsed.toString();
+  } catch {
+    return `https://wa.me/${digits}`;
+  }
 }
 
 export function mapRegistrationCode(row: RegistrationCodeRow): RegistrationCode {
