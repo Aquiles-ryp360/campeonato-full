@@ -337,7 +337,7 @@ export function ChampionshipWizard({
                     <input className={inputClass} value={draft.paymentContactPhone} onChange={(event) => updateDraft({ paymentContactPhone: event.target.value })} placeholder="+51923037653" />
                   </Field>
                   <Field label="Link wa.me">
-                    <input className={inputClass} value={draft.paymentContactWhatsappUrl} onChange={(event) => updateDraft({ paymentContactWhatsappUrl: event.target.value })} placeholder="https://wa.me/51923037356?text=..." />
+                    <input className={inputClass} value={draft.paymentContactWhatsappUrl} onChange={(event) => updateDraft({ paymentContactWhatsappUrl: event.target.value })} placeholder="https://wa.me/51923037653?text=..." />
                   </Field>
                   <div className="grid grid-cols-2 gap-3">
                     <Field label="Color principal">
@@ -559,7 +559,7 @@ function draftFromEvent(event?: TournamentEvent | null): WizardDraft {
     paymentContactPhone: event?.paymentContactPhone ?? "+51923037653",
     paymentContactWhatsappUrl:
       event?.paymentContactWhatsappUrl ??
-      "https://wa.me/51923037356?text=Te%20env%C3%ADo%20la%20captura.%20Por%20favor%2C%20proporci%C3%B3name%20el%20c%C3%B3digo%20%C3%BAnico%20de%20acceso.",
+      "https://wa.me/51923037653?text=Te%20env%C3%ADo%20la%20captura.%20Por%20favor%2C%20proporci%C3%B3name%20el%20c%C3%B3digo%20%C3%BAnico%20de%20acceso.",
     themePrimaryColor: event?.themePrimaryColor ?? "#28398f",
     themeSecondaryColor: event?.themeSecondaryColor ?? "#f4e84a",
     startTime: schedule?.startTime ?? "09:00",

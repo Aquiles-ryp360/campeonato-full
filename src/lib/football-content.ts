@@ -61,7 +61,7 @@ export const footballEvent: TournamentEvent = {
   paymentQrYapeUrl: "/epime-09/qr-yape.png",
   paymentContactPhone: "+51923037653",
   paymentContactWhatsappUrl:
-    "https://wa.me/51923037356?text=Te%20env%C3%ADo%20la%20captura.%20Por%20favor%2C%20proporci%C3%B3name%20el%20c%C3%B3digo%20%C3%BAnico%20de%20acceso.",
+    "https://wa.me/51923037653?text=Te%20env%C3%ADo%20la%20captura.%20Por%20favor%2C%20proporci%C3%B3name%20el%20c%C3%B3digo%20%C3%BAnico%20de%20acceso.",
   themePrimaryColor: "#28398f",
   themeSecondaryColor: "#f4e84a",
   preventCrossSportConflicts: true,
