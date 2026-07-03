@@ -1,0 +1,950 @@
+\documentclass[12pt,a4paper]{article}
+
+% =========================
+% Paquetes
+% =========================
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+\usepackage[spanish]{babel}
+\usepackage{geometry}
+\usepackage{enumitem}
+\usepackage{xcolor}
+\usepackage{graphicx}
+\usepackage[hidelinks]{hyperref}
+\usepackage[most]{tcolorbox}
+\usepackage{microtype}
+\usepackage{titlesec}
+\usepackage{fancyhdr}
+\usepackage{tabularx}
+\usepackage{array}
+\usepackage{ragged2e}
+\usepackage{tikz}
+
+% =========================
+% Configuración de página
+% =========================
+\geometry{
+	margin=2.25cm,
+	headheight=16pt
+}
+
+% =========================
+% Colores institucionales
+% Azul eléctrico, amarillo y plomo
+% =========================
+\definecolor{imegreen}{RGB}{0,102,255}       % Azul eléctrico principal
+\definecolor{imegreenDark}{RGB}{0,76,153}    % Azul institucional oscuro
+\definecolor{imegreenSoft}{RGB}{230,240,255} % Azul suave
+\definecolor{imedark}{RGB}{75,85,99}         % Plomo oscuro
+\definecolor{imegray}{RGB}{107,114,128}      % Plomo medio
+\definecolor{imelight}{RGB}{245,247,250}     % Fondo plomo claro
+\definecolor{imegold}{RGB}{255,204,0}        % Amarillo institucional
+\definecolor{imered}{RGB}{185,28,28}
+
+% =========================
+% Hipervínculos
+% =========================
+\hypersetup{
+	colorlinks=true,
+	linkcolor=imegreenDark,
+	urlcolor=imegreenDark,
+	citecolor=imegreenDark
+}
+
+% =========================
+% Listas
+% =========================
+\setlist[itemize]{
+	leftmargin=1.2cm,
+	itemsep=0.25em,
+	label=\textcolor{imegreen}{\small\textbullet}
+}
+
+\setlist[enumerate]{
+	leftmargin=1.2cm,
+	itemsep=0.25em,
+	label=\textcolor{imegreen}{\textbf{\arabic*.}}
+}
+
+% =========================
+% Encabezado y pie de página
+% =========================
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{\small\textcolor{imegray}{Bases Oficiales IME 2026}}
+\fancyhead[R]{\small\textcolor{imegray}{Fútbol 11 y Vóley Mixto}}
+\fancyfoot[C]{\small\textcolor{imegray}{\thepage}}
+\renewcommand{\headrulewidth}{0.4pt}
+\renewcommand{\footrulewidth}{0pt}
+
+% =========================
+% Estilo de títulos
+% =========================
+\titleformat{\section}
+{\Large\bfseries\color{imedark}}
+{\colorbox{imegreen}{\textcolor{white}{\thesection}}}
+{0.75em}
+{}
+[\vspace{0.25em}{\color{imegreen}\titlerule[0.8pt]}]
+
+\titleformat{\subsection}
+{\large\bfseries\color{imegreenDark}}
+{\thesubsection}
+{0.65em}
+{}
+
+\titlespacing*{\section}{0pt}{1.2em}{0.8em}
+\titlespacing*{\subsection}{0pt}{0.9em}{0.45em}
+
+% =========================
+% Datos editables
+% =========================
+\newcommand{\numeroYape}{987946291}
+\newcommand{\numeroContacto}{923037653}
+\newcommand{\nombreCampeonato}{Campeonato Deportivo de Ingeniería Mecánica Eléctrica 2026}
+\newcommand{\organizador}{Comisión Deportiva de Ingeniería Mecánica Eléctrica}
+\newcommand{\fechaCierreInscripcion}{8 de julio de 2026, 12:00 del mediodía}
+\newcommand{\fechaInicioFutbol}{9 de julio de 2026}
+\newcommand{\horaInicioFutbol}{8:00 a. m.}
+
+% =========================
+% Comandos generales
+% =========================
+\newcommand{\dato}[2]{%
+	\noindent\textcolor{imegreenDark}{\textbf{#1:}} #2\par\vspace{0.25em}
+}
+
+\newcommand{\datoTabla}[2]{%
+	\textbf{\textcolor{imegreenDark}{#1}} & #2\\[0.35em]
+}
+
+\newcommand{\logoCarrera}{%
+	\IfFileExists{assets/logo-carrera.png}{%
+		\includegraphics[width=2.7cm]{assets/logo-carrera.png}%
+	}{%
+		\fbox{\parbox[c][2.2cm][c]{3.8cm}{\centering Logo de la carrera}}%
+	}%
+}
+
+% =========================
+% Cajas visuales
+% =========================
+\newtcolorbox{cajaResumen}[1]{
+	enhanced,
+	breakable,
+	colback=white,
+	colframe=imegreen,
+	coltitle=white,
+	colbacktitle=imegreen,
+	fonttitle=\bfseries,
+	title=#1,
+	boxrule=0.9pt,
+	arc=3mm,
+	left=3mm,
+	right=3mm,
+	top=2mm,
+	bottom=2mm,
+	before skip=0.45cm,
+	after skip=0.45cm
+}
+
+\newtcolorbox{cajaTarjeta}[1]{
+	enhanced,
+	colback=white,
+	colframe=imegreen,
+	coltitle=white,
+	colbacktitle=imegreen,
+	fonttitle=\bfseries,
+	title=#1,
+	boxrule=0.9pt,
+	arc=3mm,
+	left=3mm,
+	right=3mm,
+	top=2mm,
+	bottom=2mm
+}
+
+\newtcolorbox{cajaImportante}[1]{
+	enhanced,
+	breakable,
+	colback=yellow!12,
+	colframe=imegold,
+	coltitle=black,
+	colbacktitle=imegold,
+	fonttitle=\bfseries,
+	title=#1,
+	boxrule=0.9pt,
+	arc=3mm,
+	left=3mm,
+	right=3mm,
+	top=2mm,
+	bottom=2mm,
+	before skip=0.45cm,
+	after skip=0.45cm
+}
+
+\newtcolorbox{cajaAdvertencia}[1]{
+	enhanced,
+	breakable,
+	colback=gray!8,
+	colframe=imedark,
+	coltitle=white,
+	colbacktitle=imedark,
+	fonttitle=\bfseries,
+	title=#1,
+	boxrule=0.9pt,
+	arc=3mm,
+	left=3mm,
+	right=3mm,
+	top=2mm,
+	bottom=2mm,
+	before skip=0.45cm,
+	after skip=0.45cm
+}
+
+\newtcolorbox{cajaPago}{
+	enhanced,
+	colback=imegreenSoft,
+	colframe=imegreen,
+	boxrule=1pt,
+	arc=4mm,
+	left=4mm,
+	right=4mm,
+	top=4mm,
+	bottom=4mm,
+	width=0.78\textwidth,
+	drop shadow
+}
+
+% =========================
+% Flyer en una hoja completa
+% =========================
+\newcommand{\flyerHojaCompleta}{%
+	\clearpage
+	\newgeometry{margin=0cm}
+	\thispagestyle{empty}
+	\noindent
+	\begin{minipage}[c][\paperheight][c]{\paperwidth}
+		\centering
+		\IfFileExists{assets/flyer-portada.png}{%
+			\includegraphics[
+			width=\paperwidth,
+			height=\paperheight,
+			keepaspectratio
+			]{assets/flyer-portada.png}%
+		}{%
+			\fbox{%
+				\parbox[c][0.90\paperheight][c]{0.90\paperwidth}{%
+					\centering
+					\Huge \textbf{Flyer oficial del campeonato}\\[0.5cm]
+					\Large Coloque la imagen en:\\[0.3cm]
+					\texttt{assets/flyer-portada.png}
+				}%
+			}%
+		}%
+	\end{minipage}
+	\clearpage
+	\restoregeometry
+}
+
+% =========================
+% QR grandes
+% =========================
+\newcommand{\qrYape}{%
+	\IfFileExists{assets/qr-yape.png}{%
+		\includegraphics[width=4.2cm]{assets/qr-yape.png}%
+	}{%
+		\fbox{\parbox[c][4cm][c]{4cm}{\centering QR Yape}}%
+	}%
+}
+
+\newcommand{\qrInscripcion}{%
+	\IfFileExists{assets/qr-inscripcion.png}{%
+		\includegraphics[width=4.2cm]{assets/qr-inscripcion.png}%
+	}{%
+		\fbox{\parbox[c][4cm][c]{4cm}{\centering QR de inscripción}}%
+	}%
+}
+
+\newcommand{\qrContacto}{%
+	\IfFileExists{assets/qr-contacto.png}{%
+		\includegraphics[width=4.2cm]{assets/qr-contacto.png}%
+	}{%
+		\fbox{\parbox[c][4cm][c]{4cm}{\centering QR de contacto}}%
+	}%
+}
+
+% =========================
+% QR pequeños para resumen rápido
+% =========================
+\newcommand{\qrYapeMini}{%
+	\IfFileExists{assets/qr-yape.png}{%
+		\includegraphics[width=2.cm]{assets/qr-yape.png}%
+	}{%
+		\fbox{\parbox[c][2.2cm][c]{2.2cm}{\centering QR}}%
+	}%
+}
+
+\newcommand{\qrInscripcionMini}{%
+	\IfFileExists{assets/qr-inscripcion.png}{%
+		\includegraphics[width=2.cm]{assets/qr-inscripcion.png}%
+	}{%
+		\fbox{\parbox[c][2.2cm][c]{2.2cm}{\centering QR}}%
+	}%
+}
+
+\newcommand{\qrContactoMini}{%
+	\IfFileExists{assets/qr-contacto.png}{%
+		\includegraphics[width=2.cm]{assets/qr-contacto.png}%
+	}{%
+		\fbox{\parbox[c][2.2cm][c]{2.2cm}{\centering QR}}%
+	}%
+}
+
+% =========================
+% Bloque de pago para portada
+% =========================
+\newcommand{\bloquePagoPortada}{%
+	\begin{cajaPago}
+		\centering
+		{\large \textbf{\textcolor{imegreenDark}{Pago oficial por Yape}}}\par
+		\vspace{0.15cm}
+		{\Huge \textcolor{imegreen}{\textbf{\numeroYape}}}\par
+		\vspace{0.15cm}
+		{\small Enviar captura del pago al contacto oficial: \textbf{\numeroContacto}}
+	\end{cajaPago}
+}
+
+% =========================
+% Portada formal mejorada
+% =========================
+\newcommand{\portadaFormal}{%
+	\begin{titlepage}
+		\thispagestyle{empty}
+		
+		\begin{tikzpicture}[remember picture,overlay]
+			\fill[imelight] (current page.north west) rectangle ([yshift=-6.2cm]current page.north east);
+			\fill[imegreen] (current page.north west) rectangle ([yshift=-0.45cm]current page.north east);
+			\fill[imegold] ([yshift=-0.45cm]current page.north west) rectangle ([yshift=-0.62cm]current page.north east);
+		\end{tikzpicture}
+		
+		\centering
+		
+		\vspace*{0.85cm}
+		
+		\logoCarrera
+		
+		\vspace{0.45cm}
+		
+		{\Large \textbf{\textcolor{imedark}{Escuela Profesional de Ingeniería Mecánica Eléctrica}}\par}
+		
+		\vspace{0.85cm}
+		
+		\begin{tcolorbox}[
+			enhanced,
+			colback=white,
+			colframe=imegreen,
+			boxrule=1pt,
+			arc=4mm,
+			width=0.92\textwidth,
+			left=5mm,
+			right=5mm,
+			top=5mm,
+			bottom=5mm,
+			drop shadow
+			]
+			\centering
+			{\Huge \textbf{\textcolor{imedark}{Bases Oficiales del Campeonato}}\par}
+			\vspace{0.25cm}
+			{\LARGE \textcolor{imegreenDark}{\textbf{Fútbol 11 y Vóley Mixto}}\par}
+			\vspace{0.25cm}
+			{\large \textcolor{imegray}{\nombreCampeonato}\par}
+		\end{tcolorbox}
+		
+		\vspace{0.65cm}
+		
+		\bloquePagoPortada
+		
+		\vspace{0.65cm}
+		
+		\begin{tcolorbox}[
+			enhanced,
+			colback=white,
+			colframe=imegreenSoft,
+			boxrule=0.9pt,
+			arc=3mm,
+			width=0.92\textwidth,
+			left=4mm,
+			right=4mm,
+			top=3mm,
+			bottom=3mm
+			]
+			\renewcommand{\arraystretch}{1.15}
+			\begin{tabularx}{\linewidth}{
+					>{\RaggedRight\arraybackslash}p{0.34\linewidth}
+					>{\RaggedRight\arraybackslash}X
+				}
+				\datoTabla{Organiza}{\organizador}
+				\datoTabla{Inscripción Fútbol 11}{S/ 35.00 por equipo}
+				\datoTabla{Inscripción Vóley Mixto}{S/ 25.00 por equipo}
+				\datoTabla{Requisito académico}{Matrícula vigente en el semestre en el que participa}
+				\datoTabla{Cierre de inscripción}{\fechaCierreInscripcion}
+				\datoTabla{Inscripción}{Mediante enlace y QR oficial del campeonato}
+				\datoTabla{Contacto}{\numeroContacto}
+			\end{tabularx}
+		\end{tcolorbox}
+		
+		
+		
+	\end{titlepage}
+}
+
+% =========================
+% Resumen rápido
+% =========================
+\newcommand{\resumenRapido}{%
+	\clearpage
+	\thispagestyle{empty}
+	
+	\begin{tikzpicture}[remember picture,overlay]
+		\fill[imelight] (current page.north west) rectangle (current page.south east);
+		\fill[imegreen] (current page.north west) rectangle ([yshift=-0.50cm]current page.north east);
+		\fill[imegold] ([yshift=-0.50cm]current page.north west) rectangle ([yshift=-0.67cm]current page.north east);
+	\end{tikzpicture}
+	
+	\vspace*{0.35cm}
+	
+	\begin{center}
+		{\Huge \textbf{\textcolor{imegreenDark}{Resumen rápido}}}\\[0.2cm]
+		{\large \textcolor{imegray}{Información esencial para delegados y jugadores}}
+	\end{center}
+	
+	\vspace{0.5cm}
+	
+	\noindent
+	\begin{minipage}[t]{0.48\textwidth}
+		\begin{cajaTarjeta}{Fechas importantes}
+			\begin{itemize}
+				\item Cierre Fútbol 11: \textbf{\fechaCierreInscripcion}.
+				\item Cierre Vóley Mixto: \textbf{\fechaCierreInscripcion}.
+				\item Inicio Fútbol 11: \textbf{\fechaInicioFutbol, \horaInicioFutbol}.
+			\end{itemize}
+		\end{cajaTarjeta}
+		
+		\vspace{0.45cm}
+		
+		\begin{cajaTarjeta}{Costos de inscripción}
+			\begin{itemize}
+				\item Fútbol 11: \textbf{S/ 35.00 por equipo}.
+				\item Vóley Mixto: \textbf{S/ 25.00 por equipo}.
+				\item Pago oficial por Yape: \textbf{\numeroYape}.
+			\end{itemize}
+		\end{cajaTarjeta}
+	\end{minipage}
+	\hfill
+	\begin{minipage}[t]{0.48\textwidth}
+		\begin{cajaTarjeta}{Requisitos básicos}
+			\begin{itemize}
+				\item Matrícula vigente en el semestre en el que participa.
+				\item Registro correcto de datos del jugador.
+				\item Delegado responsable por equipo.
+				\item Pago validado por la organización.
+			\end{itemize}
+		\end{cajaTarjeta}
+		
+		\vspace{0.45cm}
+		
+		\begin{cajaTarjeta}{Accesos rápidos}
+			\centering
+			\renewcommand{\arraystretch}{1.2}
+			\begin{tabular}{ccc}
+				\textbf{Inscripción} & \textbf{Contacto} & \textbf{Yape} \\
+				\qrInscripcionMini & \qrContactoMini & \qrYapeMini \\
+			\end{tabular}
+			
+			\vspace{0.25cm}
+			
+			{\small Contacto oficial: \textbf{\numeroContacto}}
+		\end{cajaTarjeta}
+	\end{minipage}
+	
+	\vfill
+	
+	\begin{center}
+		\begin{tcolorbox}[
+			enhanced,
+			colback=white,
+			colframe=imegold,
+			boxrule=0.9pt,
+			arc=3mm,
+			width=0.92\textwidth,
+			left=4mm,
+			right=4mm,
+			top=3mm,
+			bottom=3mm
+			]
+			\centering
+			\textbf{\textcolor{imedark}{Nota:}} Revise las secciones completas del documento para conocer todas las reglas, sanciones y procedimientos oficiales.
+		\end{tcolorbox}
+	\end{center}
+	
+	\clearpage
+}
+
+\title{\textbf{Bases Oficiales}\\\nombreCampeonato}
+\author{\organizador}
+\date{Actualizado al 1 de julio de 2026}
+
+\begin{document}
+	
+	% =========================
+	% Flyer completo en primera hoja
+	% =========================
+	\pagenumbering{gobble}
+	\flyerHojaCompleta
+	
+	% =========================
+	% Portada formal
+	% =========================
+	\portadaFormal
+	
+	% =========================
+	% Resumen rápido
+	% =========================
+	\resumenRapido
+	
+	% =========================
+	% Índice
+	% =========================
+	\pagenumbering{roman}
+	\thispagestyle{fancy}
+	
+	\begin{cajaResumen}{Índice general}
+		\tableofcontents
+	\end{cajaResumen}
+	
+	\newpage
+	\pagenumbering{arabic}
+	
+	% =========================
+	% Presentación
+	% =========================
+	\section{Presentación}
+	
+	\begin{cajaResumen}{Presentación del campeonato}
+		Las presentes bases regulan la organización y participación en el \textbf{\nombreCampeonato}, que comprende las disciplinas de \textbf{Fútbol 11} y \textbf{Vóley Mixto}. El campeonato busca promover la integración, el respeto, la competencia sana y la participación responsable de los equipos inscritos.
+		
+		La inscripción, programación, registro de jugadores, resultados, sanciones y publicación de información oficial se administrarán mediante el sistema del campeonato y por las decisiones de la organización.
+	\end{cajaResumen}
+	
+	% =========================
+	% Objetivos
+	% =========================
+	\section{Objetivos}
+	
+	\begin{enumerate}
+		\item Fomentar la práctica deportiva entre estudiantes y equipos vinculados a Ingeniería Mecánica Eléctrica.
+		\item Promover la integración, disciplina, puntualidad y juego limpio.
+		\item Establecer reglas claras para inscripción, participación, arbitraje y resolución de reclamos.
+		\item Publicar resultados y avances del campeonato de forma transparente.
+	\end{enumerate}
+	
+	% =========================
+	% Datos generales
+	% =========================
+	\section{Datos generales del campeonato}
+	
+	\begin{cajaResumen}{Información principal}
+		\renewcommand{\arraystretch}{1.25}
+		\begin{tabularx}{\linewidth}{
+				>{\RaggedRight\arraybackslash}p{0.38\linewidth}
+				>{\RaggedRight\arraybackslash}X
+			}
+			\datoTabla{Institución / escuela}{Escuela Profesional de Ingeniería Mecánica Eléctrica}
+			\datoTabla{Campeonato}{\nombreCampeonato}
+			\datoTabla{Deportes}{Fútbol 11 y Vóley Mixto}
+			\datoTabla{Lugar}{Campus universitario y canchas designadas por la organización}
+			\datoTabla{Costo de inscripción}{Fútbol 11: S/ 35.00 por equipo. Vóley Mixto: S/ 25.00 por equipo}
+			\datoTabla{Requisito académico}{Cada jugador debe acreditar matrícula vigente en el semestre en el que participa.}
+			\datoTabla{Pago por Yape}{\textbf{\numeroYape}. El encargado entrega un código único de inscripción después de verificar el pago.}
+			\datoTabla{Pago por Plin}{Disponible según indicación de la organización.}
+			\datoTabla{Inscripción}{Mediante enlace y QR oficial del campeonato.}
+			\datoTabla{Cierre de inscripción Fútbol 11}{\fechaCierreInscripcion, salvo modificación comunicada por la organización.}
+			\datoTabla{Cierre de inscripción Vóley Mixto}{\fechaCierreInscripcion, salvo modificación comunicada por la organización.}
+			\datoTabla{Contacto oficial}{\organizador{} / \numeroContacto}
+		\end{tabularx}
+	\end{cajaResumen}
+	
+	% =========================
+	% Inscripción
+	% =========================
+	\section{Inscripción general}
+	
+	\subsection{Condiciones para inscribirse}
+	
+	Solo podrán participar equipos inscritos dentro del plazo establecido y con pago validado por la organización. El registro se realiza en el sistema oficial del campeonato, utilizando el código único entregado luego del pago.
+	
+	\begin{cajaImportante}{Requisito académico obligatorio}
+		Cada jugador deberá acreditar matrícula vigente correspondiente al semestre en el que participa.
+	\end{cajaImportante}
+	
+	\subsection{Enlace y QR de inscripción}
+	
+	La inscripción de los equipos se realizará mediante el formulario oficial del campeonato. Cada delegado deberá ingresar al enlace de inscripción, completar los datos solicitados y registrar a los jugadores correspondientes.
+	
+	\begin{cajaImportante}{Formulario oficial de inscripción}
+		\centering
+		\textbf{Escanee el QR para acceder al formulario de inscripción.}
+		
+		\vspace{0.35cm}
+		\qrInscripcion
+		
+		\vspace{0.3cm}
+		\textbf{Enlace de inscripción:}\\
+		\url{https://campeonato-full.vercel.app/}
+	\end{cajaImportante}
+	
+	\begin{cajaImportante}{Contacto con la organización}
+		\centering
+		Para consultas, coordinación o confirmación de información, comuníquese con la organización mediante el siguiente QR.
+		
+		\vspace{0.35cm}
+		\qrContacto
+		
+		\vspace{0.3cm}
+		\textbf{Contacto oficial: \numeroContacto}
+	\end{cajaImportante}
+	
+	El enlace y el QR de inscripción serán los únicos medios oficiales para registrar equipos en el sistema.
+	
+	\subsection{Costo y pago}
+	
+	\begin{itemize}
+		\item El costo de inscripción para Fútbol 11 es de \textbf{S/ 35.00 por equipo}.
+		\item El costo de inscripción para Vóley Mixto es de \textbf{S/ 25.00 por equipo}.
+		\item El pago oficial por \textbf{Yape} se realiza al número \textbf{\numeroYape}.
+		\item También se podrá pagar por \textbf{Plin}, según indicación de la organización.
+		\item Luego de verificar el pago, la organización entregará un \textbf{código único de inscripción}.
+		\item El código solo puede usarse una vez y queda asociado al equipo inscrito.
+		\item La inscripción está sujeta a validación de pago y revisión de requisitos.
+	\end{itemize}
+	
+	\begin{center}
+		\begin{cajaPago}
+			\centering
+			\textbf{\Large Pago oficial por Yape}
+			
+			\vspace{0.2cm}
+			{\Huge \textcolor{imegreen}{\textbf{\numeroYape}}}
+			
+			\vspace{0.35cm}
+			\qrYape
+			
+			\vspace{0.3cm}
+			\textbf{Enviar captura del pago al contacto oficial: \numeroContacto}
+		\end{cajaPago}
+	\end{center}
+	
+	\subsection{Datos obligatorios del equipo}
+	
+	Cada equipo debe registrar:
+	
+	\begin{itemize}
+		\item nombre del equipo;
+		\item deporte y categoría;
+		\item nombre completo del delegado;
+		\item número de celular del delegado;
+		\item correo del delegado;
+		\item carrera, escuela o grupo al que representa, si corresponde;
+		\item método de pago utilizado;
+		\item código único de inscripción.
+	\end{itemize}
+	
+	\subsection{Datos obligatorios de cada jugador}
+	
+	Cada jugador debe registrar:
+	
+	\begin{itemize}
+		\item nombres;
+		\item apellidos;
+		\item DNI;
+		\item código de estudiante o jugador;
+		\item semestre o ciclo académico en el que participa;
+		\item ficha de matrícula vigente en formato PDF, JPG o PNG;
+		\item constancia o ficha de matrícula correspondiente al semestre en el que juega;
+		\item número de camiseta, si la organización lo solicita;
+		\item rol o condición deportiva, si corresponde.
+	\end{itemize}
+	
+	\subsection{Archivo de ficha de matrícula}
+	
+	\begin{cajaAdvertencia}{Documento obligatorio}
+		La ficha de matrícula es obligatoria para cada jugador. Dicha ficha deberá acreditar que el participante se encuentra matriculado en el semestre en el que juega.
+		
+		La organización podrá rechazar u observar registros sin ficha, con ficha ilegible o con información inconsistente.
+		
+		El sistema admitirá archivos PDF, JPG o PNG. El tamaño máximo recomendado por archivo es de 5 MB.
+	\end{cajaAdvertencia}
+	
+	% =========================
+	% Requisitos de equipos
+	% =========================
+	\section{Requisitos de equipos}
+	
+	\begin{itemize}
+		\item Cada equipo debe tener un delegado responsable.
+		\item Los equipos deben completar la cantidad mínima de jugadores exigida por su deporte.
+		\item Solo se considerarán habilitados los equipos con pago validado y aprobación de la organización.
+		\item La organización podrá observar, rechazar o descalificar inscripciones incompletas o falsas.
+		\item No se permite suplantación de jugadores ni documentación adulterada.
+	\end{itemize}
+	
+	% =========================
+	% Requisitos de jugadores
+	% =========================
+	\section{Requisitos de jugadores}
+	
+	\begin{cajaImportante}{Condición académica}
+		Para participar, cada jugador deberá acreditar matrícula vigente correspondiente al semestre en el que juega.
+	\end{cajaImportante}
+	
+	\begin{itemize}
+		\item El jugador debe estar correctamente registrado en el sistema.
+		\item El jugador deberá acreditar matrícula vigente correspondiente al semestre en el que participa.
+		\item No se permite que un jugador participe en dos equipos de la misma categoría.
+		\item La duplicidad se verificará por DNI y por código de estudiante o jugador.
+		\item El jugador debe presentar datos verdaderos y ficha de matrícula válida.
+		\item Un jugador no habilitado puede ocasionar observación, pérdida del partido o descalificación del equipo, según la gravedad.
+	\end{itemize}
+	
+	% =========================
+	% Delegado
+	% =========================
+	\section{Rol del delegado}
+	
+	El delegado es el representante oficial del equipo ante la organización. Sus responsabilidades son:
+	
+	\begin{itemize}
+		\item registrar correctamente al equipo y sus jugadores;
+		\item revisar que cada jugador tenga DNI, código, semestre y ficha de matrícula vigente;
+		\item verificar que la ficha de matrícula corresponda al semestre en el que participa el jugador;
+		\item recibir y atender comunicaciones oficiales;
+		\item presentar reclamos, si correspondiera;
+		\item garantizar puntualidad y conducta deportiva de su equipo.
+	\end{itemize}
+	
+	Mientras la inscripción esté abierta y el campeonato no haya iniciado, el delegado podrá solicitar o realizar modificaciones permitidas por el sistema. Una vez iniciado el campeonato, el delegado no podrá editar datos del equipo ni del plantel.
+	
+	Después del inicio, solo podrá modificar el número de camiseta de cada jugador una única vez, si el sistema y la organización lo permiten. El número debe estar entre 1 y 99 y no puede repetirse dentro del mismo equipo.
+	
+	% =========================
+	% Fútbol 11
+	% =========================
+	\section{Campeonato de Fútbol 11}
+	
+	\begin{cajaResumen}{Datos específicos de Fútbol 11}
+		\renewcommand{\arraystretch}{1.25}
+		\begin{tabularx}{\linewidth}{
+				>{\RaggedRight\arraybackslash}p{0.35\linewidth}
+				>{\RaggedRight\arraybackslash}X
+			}
+			\datoTabla{Deporte}{Fútbol 11}
+			\datoTabla{Formato}{Eliminación directa}
+			\datoTabla{Costo de inscripción}{S/ 35.00 por equipo}
+			\datoTabla{Fecha de inicio}{\fechaInicioFutbol}
+			\datoTabla{Hora de inicio}{\horaInicioFutbol}
+			\datoTabla{Canchas}{1 cancha}
+			\datoTabla{Fixture}{Programación o sorteo aleatorio realizado por la organización}
+			\datoTabla{Equipos participantes}{Solo equipos inscritos, con pago validado, matrícula verificada y aprobados por la organización}
+		\end{tabularx}
+	\end{cajaResumen}
+	
+	\subsection{Duración del partido}
+	
+	Cada partido tendrá:
+	
+	\begin{itemize}
+		\item primer tiempo: 10 minutos;
+		\item descanso: 5 minutos;
+		\item segundo tiempo: 15 minutos.
+	\end{itemize}
+	
+	El árbitro será responsable del control del tiempo oficial y de registrar el estado del partido en el sistema.
+	
+	\subsection{Empate}
+	
+	Al tratarse de eliminación directa:
+	
+	\begin{itemize}
+		\item si el partido termina empatado en el tiempo reglamentario, se definirá por penales;
+		\item no habrá tiempo extra, salvo decisión expresa de la organización;
+		\item el ganador por penales avanzará a la siguiente fase;
+		\item si se trata de la final, el ganador será declarado campeón.
+	\end{itemize}
+	
+	\subsection{Penales}
+	
+	\begin{itemize}
+		\item Cada equipo ejecutará una tanda inicial de 3 penales.
+		\item Si persiste el empate, se continuará con muerte súbita.
+		\item Los goles de penales no se suman al marcador del tiempo reglamentario.
+		\item Los penales solo sirven para definir al ganador.
+	\end{itemize}
+	
+	\begin{cajaImportante}{Ejemplo de resultado con penales}
+		\centering
+		{\Large \textbf{Equipo A 1 (3) -- 1 (2) Equipo B}}
+	\end{cajaImportante}
+	
+	\subsection{Arbitraje en Fútbol 11}
+	
+	\begin{itemize}
+		\item El árbitro es la autoridad principal del partido.
+		\item El resultado cargado por el árbitro se publicará inmediatamente como resultado oficial.
+		\item La organización podrá revisar o corregir el resultado solo en caso de controversia, reclamo o error comprobado.
+		\item Las tarjetas rojas generan suspensión automática mínima de un partido.
+		\item Las tarjetas amarillas se registrarán para control disciplinario.
+	\end{itemize}
+	
+	% =========================
+	% Vóley Mixto
+	% =========================
+	\section{Campeonato de Vóley Mixto}
+	
+	\begin{cajaResumen}{Datos específicos de Vóley Mixto}
+		\renewcommand{\arraystretch}{1.25}
+		\begin{tabularx}{\linewidth}{
+				>{\RaggedRight\arraybackslash}p{0.35\linewidth}
+				>{\RaggedRight\arraybackslash}X
+			}
+			\datoTabla{Deporte}{Vóley Mixto}
+			\datoTabla{Modalidad}{Mixto}
+			\datoTabla{Estado}{Abierto a inscripción}
+			\datoTabla{Sistema de juego}{Por sets}
+			\datoTabla{Formato}{Editable por la organización según cantidad de equipos inscritos}
+			\datoTabla{Costo de inscripción}{S/ 25.00 por equipo}
+			\datoTabla{Equipos participantes}{Solo equipos inscritos, con pago validado, matrícula verificada y aprobados por la organización}
+		\end{tabularx}
+	\end{cajaResumen}
+	
+	\subsection{Puntuación de sets}
+	
+	Para que el campeonato sea rápido, se aplicará la siguiente puntuación:
+	
+	\begin{itemize}
+		\item set 1: a 25 puntos;
+		\item set 2: a 25 puntos;
+		\item set 3: a 10 puntos, solo si hay empate 1--1.
+	\end{itemize}
+	
+	\begin{cajaAdvertencia}{Regla de diferencia}
+		\begin{itemize}
+			\item Cada set debe ganarse por diferencia mínima de 2 puntos.
+			\item Set 1 y set 2 tendrán tope máximo de 27 puntos.
+			\item Set 3 tendrá tope máximo de 12 puntos.
+		\end{itemize}
+	\end{cajaAdvertencia}
+	
+	Ejemplos:
+	
+	\begin{itemize}
+		\item si un set va 24--24, se juega hasta diferencia de 2;
+		\item si llega a 26--26, gana quien haga el punto 27;
+		\item en el tercer set, si llega a 11--11, gana quien haga el punto 12.
+	\end{itemize}
+	
+	\subsection{Composición mixta}
+	
+	Cada equipo de Vóley Mixto deberá mantener en cancha una conformación de \textbf{4 varones y 2 mujeres}.
+	
+	Los varones deberán pertenecer a la carrera de Ingeniería Mecánica Eléctrica. En caso de no contar con mujeres de la carrera, se permitirá la inscripción de mujeres pertenecientes a la universidad, previa aceptación de la organización.
+	
+	\subsection{Resultados de Vóley Mixto}
+	
+	\begin{itemize}
+		\item El árbitro o responsable registrará los sets ganados y los puntos por set.
+		\item El resultado se publicará en el sistema una vez registrado.
+		\item La organización podrá revisarlo en caso de controversia.
+	\end{itemize}
+	
+	% =========================
+	% Arbitraje y resultados
+	% =========================
+	\section{Arbitraje y resultados}
+	
+	\begin{itemize}
+		\item El árbitro o responsable designado controlará el desarrollo del partido.
+		\item Los resultados registrados por el árbitro se publicarán como resultado oficial.
+		\item El público, delegados, árbitros y administradores podrán visualizar los resultados publicados.
+		\item La organización solo intervendrá después si existe controversia, reclamo, error reportado u observación administrativa.
+		\item Las correcciones deberán quedar registradas con motivo, fecha y responsable.
+	\end{itemize}
+	
+	% =========================
+	% Sanciones
+	% =========================
+	\section{Sanciones}
+	
+	\begin{cajaAdvertencia}{Faltas y sanciones}
+		\begin{itemize}
+			\item Tarjeta roja directa: suspensión mínima de 1 partido.
+			\item Agresión verbal o física: evaluación por la organización y posible suspensión mayor o descalificación.
+			\item Jugador no habilitado: posible pérdida del partido.
+			\item Matrícula no vigente o ficha inválida: observación, inhabilitación del jugador, pérdida del partido o descalificación del equipo, según la gravedad.
+			\item Inscripción falsa: descalificación del equipo.
+			\item Conducta antideportiva: sanción según gravedad.
+			\item La organización podrá ampliar sanciones en casos de reincidencia o hechos graves.
+		\end{itemize}
+	\end{cajaAdvertencia}
+	
+	% =========================
+	% Reclamos
+	% =========================
+	\section{Reclamos}
+	
+	\begin{itemize}
+		\item Los reclamos deberán ser presentados únicamente por el delegado.
+		\item Deben realizarse dentro de un plazo máximo de 30 minutos después del partido.
+		\item La organización revisará evidencias, reporte arbitral y registros del sistema.
+		\item La decisión de la organización será final.
+	\end{itemize}
+	
+	% =========================
+	% Disposiciones finales
+	% =========================
+	\section{Disposiciones finales}
+	
+	\begin{enumerate}
+		\item La participación en el campeonato implica la aceptación total de estas bases.
+		\item Los casos no previstos serán resueltos por la organización.
+		\item La organización podrá ajustar horarios, canchas o fixture por razones justificadas.
+		\item Cualquier modificación será comunicada por los canales oficiales.
+		\item La organización velará por la transparencia, seguridad y correcto desarrollo del campeonato.
+	\end{enumerate}
+	
+	\vfill
+	
+	\begin{center}
+		\begin{tcolorbox}[
+			enhanced,
+			colback=imelight,
+			colframe=imegreen,
+			boxrule=0.8pt,
+			arc=3mm,
+			width=0.82\textwidth,
+			left=3mm,
+			right=3mm,
+			top=3mm,
+			bottom=3mm
+			]
+			\centering
+			\textcolor{imegreenDark}{\textbf{\organizador}}\\
+			\nombreCampeonato\\
+			Contacto: \numeroContacto\\
+			Yape: \numeroYape\\
+			Requisito académico: matrícula vigente
+		\end{tcolorbox}
+	\end{center}
+	
+\end{document}
