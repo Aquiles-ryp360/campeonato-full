@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
+import { scoreFromLiveEvents } from "@/lib/live-event-score";
 import { createSupabaseAdminClient } from "@/lib/supabase-admin";
 import { requireAdminUser, ServerAccessError, type AdminClient } from "@/lib/server-access";
 
@@ -23,6 +24,26 @@ type MatchRow = {
   penalty_away_score: number | null;
   winner_team_id: string | null;
   referee_notes: string | null;
+  live_status?: string | null;
+};
+
+type LiveEventRow = {
+  id: string;
+  match_id: string;
+  team_id: string | null;
+  player_id: string | null;
+  event_type: string;
+  period: string;
+  minute: number;
+  score_home: number | null;
+  score_away: number | null;
+  penalty_order: number | null;
+  notes: string | null;
+  created_by: string | null;
+  created_at: string;
+  corrected_at: string | null;
+  corrected_by: string | null;
+  correction_reason: string | null;
 };
 
 const reviewSchema = z.discriminatedUnion("action", [
@@ -38,6 +59,16 @@ const reviewSchema = z.discriminatedUnion("action", [
     penaltyAwayScore: z.coerce.number().int().min(0).optional(),
     winnerTeamId: z.string().uuid().optional(),
     reason: z.string().trim().min(3).max(500)
+  }),
+  z.object({
+    action: z.literal("void_event"),
+    eventId: z.string().uuid(),
+    reason: z.string().trim().min(3).max(500)
+  }),
+  z.object({
+    action: z.literal("restore_event"),
+    eventId: z.string().uuid(),
+    reason: z.string().trim().min(3).max(500)
   })
 ]);
 
@@ -51,6 +82,16 @@ export async function POST(request: Request, context: RouteContext) {
 
     if (input.action === "mark_under_review") {
       await markUnderReview(admin, match, user.id, input.reason);
+      return NextResponse.json({ ok: true });
+    }
+
+    if (input.action === "void_event") {
+      await setEventCorrection(admin, match, user.id, input.eventId, input.reason, true);
+      return NextResponse.json({ ok: true });
+    }
+
+    if (input.action === "restore_event") {
+      await setEventCorrection(admin, match, user.id, input.eventId, input.reason, false);
       return NextResponse.json({ ok: true });
     }
 
@@ -89,6 +130,13 @@ async function markUnderReview(admin: AdminClient, match: MatchRow, userId: stri
   if (error) throw new Error(error.message);
 
   await insertAdminObservation(admin, match, userId, `Resultado marcado en revision: ${reason}`);
+  await insertAuditLog(admin, {
+    userId,
+    action: "admin.result.mark_under_review",
+    entityTable: "matches",
+    entityId: match.id,
+    payload: { matchId: match.id, reason, previousLiveStatus: match.live_status ?? null }
+  });
 }
 
 async function correctResult(
@@ -127,6 +175,155 @@ async function correctResult(
 
   await reconcileWinnerProgression(admin, match, winnerTeamId);
   await insertAdminObservation(admin, match, userId, `Resultado corregido: ${input.reason}`);
+  await insertAuditLog(admin, {
+    userId,
+    action: "admin.result.correct",
+    entityTable: "matches",
+    entityId: match.id,
+    payload: {
+      reason: input.reason,
+      before: {
+        homeScore: match.home_score,
+        awayScore: match.away_score,
+        penaltyHomeScore: match.penalty_home_score,
+        penaltyAwayScore: match.penalty_away_score,
+        winnerTeamId: match.winner_team_id
+      },
+      after: {
+        homeScore: input.homeScore,
+        awayScore: input.awayScore,
+        penaltyHomeScore: penaltyHome,
+        penaltyAwayScore: penaltyAway,
+        winnerTeamId
+      }
+    }
+  });
+}
+
+async function setEventCorrection(
+  admin: AdminClient,
+  match: MatchRow,
+  userId: string,
+  eventId: string,
+  reason: string,
+  voided: boolean
+) {
+  const event = await getLiveEvent(admin, match.id, eventId);
+  const now = new Date().toISOString();
+  const update = voided
+    ? {
+        corrected_at: now,
+        corrected_by: userId,
+        correction_reason: reason
+      }
+    : {
+        corrected_at: null,
+        corrected_by: null,
+        correction_reason: `Restaurado: ${reason}`
+      };
+
+  const { error } = await admin
+    .from("match_live_events")
+    .update(update)
+    .eq("id", event.id)
+    .eq("match_id", match.id);
+
+  if (error) throw new Error(error.message);
+
+  const recalculated = await recalculateMatchScoreFromEvents(admin, match);
+  const label = voided ? "Evento anulado" : "Evento restaurado";
+
+  await insertAdminObservation(admin, match, userId, `${label}: ${event.event_type}. ${reason}`);
+  await insertAuditLog(admin, {
+    userId,
+    action: voided ? "admin.event.void" : "admin.event.restore",
+    entityTable: "match_live_events",
+    entityId: event.id,
+    payload: {
+      matchId: match.id,
+      reason,
+      before: event,
+      after: {
+        correctedAt: voided ? now : null,
+        correctedBy: voided ? userId : null,
+        correctionReason: update.correction_reason
+      },
+      recalculated
+    }
+  });
+}
+
+async function getLiveEvent(admin: AdminClient, matchId: string, eventId: string) {
+  const { data, error } = await admin
+    .from("match_live_events")
+    .select("*")
+    .eq("id", eventId)
+    .eq("match_id", matchId)
+    .maybeSingle<LiveEventRow>();
+
+  if (error) throw new Error(error.message);
+  if (!data) throw new ServerAccessError("Evento no encontrado.", 404);
+  return data;
+}
+
+async function recalculateMatchScoreFromEvents(admin: AdminClient, match: MatchRow) {
+  const { data, error } = await admin
+    .from("match_live_events")
+    .select("id, team_id, event_type, corrected_at")
+    .eq("match_id", match.id)
+    .is("corrected_at", null);
+
+  if (error) throw new Error(error.message);
+
+  const score = scoreFromLiveEvents(
+    {
+      homeTeamId: match.home_team_id,
+      awayTeamId: match.away_team_id
+    },
+    (data ?? []).map((event) => ({
+      teamId: event.team_id as string | null,
+      eventType: event.event_type as string,
+      correctedAt: event.corrected_at as string | null
+    }))
+  );
+  const winnerTeamId = resolveWinnerTeamId(
+    match,
+    score.homeScore,
+    score.awayScore,
+    score.penaltyHomeScore,
+    score.penaltyAwayScore
+  );
+  const winMethod = winnerTeamId
+    ? score.homeScore === score.awayScore && score.penaltyHomeScore !== score.penaltyAwayScore
+      ? "penalties"
+      : "regulation"
+    : null;
+  const liveStatus = shouldMarkResultCorrected(match.live_status) ? "corrected" : match.live_status ?? "scheduled";
+
+  const { error: updateError } = await admin
+    .from("matches")
+    .update({
+      home_score: score.homeScore,
+      away_score: score.awayScore,
+      penalty_home_score: score.penaltyHomeScore,
+      penalty_away_score: score.penaltyAwayScore,
+      winner_team_id: winnerTeamId,
+      win_method: winMethod,
+      live_status: liveStatus,
+      updated_at: new Date().toISOString()
+    })
+    .eq("id", match.id);
+
+  if (updateError) throw new Error(updateError.message);
+
+  await reconcileWinnerProgression(admin, match, winnerTeamId);
+
+  return {
+    ...score,
+    winnerTeamId,
+    winMethod,
+    liveStatus
+  };
 }
 
 function resolveWinnerTeamId(
@@ -203,7 +400,32 @@ async function insertAdminObservation(admin: AdminClient, match: MatchRow, userI
   if (error) throw new Error(error.message);
 }
 
+async function insertAuditLog(
+  admin: AdminClient,
+  input: {
+    userId: string;
+    action: string;
+    entityTable: string;
+    entityId: string;
+    payload: Record<string, unknown>;
+  }
+) {
+  const { error } = await admin.from("audit_logs").insert({
+    actor_id: input.userId,
+    action: input.action,
+    entity_table: input.entityTable,
+    entity_id: input.entityId,
+    payload: input.payload
+  });
+
+  if (error) throw new Error(error.message);
+}
+
 function appendAuditNote(current: string | null, title: string, reason: string) {
   const stamped = `${new Date().toISOString()} - ${title}: ${reason}`;
   return current ? `${current}\n${stamped}` : stamped;
+}
+
+function shouldMarkResultCorrected(liveStatus?: string | null) {
+  return ["referee_submitted", "submitted", "under_review", "corrected", "validated", "disputed"].includes(liveStatus ?? "");
 }

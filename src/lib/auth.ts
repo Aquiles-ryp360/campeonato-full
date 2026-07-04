@@ -1,3 +1,5 @@
+import { canRoleAccess } from "./route-access";
+
 export type AuthRole = "admin" | "delegate" | "referee" | "viewer";
 export type ProtectedAuthRole = Exclude<AuthRole, "viewer">;
 
@@ -72,11 +74,7 @@ export function clearStoredSession() {
 
 export function canAccess(session: AuthSession | null, requiredRole: ProtectedAuthRole) {
   if (!session) return false;
-  if (session.role === "admin") return true;
-  if (requiredRole === "referee") {
-    return session.role === "referee" || session.role === "delegate";
-  }
-  return requiredRole === session.role;
+  return canRoleAccess(session.role, requiredRole);
 }
 
 export function loginWithCredentials(usernameInput: string, passwordInput: string) {

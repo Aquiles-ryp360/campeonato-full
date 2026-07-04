@@ -28,14 +28,18 @@ Copia `.env.example` a `.env.local` y completa:
 NEXT_PUBLIC_SUPABASE_URL=
 NEXT_PUBLIC_SUPABASE_ANON_KEY=
 SUPABASE_SERVICE_ROLE_KEY=
+NEXT_PUBLIC_SITE_URL=
+ADMIN_EMAILS=
 ```
 
 ## Base de datos
 
 La migracion inicial esta en `supabase/migrations/001_initial_schema.sql`.
 
-Para el flujo actual de arbitraje en vivo tambien debe aplicarse:
+Para el flujo actual de arbitraje en vivo tambien deben aplicarse las migraciones en orden, incluyendo:
 
+- `supabase/migrations/010_referee_live_module.sql`
+- `supabase/migrations/011_penalty_live_flow.sql`
 - `supabase/migrations/012_penalty_resolution_metadata.sql`
 - `supabase/migrations/013_registration_production_hardening.sql`
 
@@ -52,6 +56,16 @@ Ambas migraciones deben ejecutarse en Supabase antes de desplegar el flujo nuevo
 - Admin: crear eventos, configurar formato, aprobar/observar inscripciones, cargar resultados.
 - IA: audio de resultado, transcripcion, JSON revisable y boton para publicar.
 
+## Seguridad y rutas protegidas
+
+Con Supabase configurado, el middleware y los layouts server-side validan sesion y rol antes de renderizar paneles privados:
+
+- `/admin/**`: requiere `admin`.
+- `/delegado/**`: requiere `delegate` o `admin`.
+- `/arbitro/**`: requiere `referee` o `admin`.
+
+Los roles esperados son `admin`, `delegate`, `referee` y `viewer`. El modo local sin variables Supabase conserva el demo para desarrollo, pero produccion debe usar Supabase Auth.
+
 ## Inscripciones
 
 Las inscripciones publicas solo se aceptan cuando el campeonato esta en estado `registration`, antes de `registration_open_until` y mientras no se haya alcanzado `max_teams` con equipos activos (`registered`, `observed`, `approved`).
@@ -63,6 +77,13 @@ El delegado puede editar equipo y plantel solo mientras la inscripcion esta abie
 El admin valida pago, observa, rechaza o aprueba equipos desde el panel. La aprobacion bloquea si faltan pago validado, fichas, semestre, cupos o existen duplicados.
 
 ## Arbitraje en vivo
+
+Ruta principal:
+
+- `/arbitro`: lista partidos asignados al correo del arbitro.
+- `/arbitro/partidos/[id]/live`: permite iniciar partido, registrar goles, tarjetas, penales, anular ultimo evento propio, enviar resultado y ver marcador en vivo.
+
+Solo el arbitro asignado al partido, o un admin, puede editar el partido. La validacion se hace en servidor antes de cada accion.
 
 El resultado cargado por el arbitro se publica inmediatamente como oficial. Cuando el arbitro presiona `Enviar resultado` o finaliza una tanda de penales:
 
@@ -84,12 +105,35 @@ Estados relevantes:
 - `disputed`: resultado observado.
 - `cancelled`: partido cancelado.
 
-## Correcciones pendientes
+## APIs disponibles
 
-Pendiente implementar UI admin granular para corregir eventos del partido:
+- `GET /api/teams`: lista equipos publicos; acepta `championship`, `championshipId`, `eventId`, `sport` y `category`.
+- `GET /api/matches`: lista partidos; acepta los mismos filtros por campeonato/deporte/categoria.
+- `GET /api/referee/matches`: lista partidos asignados al arbitro autenticado.
+- `GET /api/admin/results/pending`: lista resultados enviados/en revision para admin.
+- `POST /api/referee/matches/[id]/live`: acciones de arbitraje en vivo.
+- `POST /api/admin/matches/[id]/result`: revision, correccion de marcador y anulacion/restauracion de eventos.
 
-- goleadores;
-- tarjetas;
-- penales;
-- eventos anulados;
-- auditoria visible de correcciones.
+## Correcciones admin
+
+`/admin/resultados` permite revisar y corregir:
+
+- marcador reglamentario y penales;
+- goles, autogoles y goles de penal;
+- tarjetas amarillas y rojas;
+- penales de definicion;
+- eventos anulados/restaurados;
+- auditoria reciente desde `audit_logs`.
+
+Cada correccion critica inserta un registro en `audit_logs` y una observacion en el historial del partido.
+
+## Produccion
+
+El repositorio incluye CI en GitHub Actions, `.nvmrc`, `.editorconfig`, `.prettierrc` y headers de seguridad razonables en `next.config.mjs`.
+
+## Pendientes reales
+
+- Ejecutar todas las migraciones pendientes en Supabase de produccion.
+- Revisar politicas RLS despues de poblar usuarios reales y correos admin.
+- Sustituir credenciales demo/localStorage por cuentas Supabase en cualquier ambiente publico.
+- Ampliar auditoria con diffs visuales mas detallados si el comite necesita trazabilidad legal fina.

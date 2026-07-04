@@ -7,7 +7,13 @@ const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
   title: "Campeonato Carreras",
-  description: "Gestion de eventos deportivos por carrera con inscripciones y fixture."
+  description: "Gestion de eventos deportivos por carrera con inscripciones, fixture y arbitraje en vivo.",
+  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL ?? "https://campeonato-full.vercel.app"),
+  openGraph: {
+    title: "Campeonato Carreras",
+    description: "Fixture, arbitraje en vivo y resultados oficiales.",
+    type: "website"
+  }
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
