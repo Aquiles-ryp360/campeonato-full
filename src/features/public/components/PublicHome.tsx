@@ -23,7 +23,7 @@ import { ChampionshipHero } from "./ChampionshipHero";
 import { ChampionshipSummaryCards } from "./ChampionshipSummaryCards";
 import { FormatRenderer } from "./FormatRenderer";
 
-const championshipLocationUrl = "https://maps.app.goo.gl/ghCjzVNM78mqFCcQ8";
+const championshipLocationUrl = "https://maps.app.goo.gl/6UXhMSPc8SGkTxoT8";
 
 export function PublicHome({
   data,
