@@ -32,6 +32,11 @@ import type {
 import { formatDateTime, formatMoney, playerRoleLabel, sportLabel } from "@/lib/utils";
 import { defaultUnapCareerCode, defaultUnapCareerName, unapCareers } from "@/data/unapCareers";
 import { identityConsentTextVersion } from "@/lib/identity/identity-lookup";
+import {
+  buildPaymentContactLinks,
+  DEFAULT_PAYMENT_CONTACT_PHONE,
+  DEFAULT_PAYMENT_CONTACT_WHATSAPP_URL
+} from "@/lib/payment-contact";
 import { IdentityConsentBlock } from "@/features/identity/components/IdentityConsentBlock";
 import {
   IdentityLookupPanel,
@@ -148,6 +153,14 @@ export function RegistrationForm({
   const activePaymentQrUrl =
     paymentMethod === "plin" ? branding.paymentQrPlinUrl : branding.paymentQrYapeUrl;
   const activePaymentLabel = paymentMethod === "plin" ? "QR Plin" : "QR Yape";
+  const paymentContactLinks = useMemo(
+    () =>
+      buildPaymentContactLinks(
+        branding.paymentContactPhone,
+        branding.paymentContactWhatsappUrl
+      ),
+    [branding.paymentContactPhone, branding.paymentContactWhatsappUrl]
+  );
 
   function updatePlayer(index: number, field: keyof PlayerFormRow, value: string) {
     setPlayers((current) =>
@@ -590,21 +603,23 @@ export function RegistrationForm({
                   <div className="rounded-md border border-brand-towerMid/25 bg-white p-3 shadow-insetLine">
                     <p className="text-sm font-semibold text-ink">Pide el codigo al encargado</p>
                     <p className="mt-1 text-xs leading-5 text-brand-muted">
-                      Envia tu captura de pago por WhatsApp
-                      {branding.paymentContactPhone ? ` al ${branding.paymentContactPhone}` : ""}.
+                      Adjunta la captura del Yape y pide tu codigo por WhatsApp.
                     </p>
-                    {branding.paymentContactWhatsappUrl ? (
-                      <a
-                        href={branding.paymentContactWhatsappUrl}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="mt-3 inline-flex min-h-10 items-center justify-center gap-2 rounded-md px-3 py-2 text-sm font-semibold text-white transition hover:opacity-90"
-                        style={{ backgroundColor: branding.primaryColor }}
-                      >
-                        <MessageCircle className="h-4 w-4" />
-                        Pedir codigo
-                      </a>
-                    ) : null}
+                    <div className="mt-3 flex flex-wrap gap-2">
+                      {paymentContactLinks.map((contact) => (
+                        <a
+                          key={contact.displayPhone}
+                          href={contact.whatsappUrl}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="inline-flex min-h-10 items-center justify-center gap-2 rounded-md px-3 py-2 text-sm font-semibold text-white transition hover:opacity-90"
+                          style={{ backgroundColor: branding.primaryColor }}
+                        >
+                          <MessageCircle className="h-4 w-4" />
+                          {contact.displayPhone}
+                        </a>
+                      ))}
+                    </div>
                   </div>
                 </div>
               </div>
@@ -980,10 +995,9 @@ function getEventBranding(event: TournamentEvent | null) {
     careerLogoUrl: event?.careerLogoUrl || "/epime-09/logo-carrera.png",
     paymentQrYapeUrl: event?.paymentQrYapeUrl || "/epime-09/qr-yape.png",
     paymentQrPlinUrl: event?.paymentQrPlinUrl || "",
-    paymentContactPhone: event?.paymentContactPhone || "+51923037653",
+    paymentContactPhone: event?.paymentContactPhone || DEFAULT_PAYMENT_CONTACT_PHONE,
     paymentContactWhatsappUrl:
-      event?.paymentContactWhatsappUrl ||
-      "https://wa.me/51923037653?text=Te%20env%C3%ADo%20la%20captura.%20Por%20favor%2C%20proporci%C3%B3name%20el%20c%C3%B3digo%20%C3%BAnico%20de%20acceso.",
+      event?.paymentContactWhatsappUrl || DEFAULT_PAYMENT_CONTACT_WHATSAPP_URL,
     primaryColor: normalizeHexColor(event?.themePrimaryColor, "#28398f"),
     secondaryColor: normalizeHexColor(event?.themeSecondaryColor, "#f4e84a")
   };

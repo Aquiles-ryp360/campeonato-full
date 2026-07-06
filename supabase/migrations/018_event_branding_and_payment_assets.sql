@@ -14,8 +14,8 @@ set organizer_name = coalesce(organizer_name, 'Comision deportiva de Ingenieria 
     career_name = coalesce(career_name, 'Ingenieria Mecanica Electrica'),
     career_logo_url = coalesce(career_logo_url, '/epime-09/logo-carrera.png'),
     payment_qr_yape_url = coalesce(payment_qr_yape_url, '/epime-09/qr-yape.png'),
-    payment_contact_phone = coalesce(payment_contact_phone, '+51923037653'),
-    payment_contact_whatsapp_url = coalesce(payment_contact_whatsapp_url, 'https://wa.me/51923037653?text=Te%20env%C3%ADo%20la%20captura.%20Por%20favor%2C%20proporci%C3%B3name%20el%20c%C3%B3digo%20%C3%BAnico%20de%20acceso.'),
+    payment_contact_phone = coalesce(payment_contact_phone, '+51984000201'),
+    payment_contact_whatsapp_url = coalesce(payment_contact_whatsapp_url, 'https://wa.me/51984000201?text=Hola%2C%20solicito%20mi%20c%C3%B3digo%20%C3%BAnico%20de%20inscripci%C3%B3n.%20Adjunto%20la%20captura%20del%20Yape%20para%20validar%20el%20pago.'),
     theme_primary_color = coalesce(theme_primary_color, '#28398f'),
     theme_secondary_color = coalesce(theme_secondary_color, '#f4e84a'),
     schedule_config = jsonb_set(
@@ -27,8 +27,8 @@ set organizer_name = coalesce(organizer_name, 'Comision deportiva de Ingenieria 
         'careerLogoUrl', coalesce(career_logo_url, '/epime-09/logo-carrera.png'),
         'paymentQrYapeUrl', coalesce(payment_qr_yape_url, '/epime-09/qr-yape.png'),
         'paymentQrPlinUrl', payment_qr_plin_url,
-        'paymentContactPhone', coalesce(payment_contact_phone, '+51923037653'),
-        'paymentContactWhatsappUrl', coalesce(payment_contact_whatsapp_url, 'https://wa.me/51923037653?text=Te%20env%C3%ADo%20la%20captura.%20Por%20favor%2C%20proporci%C3%B3name%20el%20c%C3%B3digo%20%C3%BAnico%20de%20acceso.'),
+        'paymentContactPhone', coalesce(payment_contact_phone, '+51984000201'),
+        'paymentContactWhatsappUrl', coalesce(payment_contact_whatsapp_url, 'https://wa.me/51984000201?text=Hola%2C%20solicito%20mi%20c%C3%B3digo%20%C3%BAnico%20de%20inscripci%C3%B3n.%20Adjunto%20la%20captura%20del%20Yape%20para%20validar%20el%20pago.'),
         'themePrimaryColor', coalesce(theme_primary_color, '#28398f'),
         'themeSecondaryColor', coalesce(theme_secondary_color, '#f4e84a')
       ),

@@ -1,6 +1,11 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { mapEvent, type EventRow } from "../src/lib/data-mappers";
+import {
+  buildPaymentContactLinks,
+  DEFAULT_PAYMENT_CONTACT_PHONE,
+  DEFAULT_PAYMENT_CONTACT_WHATSAPP_URL
+} from "../src/lib/payment-contact";
 
 const baseEventRow: EventRow = {
   id: "11111111-1111-4111-8111-111111111111",
@@ -29,7 +34,7 @@ const baseEventRow: EventRow = {
     branding: {
       careerLogoUrl: "/uploads/championship-assets/logo.png",
       paymentQrYapeUrl: "/uploads/championship-assets/yape.png",
-      paymentContactPhone: "+51923037653",
+      paymentContactPhone: DEFAULT_PAYMENT_CONTACT_PHONE,
       themePrimaryColor: "#28398f"
     }
   }
@@ -41,7 +46,8 @@ test("maps championship branding from schedule_config when schema columns are ab
   assert.equal(event.maxTeams, 12);
   assert.equal(event.careerLogoUrl, "/uploads/championship-assets/logo.png");
   assert.equal(event.paymentQrYapeUrl, "/uploads/championship-assets/yape.png");
-  assert.equal(event.paymentContactPhone, "+51923037653");
+  assert.equal(event.paymentContactPhone, DEFAULT_PAYMENT_CONTACT_PHONE);
+  assert.equal(event.paymentContactWhatsappUrl, DEFAULT_PAYMENT_CONTACT_WHATSAPP_URL);
   assert.equal(event.themePrimaryColor, "#28398f");
 });
 
@@ -59,9 +65,25 @@ test("prefers explicit branding columns over schedule_config fallback", () => {
 test("normalizes whatsapp url to the configured phone", () => {
   const event = mapEvent({
     ...baseEventRow,
-    payment_contact_phone: "+51923037653",
-    payment_contact_whatsapp_url: "https://wa.me/51923037356?text=Hola"
+    payment_contact_phone: DEFAULT_PAYMENT_CONTACT_PHONE,
+    payment_contact_whatsapp_url: "https://wa.me/51000000000?text=Hola"
   });
 
-  assert.equal(event.paymentContactWhatsappUrl, "https://wa.me/51923037653?text=Hola");
+  assert.equal(event.paymentContactWhatsappUrl, "https://wa.me/51984000201?text=Hola");
+});
+
+test("builds both official payment whatsapp contacts without names", () => {
+  const contacts = buildPaymentContactLinks(
+    DEFAULT_PAYMENT_CONTACT_PHONE,
+    DEFAULT_PAYMENT_CONTACT_WHATSAPP_URL
+  );
+
+  assert.deepEqual(
+    contacts.map((contact) => contact.displayPhone),
+    ["984000201", "923037653"]
+  );
+  assert.equal(
+    contacts[1].whatsappUrl,
+    "https://wa.me/51923037653?text=Hola%2C%20solicito%20mi%20c%C3%B3digo%20%C3%BAnico%20de%20inscripci%C3%B3n.%20Adjunto%20la%20captura%20del%20Yape%20para%20validar%20el%20pago."
+  );
 });

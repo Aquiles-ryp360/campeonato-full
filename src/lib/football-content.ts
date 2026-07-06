@@ -1,4 +1,8 @@
 import type { CompetitionData } from "./data-mappers";
+import {
+  DEFAULT_PAYMENT_CONTACT_PHONE,
+  DEFAULT_PAYMENT_CONTACT_WHATSAPP_URL
+} from "./payment-contact";
 import type { Match, Team, TournamentBases, TournamentEvent, Venue } from "./types";
 
 export const footballEventId = "11111111-1111-4111-8111-111111111111";
@@ -59,9 +63,8 @@ export const footballEvent: TournamentEvent = {
   careerName: "Ingenieria Mecanica Electrica",
   careerLogoUrl: "/epime-09/logo-carrera.png",
   paymentQrYapeUrl: "/epime-09/qr-yape.png",
-  paymentContactPhone: "+51923037653",
-  paymentContactWhatsappUrl:
-    "https://wa.me/51923037653?text=Te%20env%C3%ADo%20la%20captura.%20Por%20favor%2C%20proporci%C3%B3name%20el%20c%C3%B3digo%20%C3%BAnico%20de%20acceso.",
+  paymentContactPhone: DEFAULT_PAYMENT_CONTACT_PHONE,
+  paymentContactWhatsappUrl: DEFAULT_PAYMENT_CONTACT_WHATSAPP_URL,
   themePrimaryColor: "#28398f",
   themeSecondaryColor: "#f4e84a",
   preventCrossSportConflicts: true,

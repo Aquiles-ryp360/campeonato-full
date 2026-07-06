@@ -14,6 +14,10 @@ import type {
   TournamentFormat
 } from "@/lib/types";
 import { hasSupabaseEnv } from "@/lib/supabase";
+import {
+  DEFAULT_PAYMENT_CONTACT_PHONE,
+  DEFAULT_PAYMENT_CONTACT_WHATSAPP_URL
+} from "@/lib/payment-contact";
 import { Badge, Button, Card, Field, SectionHeader, inputClass } from "@/components/ui";
 import { FormatConfigForm } from "./FormatConfigForm";
 import { ScheduleConfigForm } from "./ScheduleConfigForm";
@@ -334,10 +338,24 @@ export function ChampionshipWizard({
                     />
                   </Field>
                   <Field label="WhatsApp encargado">
-                    <input className={inputClass} value={draft.paymentContactPhone} onChange={(event) => updateDraft({ paymentContactPhone: event.target.value })} placeholder="+51923037653" />
+                    <input
+                      className={inputClass}
+                      value={draft.paymentContactPhone}
+                      onChange={(event) =>
+                        updateDraft({ paymentContactPhone: event.target.value })
+                      }
+                      placeholder={DEFAULT_PAYMENT_CONTACT_PHONE}
+                    />
                   </Field>
                   <Field label="Link wa.me">
-                    <input className={inputClass} value={draft.paymentContactWhatsappUrl} onChange={(event) => updateDraft({ paymentContactWhatsappUrl: event.target.value })} placeholder="https://wa.me/51923037653?text=..." />
+                    <input
+                      className={inputClass}
+                      value={draft.paymentContactWhatsappUrl}
+                      onChange={(event) =>
+                        updateDraft({ paymentContactWhatsappUrl: event.target.value })
+                      }
+                      placeholder={DEFAULT_PAYMENT_CONTACT_WHATSAPP_URL}
+                    />
                   </Field>
                   <div className="grid grid-cols-2 gap-3">
                     <Field label="Color principal">
@@ -556,10 +574,9 @@ function draftFromEvent(event?: TournamentEvent | null): WizardDraft {
     careerLogoUrl: event?.careerLogoUrl ?? "/epime-09/logo-carrera.png",
     paymentQrYapeUrl: event?.paymentQrYapeUrl ?? "/epime-09/qr-yape.png",
     paymentQrPlinUrl: event?.paymentQrPlinUrl ?? "",
-    paymentContactPhone: event?.paymentContactPhone ?? "+51923037653",
+    paymentContactPhone: event?.paymentContactPhone ?? DEFAULT_PAYMENT_CONTACT_PHONE,
     paymentContactWhatsappUrl:
-      event?.paymentContactWhatsappUrl ??
-      "https://wa.me/51923037653?text=Te%20env%C3%ADo%20la%20captura.%20Por%20favor%2C%20proporci%C3%B3name%20el%20c%C3%B3digo%20%C3%BAnico%20de%20acceso.",
+      event?.paymentContactWhatsappUrl ?? DEFAULT_PAYMENT_CONTACT_WHATSAPP_URL,
     themePrimaryColor: event?.themePrimaryColor ?? "#28398f",
     themeSecondaryColor: event?.themeSecondaryColor ?? "#f4e84a",
     startTime: schedule?.startTime ?? "09:00",

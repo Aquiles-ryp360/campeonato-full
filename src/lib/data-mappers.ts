@@ -20,6 +20,7 @@ import type {
   GroupTeam,
   GroupStanding
 } from "./types";
+import { buildPaymentWhatsappUrl } from "./payment-contact";
 
 export interface CompetitionData {
   events: TournamentEvent[];
@@ -528,7 +529,7 @@ function normalizeWhatsAppUrl(phone: string | undefined, url: string | undefined
   const digits = phone.replace(/\D/g, "");
   if (!digits) return url;
 
-  if (!url) return `https://wa.me/${digits}`;
+  if (!url) return buildPaymentWhatsappUrl(digits);
 
   try {
     const parsed = new URL(url);
