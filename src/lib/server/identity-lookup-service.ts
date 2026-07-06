@@ -4,7 +4,7 @@ import { createHash } from "node:crypto";
 import { request as httpsRequest } from "node:https";
 import {
   normalizeTeacherQuery,
-  normalizePeruApiDniResponse,
+  normalizeDniProxyResponse,
   normalizeUnapStudentResponse,
   normalizeUnapTeacherListResponse,
   validateCodigoMatricula,
@@ -25,7 +25,6 @@ import {
 
 const unapAllowedHost = "tramites.unap.edu.pe";
 const unapTeacherAllowedHost = "sictransparencia.unap.edu.pe";
-const peruApiAllowedHost = "peruapi.com";
 const defaultTimeoutMs = 8000;
 const defaultCacheTtlDays = 7;
 const defaultDniCacheTtlDays = 30;
@@ -33,7 +32,6 @@ const defaultTeacherPeriod = "2026-I";
 const defaultTeacherTermId = "08de416c-dede-444c-83dd-ff3ee6aedfdf";
 
 type Fetcher = (input: string | URL, init?: RequestInit) => Promise<Response>;
-type DniProvider = "none" | "peruapi" | "peru_consult" | "external_api";
 type TeacherCacheValue = { value: UnapTeacherLookupResult; expiresAt: number };
 type DniCacheValue = { value: DniLookupResult; expiresAt: number };
 
@@ -95,15 +93,8 @@ export class IdentityLookupService {
       return dniFailure("La consulta nacional de DNI no está habilitada.");
     }
 
-    const provider = dniProvider();
-    if (provider === "none") {
-      return dniFailure("Consulta DNI no configurada");
-    }
-
-    if (provider !== "peruapi") {
-      return dniFailure(
-        "Proveedor DNI configurado, pero la integración concreta aún debe conectarse a su contrato."
-      );
+    if (!dniProxyBaseUrl() || !dniProxySecret()) {
+      return dniFailure("Consulta DNI no configurada", "peruapi", 500);
     }
 
     const cacheKey = `dni:${hashLookupKey(normalizedDni)}`;
@@ -111,7 +102,7 @@ export class IdentityLookupService {
     if (cached && cached.expiresAt > Date.now()) return cached.value;
     if (cached) dniLookupCache.delete(cacheKey);
 
-    const result = await this.fetchPeruApiDni(normalizedDni, cacheKey);
+    const result = await this.fetchDniProxy(normalizedDni, cacheKey);
     if (result.ok) {
       dniLookupCache.set(cacheKey, {
         value: result,
@@ -292,42 +283,55 @@ export class IdentityLookupService {
     return result;
   }
 
-  private async fetchPeruApiDni(dni: string, cacheKey: string): Promise<DniLookupResult> {
-    const apiKey = peruApiKey();
-    if (!apiKey) {
-      return dniFailure("PERUAPI_API_KEY no configurado.");
+  private async fetchDniProxy(dni: string, cacheKey: string): Promise<DniLookupResult> {
+    const proxySecret = dniProxySecret();
+    if (!dniProxyBaseUrl() || !proxySecret) {
+      return dniFailure("Consulta DNI no configurada", "peruapi", 500);
     }
 
     let response: Response;
     try {
-      const url = buildPeruApiDniUrl(dni);
-      response = await safeFetchPeruApi(url, {
-        apiKey,
+      const url = buildDniProxyUrl();
+      response = await safeFetchDniProxy(url, {
+        dni,
         fetcher: this.options.fetcher ?? fetch,
-        timeoutMs: peruApiTimeoutMs()
+        proxySecret,
+        timeoutMs: dniProxyTimeoutMs()
       });
     } catch {
-      return dniFailure("El servicio de consulta DNI no respondió. Puedes registrar manualmente.");
+      return dniFailure("Servicio DNI no disponible", "peruapi", 503);
+    }
+
+    if (response.status === 400) {
+      return dniFailure("Ingresa un DNI válido de 8 dígitos.", "peruapi", 400);
     }
 
     if (response.status === 401 || response.status === 403) {
-      return dniFailure("API Key inválida o sin permisos.");
+      return dniFailure("Consulta DNI no autorizada", "peruapi", 401);
     }
 
     if (response.status === 429) {
-      return dniFailure("Límite de consultas alcanzado.");
+      return dniFailure("Límite de consultas alcanzado", "peruapi", 429);
     }
 
     if (response.status === 404) {
-      return dniFailure("No se encontraron datos para el DNI ingresado.");
+      return dniFailure("DNI no encontrado", "peruapi", 404);
+    }
+
+    if (response.status === 504) {
+      return dniFailure("Tiempo de espera agotado", "peruapi", 504);
     }
 
     const payload = await readJsonPayload(response);
     if (payload === malformedJson || response.status >= 500) {
-      return dniFailure("El servicio de consulta DNI no respondió. Puedes registrar manualmente.");
+      return dniFailure("Servicio DNI no disponible", "peruapi", 503);
     }
 
-    const result = normalizePeruApiDniResponse(payload, {
+    if (!response.ok) {
+      return dniFailure("Servicio DNI no disponible", "peruapi", 503);
+    }
+
+    const result = normalizeDniProxyResponse(payload, {
       dni,
       codigoMatricula: `NAC-${cacheKey.slice(4, 16).toUpperCase()}`
     });
@@ -335,7 +339,8 @@ export class IdentityLookupService {
     if (!result.ok) {
       return {
         ...result,
-        message: "No se encontraron datos para el DNI ingresado."
+        httpStatus: 404,
+        message: "DNI no encontrado"
       };
     }
 
@@ -394,16 +399,16 @@ export function buildUnapTeacherListUrl(params: UnapTeacherLookupParams) {
   return url;
 }
 
-export function buildPeruApiDniUrl(dni: string) {
-  const dniError = validateDni(dni);
-  if (dniError) throw new Error(dniError);
+export function buildDniProxyUrl() {
+  const baseUrlValue = dniProxyBaseUrl();
+  if (!baseUrlValue) throw new Error("DNI proxy URL is not configured");
 
-  const baseUrl = new URL(process.env.PERUAPI_BASE_URL ?? "https://peruapi.com");
-  if (baseUrl.protocol !== "https:" || baseUrl.hostname !== peruApiAllowedHost) {
-    throw new Error("Perú API base URL is not allowed");
+  const baseUrl = new URL(baseUrlValue);
+  if (baseUrl.protocol !== "https:") {
+    throw new Error("DNI proxy URL is not allowed");
   }
 
-  return new URL(`/api/dni/${encodeURIComponent(dni)}`, baseUrl);
+  return new URL("/dni", baseUrl);
 }
 
 export async function safeFetchUnap(
@@ -485,20 +490,22 @@ export async function safeFetchUnapTeacher(
   }
 }
 
-export async function safeFetchPeruApi(
+export async function safeFetchDniProxy(
   url: URL,
   {
-    apiKey,
+    dni,
     fetcher = fetch,
+    proxySecret,
     timeoutMs = defaultTimeoutMs
   }: {
-    apiKey: string;
+    dni: string;
     fetcher?: Fetcher;
+    proxySecret: string;
     timeoutMs?: number;
   }
 ) {
-  if (url.protocol !== "https:" || url.hostname !== peruApiAllowedHost) {
-    throw new Error("Perú API lookup URL is not allowed");
+  if (url.protocol !== "https:") {
+    throw new Error("DNI proxy URL is not allowed");
   }
 
   const controller = new AbortController();
@@ -506,15 +513,17 @@ export async function safeFetchPeruApi(
 
   try {
     return await fetcher(url, {
-      method: "GET",
+      method: "POST",
       redirect: "error",
       credentials: "omit",
       signal: controller.signal,
       headers: {
         Accept: "application/json",
-        "X-API-KEY": apiKey,
+        "Content-Type": "application/json",
+        "X-Proxy-Secret": proxySecret,
         "User-Agent": "campeonato-full/1.0 identity-lookup"
-      }
+      },
+      body: JSON.stringify({ dni })
     });
   } finally {
     clearTimeout(timeout);
@@ -548,8 +557,8 @@ function lookupTimeoutMs() {
   return positiveNumber(process.env.UNAP_LOOKUP_TIMEOUT_MS, defaultTimeoutMs);
 }
 
-function peruApiTimeoutMs() {
-  return positiveNumber(process.env.PERUAPI_TIMEOUT_MS, defaultTimeoutMs);
+function dniProxyTimeoutMs() {
+  return positiveNumber(process.env.DNI_PROXY_TIMEOUT_MS, defaultTimeoutMs);
 }
 
 function cacheTtlMs() {
@@ -570,8 +579,12 @@ function teacherLookupTermId() {
   return process.env.UNAP_TEACHER_LOOKUP_TERM_ID?.trim() || defaultTeacherTermId;
 }
 
-function peruApiKey() {
-  return process.env.PERUAPI_API_KEY?.trim() || process.env.API_Key_PERUAPI?.trim();
+function dniProxyBaseUrl() {
+  return process.env.DNI_PROXY_URL?.trim() || "";
+}
+
+function dniProxySecret() {
+  return process.env.DNI_PROXY_SECRET?.trim() || "";
 }
 
 function allowInsecureTeacherTls() {
@@ -592,13 +605,6 @@ function envEnabled(name: string, fallback: boolean) {
   const value = process.env[name];
   if (value === undefined) return fallback;
   return !["false", "0", "no"].includes(value.trim().toLowerCase());
-}
-
-function dniProvider(): DniProvider {
-  const value = process.env.DNI_PROVIDER?.trim() as DniProvider | undefined;
-  if (value === "peruapi" || value === "peru_consult" || value === "external_api") return value;
-  if (!value && peruApiKey()) return "peruapi";
-  return "none";
 }
 
 function hashLookupKey(value: string) {
@@ -669,7 +675,11 @@ function unapFailure({
   };
 }
 
-function dniFailure(message: string, source: DniLookupResult["source"] = "peruapi"): DniLookupResult {
+function dniFailure(
+  message: string,
+  source: DniLookupResult["source"] = "peruapi",
+  httpStatus = 400
+): DniLookupResult {
   return {
     ok: false,
     source,
@@ -677,6 +687,7 @@ function dniFailure(message: string, source: DniLookupResult["source"] = "peruap
     fullName: null,
     dni: null,
     rawAvailableFields: [],
+    httpStatus,
     message
   };
 }

@@ -20,7 +20,7 @@ En `Búsqueda docente`, el delegado escribe nombre o apellido. La UI muestra sug
 
 El resultado docente se guarda con `identitySource=unap_docentes`, `documentType=DNI` y una referencia técnica `DOC-...` derivada del `id` público de la fila. No se inventa ni se muestra como código docente real.
 
-En `Búsqueda nacional`, el delegado ingresa un DNI y presiona `Buscar DNI`. El backend consulta Perú API usando `X-API-KEY`, nunca desde el navegador. No se consulta mientras escribe.
+En `Búsqueda nacional`, el delegado ingresa un DNI y presiona `Buscar DNI`. El backend de Vercel consulta el proxy privado de DNI usando `X-Proxy-Secret`, nunca desde el navegador. No se consulta mientras escribe.
 
 ## Variables de entorno
 
@@ -36,12 +36,9 @@ UNAP_TEACHER_LOOKUP_TERM_ID=08de416c-dede-444c-83dd-ff3ee6aedfdf
 UNAP_TEACHER_LOOKUP_RATE_LIMIT_PER_MINUTE=5
 UNAP_TEACHER_LOOKUP_ALLOW_INSECURE_TLS=false
 DNI_LOOKUP_ENABLED=true
-DNI_PROVIDER=peruapi
-PERUAPI_BASE_URL=https://peruapi.com
-PERUAPI_API_KEY=
-PERUAPI_TIMEOUT_MS=8000
-DNI_API_BASE_URL=
-DNI_API_TOKEN=
+DNI_PROXY_URL=https://server-juliaca.tailb6baea.ts.net
+DNI_PROXY_SECRET=
+DNI_PROXY_TIMEOUT_MS=8000
 IDENTITY_LOOKUP_CACHE_TTL_DAYS=7
 DNI_LOOKUP_CACHE_TTL_DAYS=30
 IDENTITY_LOOKUP_RATE_LIMIT_PER_MINUTE=5
@@ -59,7 +56,7 @@ DNI_LOOKUP_RATE_LIMIT_PER_MINUTE=5
 - Rate limit actual: 5 consultas UNA/minuto/IP, 5 consultas docentes/minuto/IP y 5 consultas DNI/minuto/IP.
 - El backend construye internamente la URL y solo permite `tramites.unap.edu.pe` por HTTPS.
 - Para docentes, el backend solo permite `sictransparencia.unap.edu.pe` por HTTPS.
-- Para DNI nacional, el backend solo permite `peruapi.com` por HTTPS y usa header `X-API-KEY`.
+- Para DNI nacional, el backend solo permite `DNI_PROXY_URL` por HTTPS y usa header `X-Proxy-Secret`.
 - El DNI se muestra enmascarado en tarjetas de resultado.
 - La tabla `identity_lookup_cache` queda cerrada por RLS; el endpoint usa cache en memoria y la tabla queda lista para una cache persistente/Redis.
 
@@ -73,15 +70,8 @@ Editar `src/data/unapCareers.ts` y agregar objetos:
 
 El frontend usa esta lista para el selector y el backend la usa como lista blanca. No se debe consultar ni scrapear esa lista en producción.
 
-## Proveedor DNI
+## Proxy DNI
 
 El contrato está preparado en `IdentityLookupService.lookupDni`.
 
-Valores previstos:
-
-- `DNI_PROVIDER=none`
-- `DNI_PROVIDER=peruapi`
-- `DNI_PROVIDER=peru_consult`
-- `DNI_PROVIDER=external_api`
-
-Para Perú API, definir `PERUAPI_API_KEY` en el entorno seguro. En desarrollo también se acepta el alias `API_Key_PERUAPI`. Para conectar otro proveedor, implementar el adaptador del contrato elegido y mantener el mismo formato público de respuesta. No se debe hardcodear un proveedor inseguro ni enviar datos a terceros sin configuración explícita.
+Para producción, definir `DNI_PROXY_URL` y `DNI_PROXY_SECRET` en Vercel. La API key real del proveedor nacional queda solo en el servidor Ubuntu que ejecuta el proxy. Para cambiar el proxy, mantener el mismo formato normalizado de respuesta para el frontend.

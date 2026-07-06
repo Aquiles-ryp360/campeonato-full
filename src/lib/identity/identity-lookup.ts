@@ -34,6 +34,7 @@ export type IdentityLookupResult = {
 
 export type DniLookupResult = IdentityLookupResult & {
   source: "dni_provider" | "peruapi";
+  httpStatus?: number;
 };
 
 export type UnapTeacherLookupParams = {
@@ -228,7 +229,7 @@ export function toPublicIdentityLookupData(
   };
 }
 
-export function normalizePeruApiDniResponse(
+export function normalizeDniProxyResponse(
   payload: unknown,
   {
     dni,
@@ -257,6 +258,7 @@ export function normalizePeruApiDniResponse(
     stringField(data, "ape_materno") ??
     stringField(data, "second_surname");
   const fullName =
+    stringField(data, "cliente") ??
     stringField(data, "nombre_completo") ??
     stringField(data, "nombreCompleto") ??
     stringField(data, "full_name") ??

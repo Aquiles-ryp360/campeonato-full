@@ -2,7 +2,8 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import {
   toPublicIdentityLookupData,
-  validateConsentAccepted
+  validateConsentAccepted,
+  validateDni
 } from "@/lib/identity/identity-lookup";
 import { identityLookupService } from "@/lib/server/identity-lookup-service";
 import {
@@ -28,6 +29,11 @@ async function handleLookup(request: Request, rawBody: unknown) {
     return jsonError("Ingresa un DNI válido de 8 dígitos.", 400);
   }
 
+  const dniError = validateDni(parsed.data.dni);
+  if (dniError) {
+    return jsonError(dniError, 400);
+  }
+
   const consentError = validateConsentAccepted(parsed.data.consentAccepted === true);
   if (consentError) {
     return jsonError(consentError, 400);
@@ -40,15 +46,7 @@ async function handleLookup(request: Request, rawBody: unknown) {
 
   const result = await identityLookupService.lookupDni({ dni: parsed.data.dni });
   if (!result.ok) {
-    const status = result.message.includes("API Key")
-      ? 401
-      : result.message.includes("Límite")
-        ? 429
-        : result.message.startsWith("No se encontraron")
-          ? 404
-          : result.message.startsWith("El servicio")
-            ? 503
-            : 400;
+    const status = result.httpStatus ?? 400;
     return NextResponse.json({ ok: false, source: result.source, message: result.message }, { status });
   }
 

@@ -4,7 +4,7 @@ import {
   applyIdentityLookupToPlayerDraft,
   canSubmitUnapLookup,
   normalizeUnapTeacherListResponse,
-  normalizePeruApiDniResponse,
+  normalizeDniProxyResponse,
   normalizeUnapStudentResponse,
   teacherStorageCodeFromSource,
   validateCodigoMatricula,
@@ -131,15 +131,15 @@ test("teacher storage reference is derived from public source id", () => {
   );
 });
 
-test("normalizes Peru API DNI response", () => {
-  const result = normalizePeruApiDniResponse(
+test("normalizes DNI proxy response", () => {
+  const result = normalizeDniProxyResponse(
     {
-      data: {
-        dni: "12345678",
-        nombres: "JUAN CARLOS",
-        apellido_paterno: "PEREZ",
-        apellido_materno: "QUISPE"
-      }
+      ok: true,
+      dni: "12345678",
+      cliente: "JUAN CARLOS PEREZ QUISPE",
+      nombres: "JUAN CARLOS",
+      apellido_paterno: "PEREZ",
+      apellido_materno: "QUISPE"
     },
     { dni: "12345678", codigoMatricula: "NAC-TEST" }
   );
