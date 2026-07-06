@@ -1,5 +1,6 @@
 import type { SeedingMode, TournamentFormat } from "@/lib/types";
 import { Field, SectionHeader, inputClass } from "@/components/ui";
+import { NumberControl } from "./NumberControl";
 
 export function FormatConfigForm({
   format,
@@ -76,13 +77,11 @@ export function FormatConfigForm({
         {format === "groups_then_knockout" ? (
           <>
             <Field label="Numero de grupos">
-              <input
-                className={inputClass}
-                type="number"
+              <NumberControl
+                value={groupCount}
                 min={2}
                 max={8}
-                value={groupCount}
-                onChange={(event) => onGroupCountChange(Number(event.target.value))}
+                onChange={onGroupCountChange}
               />
             </Field>
             <Info label="Equipos aprox. por grupo" value={`${teamsPerGroup}`} />

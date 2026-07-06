@@ -23,6 +23,7 @@ import { FormatConfigForm } from "./FormatConfigForm";
 import { ScheduleConfigForm } from "./ScheduleConfigForm";
 import { BasesUploadForm } from "./BasesUploadForm";
 import { FixtureGenerationPanel } from "./FixtureGenerationPanel";
+import { NumberControl } from "./NumberControl";
 import type { CompetitionData } from "@/lib/data-mappers";
 
 const steps = [
@@ -282,7 +283,14 @@ export function ChampionshipWizard({
               </select>
             </Field>
             <Field label="Costo de inscripcion">
-              <input className={inputClass} type="number" min={0} value={draft.registrationFee} onChange={(event) => updateDraft({ registrationFee: Number(event.target.value) })} />
+              <NumberControl
+                value={draft.registrationFee}
+                min={0}
+                step={0.01}
+                integer={false}
+                showSlider={false}
+                onChange={(value) => updateDraft({ registrationFee: value })}
+              />
             </Field>
             <Field label="Descripcion">
               <textarea className={`${inputClass} min-h-24 resize-y`} value={draft.rulesSummary} onChange={(event) => updateDraft({ rulesSummary: event.target.value })} />
@@ -414,12 +422,29 @@ export function ChampionshipWizard({
               </select>
             </Field>
             <Field label="Maximo equipos">
-              <input className={inputClass} type="number" min={2} value={draft.maxTeams} onChange={(event) => updateDraft({ maxTeams: Number(event.target.value) })} />
+              <NumberControl
+                value={draft.maxTeams}
+                min={2}
+                max={64}
+                onChange={(value) => updateDraft({ maxTeams: value })}
+              />
             </Field>
             <Field label="Jugadores por equipo">
               <div className="grid grid-cols-2 gap-3">
-                <input className={inputClass} type="number" min={1} value={draft.minPlayers} onChange={(event) => updateDraft({ minPlayers: Number(event.target.value) })} aria-label="Minimo jugadores" />
-                <input className={inputClass} type="number" min={draft.minPlayers} value={draft.maxPlayers} onChange={(event) => updateDraft({ maxPlayers: Number(event.target.value) })} aria-label="Maximo jugadores" />
+                <NumberControl
+                  value={draft.minPlayers}
+                  min={1}
+                  max={99}
+                  ariaLabel="Minimo jugadores"
+                  onChange={(value) => updateDraft({ minPlayers: value })}
+                />
+                <NumberControl
+                  value={draft.maxPlayers}
+                  min={draft.minPlayers}
+                  max={99}
+                  ariaLabel="Maximo jugadores"
+                  onChange={(value) => updateDraft({ maxPlayers: value })}
+                />
               </div>
             </Field>
           </div>
@@ -445,26 +470,44 @@ export function ChampionshipWizard({
           <SectionHeader title="Reglas deportivas" description={isKnockout ? "Eliminacion directa no usa puntos por empate." : "Estos puntos alimentan tabla y posiciones."} />
           <div className="mt-5 grid gap-4 md:grid-cols-4">
             <Field label="Duracion partido">
-              <input className={inputClass} type="number" min={5} value={draft.matchDuration} onChange={(event) => updateDraft({ matchDuration: Number(event.target.value) })} />
+              <NumberControl
+                value={draft.matchDuration}
+                min={5}
+                max={240}
+                onChange={(value) => updateDraft({ matchDuration: value })}
+              />
             </Field>
             <Field label="Medio tiempo minuto">
-              <input
-                className={inputClass}
-                type="number"
+              <NumberControl
+                value={draft.halfTimeMinute}
                 min={1}
                 max={Math.max(1, draft.matchDuration - 1)}
-                value={draft.halfTimeMinute}
-                onChange={(event) => updateDraft({ halfTimeMinute: Number(event.target.value) })}
+                onChange={(value) => updateDraft({ halfTimeMinute: value })}
               />
             </Field>
             <Field label="Descanso medio tiempo">
-              <input className={inputClass} type="number" min={0} max={60} value={draft.halfTimeBreakMinutes} onChange={(event) => updateDraft({ halfTimeBreakMinutes: Number(event.target.value) })} />
+              <NumberControl
+                value={draft.halfTimeBreakMinutes}
+                min={0}
+                max={60}
+                onChange={(value) => updateDraft({ halfTimeBreakMinutes: value })}
+              />
             </Field>
             <Field label="Tiempo adicional max.">
-              <input className={inputClass} type="number" min={0} max={60} value={draft.additionalTimeAllowedMinutes} onChange={(event) => updateDraft({ additionalTimeAllowedMinutes: Number(event.target.value) })} />
+              <NumberControl
+                value={draft.additionalTimeAllowedMinutes}
+                min={0}
+                max={60}
+                onChange={(value) => updateDraft({ additionalTimeAllowedMinutes: value })}
+              />
             </Field>
             <Field label="W.O. minutos">
-              <input className={inputClass} type="number" min={0} value={draft.walkoverMinutes} onChange={(event) => updateDraft({ walkoverMinutes: Number(event.target.value) })} />
+              <NumberControl
+                value={draft.walkoverMinutes}
+                min={0}
+                max={60}
+                onChange={(value) => updateDraft({ walkoverMinutes: value })}
+              />
             </Field>
             <Field label="Cierre del arbitro">
               <select className={inputClass} value={draft.allowManualFinish ? "manual" : "suggested"} onChange={(event) => updateDraft({ allowManualFinish: event.target.value === "manual" })}>
@@ -475,13 +518,13 @@ export function ChampionshipWizard({
             {usesTablePoints ? (
               <>
                 <Field label="Puntos victoria">
-                  <input className={inputClass} type="number" value={draft.pointsWin} onChange={(event) => updateDraft({ pointsWin: Number(event.target.value) })} />
+                  <NumberControl value={draft.pointsWin} showSlider={false} onChange={(value) => updateDraft({ pointsWin: value })} />
                 </Field>
                 <Field label="Puntos empate">
-                  <input className={inputClass} type="number" value={draft.pointsDraw} onChange={(event) => updateDraft({ pointsDraw: Number(event.target.value) })} />
+                  <NumberControl value={draft.pointsDraw} showSlider={false} onChange={(value) => updateDraft({ pointsDraw: value })} />
                 </Field>
                 <Field label="Puntos derrota">
-                  <input className={inputClass} type="number" value={draft.pointsLoss} onChange={(event) => updateDraft({ pointsLoss: Number(event.target.value) })} />
+                  <NumberControl value={draft.pointsLoss} showSlider={false} onChange={(value) => updateDraft({ pointsLoss: value })} />
                 </Field>
               </>
             ) : (

@@ -1,4 +1,5 @@
 import { Field, SectionHeader, inputClass } from "@/components/ui";
+import { NumberControl } from "./NumberControl";
 
 export function ScheduleConfigForm({
   startTime,
@@ -68,23 +69,19 @@ export function ScheduleConfigForm({
         <Info label="Duracion partido" value={`${matchDuration} min`} />
         <Info label="Medio tiempo" value={`Minuto ${halfTimeMinute}`} />
         <Field label="Pausa entre partidos">
-          <input
-            className={inputClass}
-            type="number"
+          <NumberControl
+            value={transitionMinutes}
             min={0}
             max={60}
-            value={transitionMinutes}
-            onChange={(event) => onTransitionMinutesChange(Number(event.target.value))}
+            onChange={onTransitionMinutesChange}
           />
         </Field>
         <Field label="Tolerancia de inicio">
-          <input
-            className={inputClass}
-            type="number"
+          <NumberControl
+            value={matchStartToleranceMinutes}
             min={0}
             max={120}
-            value={matchStartToleranceMinutes}
-            onChange={(event) => onMatchStartToleranceMinutesChange(Number(event.target.value))}
+            onChange={onMatchStartToleranceMinutesChange}
           />
         </Field>
         <Info label="Hora fin estimada" value={estimatedEndTime} />
