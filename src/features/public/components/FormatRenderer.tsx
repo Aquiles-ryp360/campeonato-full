@@ -17,6 +17,8 @@ import { KnockoutBracket } from "@/features/brackets/components/KnockoutBracket"
 import { GroupStageView } from "@/features/brackets/components/GroupStageView";
 import { StandingsTable } from "@/features/brackets/components/StandingsTable";
 import { buildGroupQualificationPlan } from "@/lib/domain/standings";
+import { buildFixtureRandomSeed } from "@/lib/domain/fixture-preview";
+import { isActiveRegistrationTeamStatus, isEventStarted } from "@/lib/domain/registration-rules";
 import { TeamDetailsModal } from "./TeamDetailsModal";
 import { MatchDetailsModal } from "./MatchDetailsModal";
 
@@ -41,6 +43,7 @@ export function FormatRenderer({
 }) {
   const [selectedTeam, setSelectedTeam] = useState<Team | null>(null);
   const [selectedMatch, setSelectedMatch] = useState<Match | null>(null);
+  const activeTeams = teams.filter((team) => isActiveRegistrationTeamStatus(team.status));
   const upcomingMatches = matches
     .filter((match) => match.status === "scheduled")
     .sort((a, b) => a.scheduledAt.localeCompare(b.scheduledAt))
@@ -56,12 +59,14 @@ export function FormatRenderer({
       })
     : null;
   const qualifiedKnockoutTeams = groupQualification
-    ? teams.filter((team) => groupQualification.qualifiedTeamIds.has(team.id))
-    : teams;
+    ? activeTeams.filter((team) => groupQualification.qualifiedTeamIds.has(team.id))
+    : activeTeams;
+  const plannedTeamCount = shouldShowPlannedCapacity(event) ? event.maxTeams : undefined;
+  const randomSeed = buildFixtureRandomSeed(event, activeTeams);
 
   return (
-    <section id="formato" className="grid scroll-mt-24 gap-6 lg:grid-cols-[1fr_0.82fr]">
-      <div className="space-y-6">
+    <section id="formato" className="grid min-w-0 scroll-mt-24 gap-6 lg:grid-cols-[1fr_0.82fr]">
+      <div className="min-w-0 space-y-6">
         {event.format === "league" ? (
           <Card className="overflow-hidden">
             <div className="border-b border-brand-towerMid/20 p-5">
@@ -91,7 +96,7 @@ export function FormatRenderer({
               teams={teams}
               onOpenTeam={setSelectedTeam}
             />
-            <Card className="p-5">
+            <Card className="min-w-0 p-5">
               <SectionHeader title="Llave final" description="Se activa cuando existan clasificados." />
               <div className="mt-4">
                 {qualifiedKnockoutTeams.length >= 2 ? (
@@ -99,6 +104,12 @@ export function FormatRenderer({
                     eventId={event.id}
                     teams={qualifiedKnockoutTeams}
                     matches={matches}
+                    maxTeams={event.maxTeams}
+                    thirdPlace={event.thirdPlace}
+                    allowByes={event.allowByes}
+                    seedingMode={event.seedingMode}
+                    randomSeed={randomSeed}
+                    fixtureStatus={event.fixtureStatus}
                     onOpenTeam={setSelectedTeam}
                   />
                 ) : (
@@ -112,13 +123,20 @@ export function FormatRenderer({
         ) : null}
 
         {event.format === "single_elimination" ? (
-          <Card className="p-5">
+          <Card className="min-w-0 p-5">
             <SectionHeader title="Llave de eliminacion" description="Generada segun cantidad de equipos, con byes cuando corresponde." />
             <div className="mt-4">
               <KnockoutBracket
                 eventId={event.id}
-                teams={teams}
+                teams={activeTeams}
                 matches={matches}
+                maxTeams={event.maxTeams}
+                thirdPlace={event.thirdPlace}
+                allowByes={event.allowByes}
+                seedingMode={event.seedingMode}
+                randomSeed={randomSeed}
+                fixtureStatus={event.fixtureStatus}
+                plannedTeamCount={plannedTeamCount}
                 onOpenTeam={setSelectedTeam}
               />
             </div>
@@ -126,7 +144,7 @@ export function FormatRenderer({
         ) : null}
       </div>
 
-      <Card className="p-5">
+      <Card className="min-w-0 p-5">
         <SectionHeader title="Proximos partidos" description="Cruces inmediatos del campeonato seleccionado." />
         <div className="mt-4 space-y-3">
           {upcomingMatches.length > 0 ? (
@@ -135,7 +153,7 @@ export function FormatRenderer({
                 key={match.id}
                 match={match}
                 event={event}
-                teams={teams}
+                teams={activeTeams}
                 onOpenTeam={setSelectedTeam}
                 onOpenMatch={setSelectedMatch}
               />
@@ -153,10 +171,16 @@ export function FormatRenderer({
         event={event}
         players={players.filter((player) => player.teamId === selectedTeam?.id)}
         matches={matches}
-        teams={teams}
+        teams={activeTeams}
         onClose={() => setSelectedTeam(null)}
       />
-      <MatchDetailsModal match={selectedMatch} teams={teams} onClose={() => setSelectedMatch(null)} />
+      <MatchDetailsModal match={selectedMatch} teams={activeTeams} onClose={() => setSelectedMatch(null)} />
     </section>
   );
+}
+
+function shouldShowPlannedCapacity(event: TournamentEvent) {
+  if (event.format !== "single_elimination") return false;
+  if (event.fixtureStatus === "published" || event.fixtureStatus === "locked") return false;
+  return !isEventStarted(event);
 }

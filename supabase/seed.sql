@@ -138,7 +138,7 @@ begin
       120,
       '2026-07-09 08:00:00-05',
       'draft_auto',
-      'registration_order',
+      'random',
       false,
       true,
       true,

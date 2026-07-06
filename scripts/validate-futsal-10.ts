@@ -21,28 +21,33 @@ const finals = matches.filter((match) => match.stage === "final");
 const thirdPlace = matches.filter((match) => match.stage === "third_place");
 
 assert(data.events.length === 1, "La seed debe tener un solo campeonato.");
-assert(data.teams.length === 10, "La seed debe tener 10 equipos.");
-assert(data.players.length >= 80, "La seed debe tener minimo 80 jugadores.");
-assert(preliminary.length === 2, "10 equipos deben generar 2 preliminares.");
-assert(quarters.length === 4, "10 equipos deben generar 4 cuartos.");
-assert(semifinals.length === 2, "10 equipos deben generar 2 semifinales.");
+assert(data.teams.length === 12, "La seed debe tener 12 equipos.");
+assert(data.players.length >= 96, "La seed debe tener minimo 96 jugadores.");
+assert(preliminary.length === 4, "12 equipos deben generar 4 preliminares.");
+assert(quarters.length === 4, "12 equipos deben generar 4 cuartos.");
+assert(semifinals.length === 2, "12 equipos deben generar 2 semifinales.");
 assert(finals.length === 1, "Debe existir 1 final.");
 assert(thirdPlace.length === 1, "Debe existir 1 partido por tercer lugar.");
-assert(matches.length === 10, "Total esperado: 10 partidos.");
+assert(matches.length === 12, "Total esperado: 12 partidos.");
 
 const labels = new Map(matches.map((match) => [match.label, match]));
-assert(labels.get("P1")?.homePlaceholder === "Educacion Fisica", "P1 local debe ser Educacion Fisica.");
-assert(labels.get("P1")?.awayPlaceholder === "Contabilidad", "P1 visita debe ser Contabilidad.");
-assert(labels.get("P2")?.homePlaceholder === "Derecho", "P2 local debe ser Derecho.");
-assert(labels.get("P2")?.awayPlaceholder === "Enfermeria", "P2 visita debe ser Enfermeria.");
-assert(labels.get("C1")?.awayPlaceholder === "Ganador P2", "C1 debe recibir Ganador P2.");
-assert(labels.get("C3")?.awayPlaceholder === "Ganador P1", "C3 debe recibir Ganador P1.");
+assert(labels.get("P1")?.homePlaceholder === "Contabilidad", "P1 local debe ser Contabilidad.");
+assert(labels.get("P1")?.awayPlaceholder === "Medicina Humana", "P1 visita debe ser Medicina Humana.");
+assert(labels.get("P2")?.homePlaceholder === "Agronomia", "P2 local debe ser Agronomia.");
+assert(labels.get("P2")?.awayPlaceholder === "Educacion Fisica", "P2 visita debe ser Educacion Fisica.");
+assert(labels.get("P3")?.homePlaceholder === "Ingenieria Mecanica Electrica", "P3 local debe ser Ingenieria Mecanica Electrica.");
+assert(labels.get("P3")?.awayPlaceholder === "Ingenieria de Sistemas", "P3 visita debe ser Ingenieria de Sistemas.");
+assert(labels.get("P4")?.homePlaceholder === "Derecho", "P4 local debe ser Derecho.");
+assert(labels.get("P4")?.awayPlaceholder === "Ingenieria Civil", "P4 visita debe ser Ingenieria Civil.");
+assert(labels.get("C1")?.awayPlaceholder === "Ganador P4", "C1 debe recibir Ganador P4.");
+assert(labels.get("C3")?.awayPlaceholder === "Ganador P3", "C3 debe recibir Ganador P3.");
 
 assert(labels.get("P1")?.scheduledAt.includes("14:00:00.000Z"), "P1 debe programarse 09:00 America/Lima.");
-assert(labels.get("C1")?.scheduledAt.includes("14:30:00.000Z"), "C1 debe programarse 09:30 America/Lima.");
-assert(labels.get("C3")?.scheduledAt.includes("15:00:00.000Z"), "C3 debe programarse 10:00 America/Lima.");
-assert(labels.get("S1")?.scheduledAt.includes("15:30:00.000Z"), "S1 debe programarse 10:30 America/Lima.");
-assert(labels.get("F")?.scheduledAt.includes("16:00:00.000Z"), "Final debe programarse 11:00 America/Lima.");
+assert(labels.get("P3")?.scheduledAt.includes("14:30:00.000Z"), "P3 debe programarse 09:30 America/Lima.");
+assert(labels.get("C1")?.scheduledAt.includes("15:00:00.000Z"), "C1 debe programarse 10:00 America/Lima.");
+assert(labels.get("C3")?.scheduledAt.includes("15:30:00.000Z"), "C3 debe programarse 10:30 America/Lima.");
+assert(labels.get("S1")?.scheduledAt.includes("16:00:00.000Z"), "S1 debe programarse 11:00 America/Lima.");
+assert(labels.get("F")?.scheduledAt.includes("16:30:00.000Z"), "Final debe programarse 11:30 America/Lima.");
 
 const courtTimeKeys = new Set<string>();
 for (const match of matches) {

@@ -5,6 +5,7 @@ import {
   DEFAULT_PAYMENT_CONTACT_WHATSAPP_URL
 } from "./payment-contact";
 import { generateKnockoutMatches } from "./domain/bracket-generator";
+import { buildFixtureRandomSeed } from "./domain/fixture-preview";
 import { generateOneDaySchedule } from "./domain/schedule-generator";
 
 export const futsal10EventId = "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaa1";
@@ -22,13 +23,13 @@ export const futsal10Event: TournamentEvent = {
   status: "registration",
   registrationFee: 40,
   registrationOpenUntil: "2026-07-17T23:59:00-05:00",
-  maxTeams: 10,
+  maxTeams: 12,
   minPlayers: 8,
   maxPlayers: 12,
   pointsWin: 0,
   pointsDraw: 0,
   pointsLoss: 0,
-  rulesSummary: "Eliminacion directa con ronda preliminar automatica para llegar a cuartos de final.",
+  rulesSummary: "Eliminacion directa con sorteo aleatorio y ronda preliminar automatica para llegar a cuartos de final.",
   organizerName: "Comision deportiva de Ingenieria Mecanica Electrica",
   careerName: "Ingenieria Mecanica Electrica",
   careerLogoUrl: "/epime-09/logo-carrera.png",
@@ -41,7 +42,7 @@ export const futsal10Event: TournamentEvent = {
   minimumRestMinutes: 40,
   eventDate,
   fixtureStatus: "draft_auto",
-  seedingMode: "manual",
+  seedingMode: "random",
   thirdPlace: true,
   allowByes: true,
   penaltiesEnabled: true,
@@ -71,7 +72,9 @@ const teamSeedData = [
   ["cccccccc-cccc-4ccc-8ccc-cccccccccc07", "Educacion Fisica", "Jorge Mamani", "jorge.mamani.demo@campeonato.local", "999 100 007", "#ea580c"],
   ["cccccccc-cccc-4ccc-8ccc-cccccccccc08", "Derecho", "Lucia Ramos", "lucia.ramos.demo@campeonato.local", "999 100 008", "#334155"],
   ["cccccccc-cccc-4ccc-8ccc-cccccccccc09", "Enfermeria", "Andrea Flores", "andrea.flores.demo@campeonato.local", "999 100 009", "#0891b2"],
-  ["cccccccc-cccc-4ccc-8ccc-cccccccccc10", "Contabilidad", "Fernando Campos", "fernando.campos.demo@campeonato.local", "999 100 010", "#ca8a04"]
+  ["cccccccc-cccc-4ccc-8ccc-cccccccccc10", "Contabilidad", "Fernando Campos", "fernando.campos.demo@campeonato.local", "999 100 010", "#ca8a04"],
+  ["cccccccc-cccc-4ccc-8ccc-cccccccccc11", "Ingenieria Industrial", "Sofia Vargas", "sofia.vargas.demo@campeonato.local", "999 100 011", "#c026d3"],
+  ["cccccccc-cccc-4ccc-8ccc-cccccccccc12", "Medicina Humana", "Luis Cardenas", "luis.cardenas.demo@campeonato.local", "999 100 012", "#059669"]
 ] as const;
 
 const firstNames = [
@@ -110,8 +113,8 @@ export function buildFutsal10Seed(): CompetitionData {
     format: "single_elimination",
     maxTeams: futsal10Event.maxTeams,
     thirdPlace: true,
-    seedingMode: "manual",
-    manualSeeds: teams.map((team) => team.id),
+    seedingMode: futsal10Event.seedingMode,
+    randomSeed: buildFixtureRandomSeed(futsal10Event, teams),
     fixtureStatus: "draft_auto"
   });
   const schedule = generateOneDaySchedule(bracketMatches, {
@@ -211,7 +214,7 @@ function createBases(): TournamentBases {
     organizer: "Comision deportiva universitaria",
     startDate: futsal10Event.eventDate ?? eventDate,
     endDate: futsal10Event.eventDate ?? eventDate,
-    description: "Bases de prueba para validar generacion automatica de fixture de futsal varones con 10 equipos.",
+    description: "Bases de prueba para validar generacion automatica de fixture de futsal varones con 12 equipos.",
     matchDuration: 20,
     pointsWin: 0,
     pointsDraw: 0,

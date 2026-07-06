@@ -1,10 +1,10 @@
 "use client";
 
-import { Check, Trophy } from "lucide-react";
+import { Check, Shuffle, Trophy, UsersRound } from "lucide-react";
 import { generateKnockoutBracket } from "@/lib/domain/bracket-generator";
-import type { Match, Team } from "@/lib/types";
+import type { FixtureStatus, Match, SeedingMode, Team } from "@/lib/types";
 import { Badge } from "@/components/ui";
-import { formatDateTime } from "@/lib/utils";
+import { cn, formatDateTime } from "@/lib/utils";
 import { liveStatusLabel, shouldAdvanceOfficialWinner, visiblePenaltyScores } from "@/lib/live-match";
 import { ThirdPlaceMatch } from "./ThirdPlaceMatch";
 
@@ -12,31 +12,96 @@ export function KnockoutBracket({
   eventId,
   teams,
   matches,
+  maxTeams,
+  thirdPlace,
+  allowByes,
+  seedingMode,
+  randomSeed,
+  fixtureStatus,
+  plannedTeamCount,
   onOpenTeam
 }: {
   eventId: string;
   teams: Team[];
   matches: Match[];
+  maxTeams?: number;
+  thirdPlace?: boolean;
+  allowByes?: boolean;
+  seedingMode?: SeedingMode;
+  randomSeed?: string;
+  fixtureStatus?: FixtureStatus;
+  plannedTeamCount?: number;
   onOpenTeam?: (team: Team) => void;
 }) {
-  const bracket = generateKnockoutBracket({ eventId, teams, matches });
+  const displayTeams = withPlannedSlots({ eventId, teams, plannedTeamCount });
+  const plannedTeamIds = new Set(displayTeams.filter((team) => isPlannedSlot(team.id, eventId)).map((team) => team.id));
+  const bracket = generateKnockoutBracket({
+    eventId,
+    teams: displayTeams,
+    matches,
+    maxTeams,
+    thirdPlace,
+    allowByes,
+    seedingMode,
+    randomSeed,
+    fixtureStatus
+  });
   const rounds = bracket.rounds.filter((round) => round.stage !== "third_place");
+  const filledTeamCount = teams.length;
+  const capacityCount = Math.max(plannedTeamCount ?? 0, maxTeams ?? 0, filledTeamCount);
 
   return (
-    <div className="overflow-x-auto overscroll-x-contain rounded-lg border border-white/10 bg-technical-blue p-4 text-white shadow-panel">
+    <div className="w-full min-w-0 overflow-hidden rounded-lg border border-white/10 bg-technical-blue text-white shadow-panel">
+      <div className="border-b border-white/10 p-4 sm:p-5">
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+          <div>
+            <p className="text-xs font-black uppercase text-brand-yellow">Llaves del campeonato</p>
+            <h3 className="mt-1 text-2xl font-black leading-tight">
+              {capacityCount > 0 ? `Cuadro visual para ${capacityCount} equipos` : "Cuadro visual"}
+            </h3>
+            <p className="mt-2 max-w-3xl text-sm leading-6 text-white/70">
+              {bracketSummary(bracket)}
+            </p>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <Badge tone="dark">
+              <UsersRound className="mr-1 h-3.5 w-3.5" />
+              {filledTeamCount}/{capacityCount || filledTeamCount} inscritos
+            </Badge>
+            <Badge tone={seedingMode === "random" ? "amber" : "dark"}>
+              <Shuffle className="mr-1 h-3.5 w-3.5" />
+              {seedingMode === "random" ? "Sorteo aleatorio" : "Orden de inscripcion"}
+            </Badge>
+            {bracket.preliminaryMatches > 0 ? (
+              <Badge tone="amber">{bracket.preliminaryMatches} preliminares</Badge>
+            ) : (
+              <Badge tone="dark">Sin preliminar</Badge>
+            )}
+          </div>
+        </div>
+      </div>
+
+      <div className="max-w-full overflow-x-auto overscroll-x-contain p-4">
       <div
-        className="grid min-w-[760px] gap-4"
+        className="grid min-w-[900px] gap-5"
         style={{ gridTemplateColumns: `repeat(${Math.max(1, rounds.length)}, minmax(180px, 1fr))` }}
       >
-        {rounds.map((round) => (
+        {rounds.map((round, roundIndex) => (
           <section key={round.id} className="flex min-h-[360px] flex-col gap-3">
             <div className="flex items-center justify-between gap-2 rounded-md bg-white/10 px-3 py-2">
-              <p className="text-xs font-black uppercase tracking-wide">{round.name}</p>
+              <p className="text-xs font-black uppercase">{round.name}</p>
               <Badge tone="dark">{round.slots.length}</Badge>
             </div>
             <div className="flex flex-1 flex-col justify-around gap-4">
               {round.slots.map((slot) => (
-                <div key={slot.id} className="rounded-md border border-white/20 bg-white p-3 text-ink shadow-panel">
+                <div
+                  key={slot.id}
+                  className={cn(
+                    "relative rounded-md border border-white/20 bg-white p-3 text-ink shadow-panel",
+                    roundIndex < rounds.length - 1 &&
+                      "after:absolute after:left-full after:top-1/2 after:h-px after:w-5 after:bg-brand-yellow/60 after:content-['']"
+                  )}
+                >
                   <div className="mb-2 flex items-center justify-between gap-2">
                     <span className="rounded bg-brand-navy px-2 py-1 text-[10px] font-black uppercase text-white">
                       {slot.label}
@@ -51,6 +116,8 @@ export function KnockoutBracket({
                     teamId={slot.homeTeamId}
                     fallback={slot.homeLabel}
                     teams={teams}
+                    displayTeams={displayTeams}
+                    plannedTeamIds={plannedTeamIds}
                     onOpenTeam={onOpenTeam}
                   />
                   <TeamLine
@@ -59,6 +126,8 @@ export function KnockoutBracket({
                     teamId={slot.awayTeamId}
                     fallback={slot.awayLabel}
                     teams={teams}
+                    displayTeams={displayTeams}
+                    plannedTeamIds={plannedTeamIds}
                     onOpenTeam={onOpenTeam}
                   />
                   {provisionalWinnerName(slot.match, teams) ? (
@@ -77,14 +146,15 @@ export function KnockoutBracket({
           </section>
         ))}
       </div>
+      </div>
 
-      <div className="mt-5 grid gap-4 md:grid-cols-[1fr_220px]">
+      <div className="grid gap-4 border-t border-white/10 p-4 md:grid-cols-[1fr_220px]">
         <div className="flex items-center gap-3 rounded-md border border-white/10 bg-white/10 p-4">
           <div className="grid h-11 w-11 place-items-center rounded-md bg-brand-yellow text-brand-navy">
             <Trophy className="h-5 w-5" />
           </div>
           <div>
-            <p className="font-bold">Llave dinamica</p>
+            <p className="font-bold">Llave completa</p>
             <p className="text-sm text-white/70">
               {bracketSummary(bracket)}
             </p>
@@ -114,6 +184,8 @@ function TeamLine({
   teamId,
   fallback,
   teams,
+  displayTeams,
+  plannedTeamIds,
   onOpenTeam
 }: {
   side: "home" | "away";
@@ -121,16 +193,33 @@ function TeamLine({
   teamId?: string;
   fallback: string;
   teams: Team[];
+  displayTeams: Team[];
+  plannedTeamIds: Set<string>;
   onOpenTeam?: (team: Team) => void;
 }) {
   const team = teams.find((item) => item.id === teamId);
+  const displayTeam = team ?? displayTeams.find((item) => item.id === teamId);
+  const planned = Boolean(displayTeam && plannedTeamIds.has(displayTeam.id));
   const score = scoreForSide(match, side);
   const officialWinner = shouldAdvanceOfficialWinner(match?.liveStatus) && match?.winnerTeamId === teamId;
 
-  if (!team) {
+  if (!team || planned) {
     return (
-      <div className="mb-1 flex min-h-9 items-center justify-between gap-2 rounded bg-brand-wash px-2 text-sm text-brand-muted">
-        <span className="truncate">{fallback}</span>
+      <div
+        className={cn(
+          "mb-1 flex min-h-9 items-center justify-between gap-2 rounded border px-2 text-sm",
+          planned
+            ? "border-dashed border-brand-towerMid/50 bg-brand-wash/80 text-brand-muted"
+            : "border-transparent bg-brand-wash text-brand-muted"
+        )}
+      >
+        <span className="flex min-w-0 items-center gap-2">
+          <span
+            className="h-3 w-3 shrink-0 rounded-sm border border-brand-towerMid/40"
+            style={{ backgroundColor: displayTeam?.primaryColor ?? "#cbd5e1" }}
+          />
+          <span className="truncate">{displayTeam?.name ?? fallback}</span>
+        </span>
         {score ? <span className="font-black tabular-nums text-ink">{score}</span> : null}
       </div>
     );
@@ -152,6 +241,53 @@ function TeamLine({
       </span>
     </button>
   );
+}
+
+function withPlannedSlots({
+  eventId,
+  teams,
+  plannedTeamCount
+}: {
+  eventId: string;
+  teams: Team[];
+  plannedTeamCount?: number;
+}) {
+  const target = Math.max(teams.length, plannedTeamCount ?? 0);
+  if (target <= teams.length) return teams;
+
+  return [
+    ...teams,
+    ...Array.from({ length: target - teams.length }, (_, index) => {
+      const slot = teams.length + index + 1;
+      return createPlannedSlotTeam(eventId, slot);
+    })
+  ];
+}
+
+function createPlannedSlotTeam(eventId: string, slot: number): Team {
+  return {
+    id: plannedSlotId(eventId, slot),
+    eventId,
+    name: `Cupo ${slot}`,
+    delegateName: "Por confirmar",
+    delegatePhone: "",
+    delegateEmail: "",
+    paymentMethod: "yape",
+    registrationCode: "",
+    paymentStatus: "pending",
+    status: "pending_payment",
+    primaryColor: "#cbd5e1",
+    secondaryColor: "#f8fafc",
+    createdAt: `9999-12-${String(Math.min(slot, 28)).padStart(2, "0")}T00:00:00.000Z`
+  };
+}
+
+function plannedSlotId(eventId: string, slot: number) {
+  return `${eventId}-planned-slot-${slot}`;
+}
+
+function isPlannedSlot(teamId: string, eventId: string) {
+  return teamId.startsWith(`${eventId}-planned-slot-`);
 }
 
 function scoreForSide(match: Match | undefined, side: "home" | "away") {

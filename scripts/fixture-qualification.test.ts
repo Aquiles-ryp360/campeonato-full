@@ -1,8 +1,9 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { generateKnockoutBracket } from "../src/lib/domain/bracket-generator";
+import { buildEventFixturePreview } from "../src/lib/domain/fixture-preview";
 import { buildGroupQualificationPlan } from "../src/lib/domain/standings";
-import type { Group, GroupStanding, GroupTeam, Team, TournamentEvent } from "../src/lib/types";
+import type { Group, GroupStanding, GroupTeam, Team, TournamentEvent, Venue } from "../src/lib/types";
 
 const baseEvent: TournamentEvent = {
   id: "event-1",
@@ -58,6 +59,56 @@ test("knockout bracket respects disabled byes", () => {
   assert.equal(bracket.status, "incomplete");
   assert.equal(bracket.matches.length, 0);
   assert.match(bracket.warnings.join(" "), /sin byes/);
+});
+
+test("fixture preview uses only active teams and keeps random draw stable", () => {
+  const activeTeams = Array.from({ length: 12 }, (_, index) => team(index + 1));
+  const inactive = {
+    ...team(13),
+    id: "team-rejected",
+    name: "Equipo rechazado",
+    status: "rejected" as const
+  };
+  const event: TournamentEvent = {
+    ...baseEvent,
+    seedingMode: "random",
+    eventDate: "2026-07-10T08:00:00-05:00",
+    fixtureStatus: "draft_auto",
+    scheduleConfig: {
+      startTime: "08:00",
+      matchDurationMinutes: 20,
+      transitionMinutes: 10,
+      courts: ["Cancha A", "Cancha B"],
+      minimumRestMinutes: 40,
+      allowCompactPreview: true
+    }
+  };
+  const venues: Venue[] = [
+    { id: "venue-a", name: "Cancha A", active: true },
+    { id: "venue-b", name: "Cancha B", active: true }
+  ];
+  const firstPreview = buildEventFixturePreview({
+    event,
+    teams: [...activeTeams, inactive],
+    matches: [],
+    venues
+  });
+  const secondPreview = buildEventFixturePreview({
+    event,
+    teams: [...activeTeams, inactive],
+    matches: [],
+    venues
+  });
+
+  assert(firstPreview);
+  assert(secondPreview);
+  assert.equal(firstPreview.teams.length, 12);
+  assert.equal(firstPreview.bracket.preliminaryMatches, 4);
+  assert(!firstPreview.matches.some((match) => match.homeTeamId === inactive.id || match.awayTeamId === inactive.id));
+  assert.deepEqual(
+    firstPreview.matches.map((match) => [match.label, match.homeTeamId, match.awayTeamId]),
+    secondPreview.matches.map((match) => [match.label, match.homeTeamId, match.awayTeamId])
+  );
 });
 
 test("group qualification adds best thirds to complete knockout size", () => {

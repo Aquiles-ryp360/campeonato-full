@@ -1,5 +1,6 @@
 import type { Match, Team, TournamentEvent, Venue } from "../types";
 import { generateKnockoutBracket, type GeneratedBracket } from "./bracket-generator";
+import { isActiveRegistrationTeamStatus } from "./registration-rules";
 import { generateOneDaySchedule, type GeneratedSchedule } from "./schedule-generator";
 
 type PreviewInput = {
@@ -24,7 +25,7 @@ export function buildEventFixturePreview({
 }: PreviewInput): EventFixturePreview | null {
   if (!shouldBuildPreliminaryFixture(event)) return null;
 
-  const eventTeams = teams.filter((team) => team.eventId === event.id);
+  const eventTeams = getEventFixtureTeams(event, teams);
   const eventMatches = matches.filter((match) => match.eventId === event.id);
   const bracket = generateKnockoutBracket({
     eventId: event.id,
@@ -34,6 +35,7 @@ export function buildEventFixturePreview({
     maxTeams: event.maxTeams,
     allowByes: event.allowByes ?? true,
     seedingMode: event.seedingMode ?? "registration_order",
+    randomSeed: buildFixtureRandomSeed(event, eventTeams),
     fixtureStatus: event.fixtureStatus ?? "draft_auto"
   });
   const schedule =
@@ -58,6 +60,27 @@ export function buildEventFixturePreview({
   };
 }
 
+export function getEventFixtureTeams(event: Pick<TournamentEvent, "id">, teams: Team[]) {
+  return teams.filter((team) => team.eventId === event.id && isActiveRegistrationTeamStatus(team.status));
+}
+
+export function buildFixtureRandomSeed(
+  event: Pick<TournamentEvent, "id" | "eventDate" | "registrationOpenUntil">,
+  teams: Team[]
+) {
+  const teamFingerprint = teams
+    .map((team) => `${team.id}:${team.createdAt ?? ""}`)
+    .sort()
+    .join("|");
+
+  return [
+    event.id,
+    event.eventDate ?? "",
+    event.registrationOpenUntil ?? "",
+    teamFingerprint
+  ].join("::");
+}
+
 export function buildVisibleFixtureMatches({
   events,
   teams,
@@ -73,7 +96,7 @@ export function buildVisibleFixtureMatches({
 
   for (const event of events) {
     const preview = buildEventFixturePreview({ event, teams, matches, venues });
-    if (preview?.matches.length) {
+    if (preview) {
       generatedByEvent.set(event.id, preview.matches);
     }
   }

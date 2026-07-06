@@ -5,9 +5,9 @@
 Se implemento un escenario limpio de prueba para validar funcionalidad real:
 
 - 1 campeonato: `Futsal Varones 2026`.
-- 10 equipos.
-- 10 delegados fake ligados por correo.
-- 80 jugadores fake, 8 por equipo.
+- 12 equipos.
+- 12 delegados fake ligados por correo.
+- 96 jugadores fake, 8 por equipo.
 - Eliminacion directa con ronda preliminar automatica.
 - Cuartos, semifinales, final y tercer lugar.
 - Fixture preliminar generado automaticamente.
@@ -21,15 +21,15 @@ La carga publica usa `getPublicCompetitionData()` en modo saneado por defecto: n
 
 Para eliminacion directa el generador calcula la potencia de 2 inferior mas cercana.
 
-Con 10 equipos:
+Con 12 equipos:
 
 - Potencia inferior: 8.
-- `preliminaryMatches = teamCount - lowerPowerOfTwo = 10 - 8 = 2`.
-- `preliminaryTeams = preliminaryMatches * 2 = 4`.
-- 4 equipos juegan preliminar.
-- 6 equipos pasan directo a cuartos.
+- `preliminaryMatches = teamCount - lowerPowerOfTwo = 12 - 8 = 4`.
+- `preliminaryTeams = preliminaryMatches * 2 = 8`.
+- 8 equipos juegan preliminar.
+- 4 equipos pasan directo a cuartos.
 
-El sembrado de prueba es manual:
+El sembrado de prueba usa sorteo aleatorio estable:
 
 1. Ingenieria Mecanica Electrica
 2. Ingenieria de Sistemas
@@ -41,15 +41,19 @@ El sembrado de prueba es manual:
 8. Derecho
 9. Enfermeria
 10. Contabilidad
+11. Ingenieria Industrial
+12. Medicina Humana
 
 Resultado:
 
-- P1: Educacion Fisica vs Contabilidad
-- P2: Derecho vs Enfermeria
-- C1: Ingenieria Mecanica Electrica vs Ganador P2
-- C2: Ingenieria de Minas vs Arquitectura
-- C3: Ingenieria de Sistemas vs Ganador P1
-- C4: Ingenieria Civil vs Agronomia
+- P1: Contabilidad vs Medicina Humana
+- P2: Agronomia vs Educacion Fisica
+- P3: Ingenieria Mecanica Electrica vs Ingenieria de Sistemas
+- P4: Derecho vs Ingenieria Civil
+- C1: Ingenieria Industrial vs Ganador P4
+- C2: Ingenieria de Minas vs Ganador P1
+- C3: Arquitectura vs Ganador P3
+- C4: Enfermeria vs Ganador P2
 - S1: Ganador C1 vs Ganador C2
 - S2: Ganador C3 vs Ganador C4
 - F: Ganador S1 vs Ganador S2
@@ -64,23 +68,25 @@ Inputs de la seed:
 - Fecha: 2026-07-18.
 - Hora inicio: 09:00.
 - Duracion: 20 minutos.
-- Transicion: 0 minutos.
+- Transicion: 10 minutos.
 - Canchas: Cancha A y Cancha B.
 - Descanso minimo recomendado: 40 minutos.
 - Modo compacto preliminar: activado.
 
 Fixture esperado:
 
-- 09:00 | Cancha A | P1 | Educacion Fisica vs Contabilidad
-- 09:00 | Cancha B | P2 | Derecho vs Enfermeria
-- 09:20 | Cancha A | C1 | Ingenieria Mecanica Electrica vs Ganador P2
-- 09:20 | Cancha B | C2 | Ingenieria de Minas vs Arquitectura
-- 09:40 | Cancha A | C3 | Ingenieria de Sistemas vs Ganador P1
-- 09:40 | Cancha B | C4 | Ingenieria Civil vs Agronomia
-- 10:00 | Cancha A | S1 | Ganador C1 vs Ganador C2
-- 10:00 | Cancha B | S2 | Ganador C3 vs Ganador C4
-- 10:20 | Cancha A | F | Ganador S1 vs Ganador S2
-- 10:20 | Cancha B | 3L | Perdedor S1 vs Perdedor S2
+- 09:00 | Cancha A | P1 | Contabilidad vs Medicina Humana
+- 09:00 | Cancha B | P2 | Agronomia vs Educacion Fisica
+- 09:30 | Cancha A | P3 | Ingenieria Mecanica Electrica vs Ingenieria de Sistemas
+- 09:30 | Cancha B | P4 | Derecho vs Ingenieria Civil
+- 10:00 | Cancha A | C1 | Ingenieria Industrial vs Ganador P4
+- 10:00 | Cancha B | C2 | Ingenieria de Minas vs Ganador P1
+- 10:30 | Cancha A | C3 | Arquitectura vs Ganador P3
+- 10:30 | Cancha B | C4 | Enfermeria vs Ganador P2
+- 11:00 | Cancha A | S1 | Ganador C1 vs Ganador C2
+- 11:00 | Cancha B | S2 | Ganador C3 vs Ganador C4
+- 11:30 | Cancha A | F | Ganador S1 vs Ganador S2
+- 11:30 | Cancha B | 3L | Perdedor S1 vs Perdedor S2
 
 `generateOneDaySchedule` ordena por ronda y respeta dependencias. En modo compacto permite esta maqueta visual y devuelve warning informativo si el descanso minimo real podria no cumplirse para equipos que avancen.
 
@@ -129,14 +135,14 @@ El reset borra solo datos deportivos y conserva `auth.users`, `profiles` y `admi
 `npm run validate:fixture` comprueba:
 
 - 1 campeonato.
-- 10 equipos.
-- minimo 80 jugadores.
-- 2 preliminares.
+- 12 equipos.
+- minimo 96 jugadores.
+- 4 preliminares.
 - 4 cuartos.
 - 2 semifinales.
 - 1 final.
 - 1 tercer lugar.
-- 10 partidos totales.
+- 12 partidos totales.
 - horarios esperados.
 - sin dos partidos en la misma cancha a la misma hora.
 - semifinales despues de cuartos.

@@ -117,7 +117,7 @@ async function validateServerSeed(supabase: AdminClient) {
     if (result.error) throw new Error(`No se pudo validar ${label}: ${result.error.message}`);
   }
 
-  if (events.count !== 1 || teams.count !== 10 || (players.count ?? 0) < 80 || matches.count !== 10) {
+  if (events.count !== 1 || teams.count !== 12 || (players.count ?? 0) < 96 || matches.count !== 12) {
     throw new Error(
       `Seed incompleta en Supabase: events=${events.count}, teams=${teams.count}, players=${players.count}, matches=${matches.count}`
     );
