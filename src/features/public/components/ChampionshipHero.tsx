@@ -74,7 +74,7 @@ export function ChampionshipHero({
           {basesPdfHref ? (
             <Button
               href={basesPdfHref}
-              variant="secondary"
+              variant="highlight"
               download={getOfficialBasesDownloadName(event)}
             >
               <Download className="h-4 w-4" />

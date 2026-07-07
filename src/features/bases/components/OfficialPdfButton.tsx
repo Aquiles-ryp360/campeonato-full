@@ -18,7 +18,7 @@ export function OfficialPdfButton({
   }
 
   return (
-    <Button href={href} variant="secondary" download={fileName ?? true}>
+    <Button href={href} variant="highlight" download={fileName ?? true}>
       <Download className="h-4 w-4" />
       Descargar bases PDF
     </Button>
