@@ -1,5 +1,6 @@
 import type { TournamentBases, TournamentEvent } from "@/lib/types";
 import { Card, SectionHeader } from "@/components/ui";
+import { getOfficialBasesDownloadName, getOfficialBasesPdfHref } from "@/lib/bases-documents";
 import { OfficialPdfButton } from "./OfficialPdfButton";
 
 const fallbackSections = [
@@ -21,6 +22,8 @@ export function BasesArticle({
   event: TournamentEvent;
   bases: TournamentBases | null;
 }) {
+  const pdfHref = getOfficialBasesPdfHref(event, bases);
+
   return (
     <Card className="overflow-hidden">
       <div className="border-b border-brand-towerMid/20 p-5">
@@ -28,7 +31,7 @@ export function BasesArticle({
           eyebrow="Bases oficiales"
           title="Reglamento estructurado"
           description={`Campeonato seleccionado: ${event.name}`}
-          action={<OfficialPdfButton />}
+          action={<OfficialPdfButton href={pdfHref} fileName={getOfficialBasesDownloadName(event)} />}
         />
       </div>
       <article className="grid gap-4 p-5 lg:grid-cols-2">

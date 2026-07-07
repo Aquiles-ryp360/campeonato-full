@@ -1,7 +1,8 @@
 "use client";
 
-import { CalendarDays, FileText, ListChecks, UserPlus } from "lucide-react";
+import { CalendarDays, Download, FileText, ListChecks, UserPlus } from "lucide-react";
 import type { TournamentEvent } from "@/lib/types";
+import { getOfficialBasesDownloadName, getOfficialBasesPdfHref } from "@/lib/bases-documents";
 import { eventStatusLabel, fixtureStatusLabel } from "@/lib/utils";
 import {
   championshipSlug,
@@ -26,6 +27,7 @@ export function ChampionshipHero({
   onChangeEvent: (eventId: string) => void;
 }) {
   const slug = championshipSlug(event);
+  const basesPdfHref = getOfficialBasesPdfHref(event);
 
   return (
     <section className="relative overflow-hidden rounded-lg bg-technical-blue p-5 text-white shadow-panel sm:p-7">
@@ -69,6 +71,16 @@ export function ChampionshipHero({
             <FileText className="h-4 w-4" />
             Bases
           </Button>
+          {basesPdfHref ? (
+            <Button
+              href={basesPdfHref}
+              variant="secondary"
+              download={getOfficialBasesDownloadName(event)}
+            >
+              <Download className="h-4 w-4" />
+              Descargar bases
+            </Button>
+          ) : null}
           <Button href={`/c/${slug}/registro`} variant="highlight">
             <UserPlus className="h-4 w-4" />
             Inscribir equipo

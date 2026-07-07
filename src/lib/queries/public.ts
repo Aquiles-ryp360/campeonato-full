@@ -1,4 +1,5 @@
 import type { CompetitionData } from "../data-mappers";
+import { findBasesForEvent } from "../bases-documents";
 import { matchesChampionshipSlug, visiblePublicEvents } from "../domain/tournament-format";
 import { buildStandings } from "../domain/standings";
 
@@ -54,13 +55,7 @@ export function getChampionshipPublicContext(data: CompetitionData, slugOrId?: s
     groups,
     groupTeams,
     groupStandings,
-    bases:
-      data.tournamentBases.find((base) =>
-        base.championshipName.toLowerCase().includes(event.name.toLowerCase())
-      ) ??
-      data.tournamentBases.find((base) => base.published) ??
-      data.tournamentBases[0] ??
-      null,
+    bases: findBasesForEvent(event, data.tournamentBases),
     venues: data.venues
   };
 }

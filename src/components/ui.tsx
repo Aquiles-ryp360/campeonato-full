@@ -41,7 +41,8 @@ export function Button({
   type = "button",
   form,
   onClick,
-  disabled = false
+  disabled = false,
+  download
 }: {
   children: React.ReactNode;
   href?: string;
@@ -52,6 +53,7 @@ export function Button({
   form?: string;
   onClick?: () => void;
   disabled?: boolean;
+  download?: boolean | string;
 }) {
   const variants = {
     primary: "bg-brand-electric text-white shadow-lift hover:bg-brand-institutional",
@@ -70,7 +72,7 @@ export function Button({
 
   if (href) {
     return (
-      <Link href={href} className={classes} style={style}>
+      <Link href={href} className={classes} style={style} download={download}>
         {children}
       </Link>
     );

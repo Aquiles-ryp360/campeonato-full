@@ -35,7 +35,7 @@ export function PublicBasesPage({
           <div>
             <h1 className="text-3xl font-black sm:text-5xl">Bases oficiales</h1>
             <p className="mt-3 max-w-2xl text-sm leading-6 text-white/70">
-              Texto web limpio, preparado para sincronizarse con un PDF oficial cuando el backend lo soporte.
+              Consulta el resumen web y descarga el PDF oficial del campeonato seleccionado.
             </p>
           </div>
           <ChampionshipSwitcher
@@ -51,8 +51,8 @@ export function PublicBasesPage({
 
       <Card className="p-5">
         <SectionHeader
-          title="Preparado para PDF"
-          description="Cuando exista extraccion de PDF en backend, este componente puede recibir el texto extraido y mantener las mismas secciones publicas."
+          title="PDF oficial"
+          description="El archivo descargable corresponde al campeonato seleccionado: Futbol 11 o Voley Mixto."
         />
       </Card>
     </div>
