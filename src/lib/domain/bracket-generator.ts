@@ -563,12 +563,85 @@ function missingSeed(seed: number): Entrant {
 
 function mergeExistingMatches(generated: Match[], existing: Match[], eventId: string) {
   const existingById = new Map(existing.filter((match) => match.eventId === eventId).map((match) => [match.id, match]));
+  const generatedById = new Map(generated.map((match) => [match.id, match]));
+
   return generated.map((match) => ({
-    ...match,
-    ...existingById.get(match.id),
-    homePlaceholder: existingById.get(match.id)?.homePlaceholder ?? match.homePlaceholder,
-    awayPlaceholder: existingById.get(match.id)?.awayPlaceholder ?? match.awayPlaceholder,
-    sourceMatchIds: existingById.get(match.id)?.sourceMatchIds ?? match.sourceMatchIds,
-    dependsOnMatchIds: existingById.get(match.id)?.dependsOnMatchIds ?? match.dependsOnMatchIds
+    ...mergeExistingMatch(match, existingById.get(match.id), existingById, generatedById)
   }));
+}
+
+function mergeExistingMatch(
+  generated: Match,
+  existing: Match | undefined,
+  existingById: Map<string, Match>,
+  generatedById: Map<string, Match>
+): Match {
+  if (!existing) return generated;
+
+  if (!isFixturePreliminary(generated.fixtureStatus)) {
+    return {
+      ...generated,
+      ...existing,
+      homePlaceholder: existing.homePlaceholder ?? generated.homePlaceholder,
+      awayPlaceholder: existing.awayPlaceholder ?? generated.awayPlaceholder,
+      sourceMatchIds: existing.sourceMatchIds ?? generated.sourceMatchIds,
+      dependsOnMatchIds: existing.dependsOnMatchIds ?? generated.dependsOnMatchIds
+    };
+  }
+
+  return {
+    ...generated,
+    scheduledAt: existing.scheduledAt || generated.scheduledAt,
+    scheduledEndAt: existing.scheduledEndAt ?? generated.scheduledEndAt,
+    venueId: existing.venueId ?? generated.venueId,
+    court: existing.court ?? generated.court,
+    status: existing.status ?? generated.status,
+    liveStatus: existing.liveStatus ?? generated.liveStatus,
+    homeScore: existing.homeScore ?? generated.homeScore,
+    awayScore: existing.awayScore ?? generated.awayScore,
+    penaltyHomeScore: existing.penaltyHomeScore ?? generated.penaltyHomeScore,
+    penaltyAwayScore: existing.penaltyAwayScore ?? generated.penaltyAwayScore,
+    winnerTeamId: existing.winnerTeamId ?? generated.winnerTeamId,
+    winMethod: existing.winMethod ?? generated.winMethod,
+    notes: existing.notes ?? generated.notes,
+    refereeNotes: existing.refereeNotes ?? generated.refereeNotes,
+    actualStartedAt: existing.actualStartedAt ?? generated.actualStartedAt,
+    firstHalfStartedAt: existing.firstHalfStartedAt ?? generated.firstHalfStartedAt,
+    firstHalfEndedAt: existing.firstHalfEndedAt ?? generated.firstHalfEndedAt,
+    halftimeStartedAt: existing.halftimeStartedAt ?? generated.halftimeStartedAt,
+    secondHalfStartedAt: existing.secondHalfStartedAt ?? generated.secondHalfStartedAt,
+    secondHalfEndedAt: existing.secondHalfEndedAt ?? generated.secondHalfEndedAt,
+    actualFinishedAt: existing.actualFinishedAt ?? generated.actualFinishedAt,
+    submittedAt: existing.submittedAt ?? generated.submittedAt,
+    validatedAt: existing.validatedAt ?? generated.validatedAt,
+    fixtureStatus: existing.fixtureStatus ?? generated.fixtureStatus,
+    isFixturePreliminary: existing.isFixturePreliminary ?? generated.isFixturePreliminary,
+    homeTeamId: mergedSideTeamId(generated, existing, "home", existingById, generatedById),
+    awayTeamId: mergedSideTeamId(generated, existing, "away", existingById, generatedById)
+  };
+}
+
+function mergedSideTeamId(
+  generated: Match,
+  existing: Match,
+  side: "home" | "away",
+  existingById: Map<string, Match>,
+  generatedById: Map<string, Match>
+) {
+  const teamKey = side === "home" ? "homeTeamId" : "awayTeamId";
+  const sourceKey = side === "home" ? "homeSourceMatchId" : "awaySourceMatchId";
+  const generatedTeamId = generated[teamKey];
+  const sourceMatchId = generated[sourceKey];
+
+  if (!sourceMatchId) return generatedTeamId;
+
+  const existingTeamId = existing[teamKey];
+  if (!existingTeamId) return "";
+
+  const sourceMatch = existingById.get(sourceMatchId) ?? generatedById.get(sourceMatchId);
+  return sourceMatch?.winnerTeamId === existingTeamId ? existingTeamId : "";
+}
+
+function isFixturePreliminary(status?: FixtureStatus) {
+  return status === undefined || status === "draft_auto" || status === "draft_review";
 }

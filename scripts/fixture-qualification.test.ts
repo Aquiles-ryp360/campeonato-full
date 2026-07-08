@@ -46,6 +46,39 @@ test("knockout bracket for 12 teams creates preliminaries and direct byes", () =
   assert.equal(bracket.rounds.find((round) => round.stage === "quarter_finals")?.slots.length, 4);
 });
 
+test("draft knockout preview does not reuse stale teams in dependent rounds", () => {
+  const teams = Array.from({ length: 12 }, (_, index) => team(index + 1));
+  const staleSixTeamFixture = generateKnockoutBracket({
+    eventId: baseEvent.id,
+    teams: teams.slice(0, 6),
+    thirdPlace: true,
+    fixtureStatus: "draft_auto"
+  }).matches;
+  const bracket = generateKnockoutBracket({
+    eventId: baseEvent.id,
+    teams,
+    matches: staleSixTeamFixture,
+    thirdPlace: true,
+    fixtureStatus: "draft_auto"
+  });
+  const labels = new Map(bracket.matches.map((match) => [match.label, match]));
+  const assignedTeamIds = bracket.matches.flatMap((match) =>
+    [match.homeTeamId, match.awayTeamId].filter(Boolean)
+  );
+
+  assert.equal(labels.get("P1")?.homeTeamId, "team-5");
+  assert.equal(labels.get("P1")?.awayTeamId, "team-12");
+  assert.equal(labels.get("S1")?.homePlaceholder, "Ganador C1");
+  assert.equal(labels.get("S1")?.awayPlaceholder, "Ganador C2");
+  assert.equal(labels.get("S1")?.homeTeamId, "");
+  assert.equal(labels.get("S1")?.awayTeamId, "");
+  assert.equal(labels.get("S2")?.homePlaceholder, "Ganador C3");
+  assert.equal(labels.get("S2")?.awayPlaceholder, "Ganador C4");
+  assert.equal(labels.get("S2")?.homeTeamId, "");
+  assert.equal(labels.get("S2")?.awayTeamId, "");
+  assert.equal(new Set(assignedTeamIds).size, assignedTeamIds.length);
+});
+
 test("knockout bracket respects disabled byes", () => {
   const teams = Array.from({ length: 12 }, (_, index) => team(index + 1));
   const bracket = generateKnockoutBracket({
