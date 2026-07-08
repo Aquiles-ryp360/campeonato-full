@@ -18,7 +18,7 @@ import { GroupStageView } from "@/features/brackets/components/GroupStageView";
 import { StandingsTable } from "@/features/brackets/components/StandingsTable";
 import { buildGroupQualificationPlan } from "@/lib/domain/standings";
 import { buildFixtureRandomSeed } from "@/lib/domain/fixture-preview";
-import { isActiveRegistrationTeamStatus, isEventStarted } from "@/lib/domain/registration-rules";
+import { isActiveRegistrationTeamStatus } from "@/lib/domain/registration-rules";
 import { TeamDetailsModal } from "./TeamDetailsModal";
 import { MatchDetailsModal } from "./MatchDetailsModal";
 
@@ -61,7 +61,6 @@ export function FormatRenderer({
   const qualifiedKnockoutTeams = groupQualification
     ? activeTeams.filter((team) => groupQualification.qualifiedTeamIds.has(team.id))
     : activeTeams;
-  const plannedTeamCount = shouldShowPlannedCapacity(event) ? event.maxTeams : undefined;
   const randomSeed = buildFixtureRandomSeed(event, activeTeams);
 
   return (
@@ -136,7 +135,6 @@ export function FormatRenderer({
                 seedingMode={event.seedingMode}
                 randomSeed={randomSeed}
                 fixtureStatus={event.fixtureStatus}
-                plannedTeamCount={plannedTeamCount}
                 onOpenTeam={setSelectedTeam}
               />
             </div>
@@ -177,10 +175,4 @@ export function FormatRenderer({
       <MatchDetailsModal match={selectedMatch} teams={activeTeams} onClose={() => setSelectedMatch(null)} />
     </section>
   );
-}
-
-function shouldShowPlannedCapacity(event: TournamentEvent) {
-  if (event.format !== "single_elimination") return false;
-  if (event.fixtureStatus === "published" || event.fixtureStatus === "locked") return false;
-  return !isEventStarted(event);
 }

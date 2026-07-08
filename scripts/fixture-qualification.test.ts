@@ -79,6 +79,33 @@ test("draft knockout preview does not reuse stale teams in dependent rounds", ()
   assert.equal(new Set(assignedTeamIds).size, assignedTeamIds.length);
 });
 
+test("knockout bracket stays compact when active teams are below max teams", () => {
+  const teams = Array.from({ length: 6 }, (_, index) => team(index + 1));
+  const bracket = generateKnockoutBracket({
+    eventId: baseEvent.id,
+    teams,
+    maxTeams: 12,
+    thirdPlace: false,
+    seedingMode: "random",
+    randomSeed: "compact-six-team-draw",
+    fixtureStatus: "draft_auto"
+  });
+  const assignedTeamIds = bracket.matches.flatMap((match) =>
+    [match.homeTeamId, match.awayTeamId].filter(Boolean)
+  );
+
+  assert.equal(bracket.status, "complete");
+  assert.equal(bracket.bracketSize, 8);
+  assert.equal(bracket.lowerPowerOfTwo, 4);
+  assert.equal(bracket.preliminaryMatches, 2);
+  assert.equal(bracket.preliminaryTeams, 4);
+  assert.equal(bracket.byeCount, 2);
+  assert.equal(bracket.matches.length, 5);
+  assert.equal(bracket.rounds.find((round) => round.stage === "preliminary")?.slots.length, 2);
+  assert.equal(bracket.rounds.find((round) => round.stage === "semi_finals")?.slots.length, 2);
+  assert.equal(new Set(assignedTeamIds).size, assignedTeamIds.length);
+});
+
 test("knockout bracket respects disabled byes", () => {
   const teams = Array.from({ length: 12 }, (_, index) => team(index + 1));
   const bracket = generateKnockoutBracket({

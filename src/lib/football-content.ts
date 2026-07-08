@@ -71,7 +71,7 @@ export const footballEvent: TournamentEvent = {
   minimumRestMinutes: 120,
   eventDate: "2026-07-09T08:00:00-05:00",
   fixtureStatus: "draft_auto",
-  seedingMode: "registration_order",
+  seedingMode: "random",
   thirdPlace: false,
   allowByes: true,
   penaltiesEnabled: true,
