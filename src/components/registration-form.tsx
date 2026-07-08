@@ -246,18 +246,18 @@ export function RegistrationForm({
     }
 
     const completedPlayers = players.filter((player) =>
-      Boolean(
-        player.firstName &&
-          player.lastName &&
-          player.dni &&
-          player.studentCode &&
-          player.semester &&
-          player.enrollmentFileObject
-      )
+      hasPlayerRequiredFields(player)
     );
 
-    if (!teamName || !delegateName || !delegatePhone || !delegateEmail || !registrationCode) {
-      toast.error("Completa equipo, delegado, correo y codigo unico de inscripcion.");
+    const missingRegistrationField = registrationMissingFieldMessage({
+      teamName,
+      delegateName,
+      delegatePhone,
+      delegateEmail,
+      registrationCode
+    });
+    if (missingRegistrationField) {
+      toast.error(missingRegistrationField);
       return;
     }
 
@@ -266,21 +266,10 @@ export function RegistrationForm({
       return;
     }
 
-    const playersWithAnyData = players.filter(
-      (player) =>
-        player.firstName ||
-        player.lastName ||
-        player.dni ||
-        player.studentCode ||
-        player.codigoCarrera ||
-        player.escuela ||
-        player.semester ||
-        player.enrollmentFileObject
-    );
-    const incompletePlayer = playersWithAnyData.length !== completedPlayers.length;
+    const incompletePlayerMessage = firstIncompletePlayerMessage(players);
 
-    if (incompletePlayer) {
-      toast.error("Todos los jugadores deben tener semestre y ficha de matricula.");
+    if (incompletePlayerMessage) {
+      toast.error(incompletePlayerMessage);
       return;
     }
 
@@ -310,9 +299,9 @@ export function RegistrationForm({
 
     for (const player of completedPlayers) {
       const file = player.enrollmentFileObject;
-      const fileError = file
-        ? validateEnrollmentFileMeta({ type: file.type, size: file.size })
-        : "Todos los jugadores deben tener semestre y ficha de matricula.";
+      if (!file) continue;
+
+      const fileError = validateEnrollmentFileMeta({ type: file.type, size: file.size });
       if (fileError) {
         toast.error(fileError);
         return;
@@ -647,7 +636,7 @@ export function RegistrationForm({
       <Card className="p-5">
         <SectionHeader
           title="Jugadores"
-          description="DNI, codigo universitario, ficha de matricula y ciclo/semestre."
+          description="DNI, codigo universitario y ciclo/semestre. La ficha de matricula es opcional."
           action={
             <Button
               type="button"
@@ -827,6 +816,63 @@ export function RegistrationForm({
       </div>
     </form>
   );
+}
+
+function registrationMissingFieldMessage({
+  teamName,
+  delegateName,
+  delegatePhone,
+  delegateEmail,
+  registrationCode
+}: {
+  teamName: string;
+  delegateName: string;
+  delegatePhone: string;
+  delegateEmail: string;
+  registrationCode: string;
+}) {
+  if (!teamName.trim()) return "Falta el nombre del equipo.";
+  if (!delegateName.trim()) return "Falta el nombre del delegado.";
+  if (!delegatePhone.trim()) return "Falta el celular del delegado.";
+  if (!delegateEmail.trim()) return "Falta el correo del delegado.";
+  if (!registrationCode.trim()) return "Falta el codigo unico de inscripcion.";
+  return null;
+}
+
+function hasPlayerAnySubmittedData(player: PlayerFormRow) {
+  return Boolean(
+    player.firstName.trim() ||
+      player.lastName.trim() ||
+      player.dni.trim() ||
+      player.studentCode.trim() ||
+      player.semester.trim() ||
+      player.enrollmentFileObject
+  );
+}
+
+function hasPlayerRequiredFields(player: PlayerFormRow) {
+  return Boolean(
+    player.firstName.trim() &&
+      player.lastName.trim() &&
+      player.dni.trim() &&
+      player.studentCode.trim() &&
+      player.semester.trim()
+  );
+}
+
+function firstIncompletePlayerMessage(players: PlayerFormRow[]) {
+  for (const [index, player] of players.entries()) {
+    if (!hasPlayerAnySubmittedData(player)) continue;
+
+    const playerLabel = `Jugador ${index + 1}`;
+    if (!player.firstName.trim()) return `${playerLabel}: falta nombres.`;
+    if (!player.lastName.trim()) return `${playerLabel}: falta apellidos.`;
+    if (!player.dni.trim()) return `${playerLabel}: falta DNI.`;
+    if (!player.studentCode.trim()) return `${playerLabel}: falta codigo.`;
+    if (!player.semester.trim()) return `${playerLabel}: falta ciclo/semestre.`;
+  }
+
+  return null;
 }
 
 async function generateRegistrationReceiptPdf(receipt: RegistrationReceipt) {

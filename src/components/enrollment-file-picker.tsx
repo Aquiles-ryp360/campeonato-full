@@ -32,7 +32,7 @@ export function EnrollmentFilePicker({
         } ${disabled ? "pointer-events-none opacity-60" : ""}`}
       >
         <Upload className="h-4 w-4 shrink-0" />
-        <span className="truncate">{fileName || "Subir ficha de matrícula"}</span>
+        <span className="truncate">{fileName || "Subir ficha de matrícula (opcional)"}</span>
       </label>
     </div>
   );

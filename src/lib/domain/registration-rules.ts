@@ -23,7 +23,6 @@ export type TeamApprovalIssue =
   | "payment_pending"
   | "below_minimum"
   | "above_maximum"
-  | "missing_enrollment_file"
   | "missing_semester"
   | "duplicate_dni"
   | "duplicate_student_code"
@@ -114,15 +113,14 @@ export function rosterLimitState({
 }
 
 export function hasCompletePlayerRequiredFields(
-  player: Pick<Player, "firstName" | "lastName" | "dni" | "studentCode" | "semester" | "enrollmentFile">
+  player: Pick<Player, "firstName" | "lastName" | "dni" | "studentCode" | "semester">
 ) {
   return Boolean(
     player.firstName.trim() &&
       player.lastName.trim() &&
       player.dni.trim() &&
       player.studentCode.trim() &&
-      player.semester.trim() &&
-      player.enrollmentFile.trim()
+      player.semester.trim()
   );
 }
 
@@ -223,9 +221,6 @@ export function validateTeamApproval({
   if (team.paymentStatus !== "verified") issues.push("payment_pending");
   if (playerCountState === "below_minimum") issues.push("below_minimum");
   if (playerCountState === "above_maximum") issues.push("above_maximum");
-  if (players.some((player) => !player.enrollmentFile.trim())) {
-    issues.push("missing_enrollment_file");
-  }
   if (players.some((player) => !player.semester.trim())) {
     issues.push("missing_semester");
   }
@@ -273,7 +268,6 @@ export function teamApprovalIssueMessage(issue: TeamApprovalIssue) {
     payment_pending: "El pago aun no esta validado.",
     below_minimum: "El equipo no cumple el minimo de jugadores.",
     above_maximum: "El equipo supera el maximo de jugadores.",
-    missing_enrollment_file: "Todos los jugadores deben tener ficha de matricula.",
     missing_semester: "Todos los jugadores deben tener semestre.",
     duplicate_dni: "Hay DNI repetidos dentro del equipo.",
     duplicate_student_code: "Hay codigos repetidos dentro del equipo.",

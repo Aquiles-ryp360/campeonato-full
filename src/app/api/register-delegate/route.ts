@@ -59,7 +59,7 @@ type RegistrationInput = z.infer<typeof registrationSchema>;
 
 type ParsedRegistrationRequest = {
   input: RegistrationInput;
-  enrollmentFiles: File[];
+  enrollmentFiles: Array<File | null>;
 };
 
 type EventRow = {
@@ -143,7 +143,7 @@ async function parseRegistrationRequest(request: Request): Promise<ParsedRegistr
   const contentType = request.headers.get("content-type") ?? "";
 
   if (!contentType.includes("multipart/form-data")) {
-    throw new PublicRouteError("La inscripcion debe enviarse con archivos de matricula.", 400);
+    throw new PublicRouteError("La inscripcion debe enviarse como formulario.", 400);
   }
 
   const formData = await request.formData();
@@ -181,10 +181,7 @@ async function parseRegistrationRequest(request: Request): Promise<ParsedRegistr
 
   const enrollmentFiles = parsed.data.players.map((_, index) => {
     const file = formData.get(`enrollmentFile-${index}`);
-    if (!(file instanceof File) || file.size === 0) {
-      throw new PublicRouteError("Todos los jugadores deben tener ficha de matricula.", 400);
-    }
-    return file;
+    return file instanceof File && file.size > 0 ? file : null;
   });
 
   return { input: parsed.data, enrollmentFiles };
@@ -226,10 +223,6 @@ async function registerDelegateTeam(
       `Este campeonato permite maximo ${event.max_players} jugadores.`,
       400
     );
-  }
-
-  if (input.players.length !== enrollmentFiles.length) {
-    throw new PublicRouteError("Todos los jugadores deben tener ficha de matricula.", 400);
   }
 
   const repeatedDni = findDuplicateNormalizedValue(input.players.map((player) => player.dni));
@@ -274,6 +267,7 @@ async function registerDelegateTeam(
   let registrationCodeMarkedUsed = false;
   let emailSent = false;
   const uploadedFiles: UploadedEnrollmentFile[] = [];
+  const uploadedFilesByPlayer: Array<UploadedEnrollmentFile | null> = [];
 
   try {
     const { data: team, error: teamError } = await supabase
@@ -298,13 +292,20 @@ async function registerDelegateTeam(
     const teamId = team.id;
 
     for (const [index, player] of input.players.entries()) {
+      const file = enrollmentFiles[index];
+      if (!file) {
+        uploadedFilesByPlayer[index] = null;
+        continue;
+      }
+
       const uploaded = await uploadEnrollmentFile(supabase, {
         eventId: event.id,
         teamId,
-        file: enrollmentFiles[index],
+        file,
         label: `${player.studentCode}-${player.dni}`
       });
       uploadedFiles.push(uploaded);
+      uploadedFilesByPlayer[index] = uploaded;
     }
 
     const { error: playersError } = await supabase.from("players").insert(
@@ -317,7 +318,7 @@ async function registerDelegateTeam(
         student_code: player.studentCode,
         codigo_carrera: player.codigoCarrera || null,
         escuela: player.escuela || null,
-        enrollment_file: uploadedFiles[index].dbPath,
+        enrollment_file: uploadedFilesByPlayer[index]?.dbPath ?? "",
         semester: player.semester,
         lineup_role: player.lineupRole,
         document_type: player.documentType,

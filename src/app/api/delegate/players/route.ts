@@ -156,13 +156,16 @@ export async function POST(request: Request) {
     const uploadedFiles: UploadedEnrollmentFile[] = [];
 
     try {
-      const uploaded = await uploadEnrollmentFile(admin, {
-        eventId: event.id,
-        teamId: team.id,
-        file,
-        label: `${input.studentCode}-${input.dni}`
-      });
-      uploadedFiles.push(uploaded);
+      const uploaded = file
+        ? await uploadEnrollmentFile(admin, {
+            eventId: event.id,
+            teamId: team.id,
+            file,
+            label: `${input.studentCode}-${input.dni}`
+          })
+        : null;
+
+      if (uploaded) uploadedFiles.push(uploaded);
 
       const { error } = await admin.from("players").insert({
         team_id: team.id,
@@ -174,7 +177,7 @@ export async function POST(request: Request) {
         codigo_carrera: input.codigoCarrera || null,
         escuela: input.escuela || null,
         semester: input.semester,
-        enrollment_file: uploaded.dbPath,
+        enrollment_file: uploaded?.dbPath ?? "",
         lineup_role: input.lineupRole,
         jersey_number: jerseyNumber,
         position: input.position || null,
@@ -317,11 +320,11 @@ async function parseAddPlayerRequest(request: Request) {
   }
 
   const file = formData.get("enrollmentFile");
-  if (!(file instanceof File) || file.size === 0) {
-    throw new ServerAccessError("Todos los jugadores deben tener ficha de matricula.", 400);
-  }
 
-  return { input: parsed.data, file };
+  return {
+    input: parsed.data,
+    file: file instanceof File && file.size > 0 ? file : null
+  };
 }
 
 async function findEvent(

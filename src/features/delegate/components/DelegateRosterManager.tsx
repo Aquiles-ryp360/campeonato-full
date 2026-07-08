@@ -111,18 +111,21 @@ export function DelegateRosterManager({
       return;
     }
 
-    if (!enrollmentFile) {
-      toast.error("Selecciona la ficha de matricula del jugador.");
+    const missingField = missingDraftFieldMessage(draft);
+    if (missingField) {
+      toast.error(missingField);
       return;
     }
 
-    const fileError = validateEnrollmentFileMeta({
-      type: enrollmentFile.type,
-      size: enrollmentFile.size
-    });
-    if (fileError) {
-      toast.error(fileError);
-      return;
+    if (enrollmentFile) {
+      const fileError = validateEnrollmentFileMeta({
+        type: enrollmentFile.type,
+        size: enrollmentFile.size
+      });
+      if (fileError) {
+        toast.error(fileError);
+        return;
+      }
     }
 
     if (draft.jerseyNumber) {
@@ -142,7 +145,9 @@ export function DelegateRosterManager({
       const formData = new FormData();
       formData.append("teamId", team.id);
       Object.entries(draft).forEach(([key, value]) => formData.append(key, value));
-      formData.append("enrollmentFile", enrollmentFile);
+      if (enrollmentFile) {
+        formData.append("enrollmentFile", enrollmentFile);
+      }
       formData.append("dataConsentAccepted", String(identityConsentAccepted));
       formData.append("dataConsentTextVersion", identityConsentTextVersion);
 
@@ -348,7 +353,7 @@ export function DelegateRosterManager({
               <option value="substitute">Suplente</option>
             </select>
           </Field>
-          <Field label="Ficha de matricula">
+          <Field label="Ficha de matricula (opcional)">
             <EnrollmentFilePicker
               id="delegate-enrollment-file"
               fileName={enrollmentFile?.name ?? ""}
@@ -412,4 +417,13 @@ export function DelegateRosterManager({
       ) : null}
     </Card>
   );
+}
+
+function missingDraftFieldMessage(draft: typeof emptyDraft) {
+  if (!draft.firstName.trim()) return "Falta nombres del jugador.";
+  if (!draft.lastName.trim()) return "Falta apellidos del jugador.";
+  if (!draft.dni.trim()) return "Falta DNI del jugador.";
+  if (!draft.studentCode.trim()) return "Falta codigo del jugador.";
+  if (!draft.semester.trim()) return "Falta ciclo/semestre del jugador.";
+  return null;
 }

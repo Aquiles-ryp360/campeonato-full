@@ -356,7 +356,7 @@ test("cross-team duplicate DNI and student code are detected inside active teams
   );
 });
 
-test("admin approval requires payment, roster limits, enrollment files and no duplicates", () => {
+test("admin approval requires payment, roster limits, semester and no duplicates", () => {
   const event = registrationEvent({ minPlayers: 2, maxPlayers: 4 });
   const currentTeam = { ...team("team-1", "Equipo 1"), paymentStatus: "pending" as const };
   const players = [
@@ -373,7 +373,7 @@ test("admin approval requires payment, roster limits, enrollment files and no du
 
   assert.deepEqual(
     issues,
-    ["payment_pending", "missing_enrollment_file", "missing_semester", "duplicate_dni"]
+    ["payment_pending", "missing_semester", "duplicate_dni"]
   );
 });
 
