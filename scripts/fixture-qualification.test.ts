@@ -1,7 +1,11 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { generateKnockoutBracket } from "../src/lib/domain/bracket-generator";
-import { buildEventFixturePreview, buildVisibleFixtureMatches } from "../src/lib/domain/fixture-preview";
+import {
+  buildEventFixturePreview,
+  buildFixtureTeamFingerprint,
+  buildVisibleFixtureMatches
+} from "../src/lib/domain/fixture-preview";
 import { generateOneDaySchedule } from "../src/lib/domain/schedule-generator";
 import { buildGroupQualificationPlan } from "../src/lib/domain/standings";
 import type { Group, GroupStanding, GroupTeam, Team, TournamentEvent, Venue } from "../src/lib/types";
@@ -232,6 +236,52 @@ test("published visible fixture uses latest active teams and keeps exhibition ma
   assert.equal(exhibition?.id, "db-exhibition");
   assert(exhibition?.scheduledAt && latestC4?.scheduledAt);
   assert(exhibition.scheduledAt > latestC4.scheduledAt);
+});
+
+test("published regenerated fixture reuses saved draw by bracket label", () => {
+  const activeTeams = Array.from({ length: 11 }, (_, index) => team(index + 1));
+  const savedSeed = "admin-regenerated-draw";
+  const savedFixture = generateKnockoutBracket({
+    eventId: baseEvent.id,
+    teams: activeTeams,
+    thirdPlace: false,
+    seedingMode: "random",
+    randomSeed: savedSeed,
+    fixtureStatus: "published"
+  }).matches.map((match) => ({
+    ...match,
+    id: `db-${match.label}`,
+    scheduledAt: `2026-07-09T${String(8 + match.round).padStart(2, "0")}:00:00.000Z`
+  }));
+  const event: TournamentEvent = {
+    ...baseEvent,
+    seedingMode: "random",
+    thirdPlace: false,
+    fixtureStatus: "published",
+    eventDate: "2026-07-09T05:00:00+00:00",
+    scheduleConfig: {
+      startTime: "08:00",
+      matchDurationMinutes: 25,
+      transitionMinutes: 10,
+      courts: ["Cancha A"],
+      minimumRestMinutes: 35,
+      allowCompactPreview: true,
+      fixtureRandomSeed: savedSeed,
+      fixtureTeamFingerprint: buildFixtureTeamFingerprint(activeTeams)
+    }
+  };
+  const visible = buildVisibleFixtureMatches({
+    events: [event],
+    teams: activeTeams,
+    matches: savedFixture,
+    venues: []
+  });
+  const p1 = visible.find((match) => match.label === "P1");
+  const savedP1 = savedFixture.find((match) => match.label === "P1");
+
+  assert.equal(p1?.id, "db-P1");
+  assert.equal(p1?.homeTeamId, savedP1?.homeTeamId);
+  assert.equal(p1?.awayTeamId, savedP1?.awayTeamId);
 });
 
 test("one day schedule interprets configured start time as Peru time", () => {

@@ -192,6 +192,8 @@ export interface TournamentEvent {
     minimumRestMinutes: number;
     allowCompactPreview: boolean;
     estimatedEndTime?: string;
+    fixtureRandomSeed?: string;
+    fixtureTeamFingerprint?: string;
     branding?: ChampionshipBranding;
   };
 }

@@ -563,11 +563,29 @@ function missingSeed(seed: number): Entrant {
 
 function mergeExistingMatches(generated: Match[], existing: Match[], eventId: string) {
   const existingById = new Map(existing.filter((match) => match.eventId === eventId).map((match) => [match.id, match]));
+  const existingByIdentity = new Map(
+    existing
+      .filter((match) => match.eventId === eventId)
+      .map((match) => [matchIdentityKey(match), match])
+  );
   const generatedById = new Map(generated.map((match) => [match.id, match]));
 
   return generated.map((match) => ({
-    ...mergeExistingMatch(match, existingById.get(match.id), existingById, generatedById)
+    ...mergeExistingMatch(
+      match,
+      existingById.get(match.id) ?? existingByIdentity.get(matchIdentityKey(match)),
+      existingById,
+      generatedById
+    )
   }));
+}
+
+function matchIdentityKey(match: Pick<Match, "stage" | "label" | "bracketPosition">) {
+  return [
+    match.stage,
+    match.label ?? "",
+    match.bracketPosition ?? ""
+  ].join(":");
 }
 
 function mergeExistingMatch(

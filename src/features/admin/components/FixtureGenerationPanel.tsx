@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
 import { AlertTriangle, Info as InfoIcon, Lock, Mail, Send, Snowflake, Wand2 } from "lucide-react";
 import { toast } from "sonner";
 import type { CompetitionData } from "@/lib/data-mappers";
@@ -29,8 +30,10 @@ export function FixtureGenerationPanel({
   data: CompetitionData;
   activeEvent?: TournamentEvent | null;
 }) {
+  const router = useRouter();
   const [selectedEventId, setSelectedEventId] = useState(activeEvent?.id ?? data.events[0]?.id ?? "");
   const [sendingFixtureEmail, setSendingFixtureEmail] = useState(false);
+  const [regeneratingFixture, setRegeneratingFixture] = useState(false);
   const selectedEvent =
     activeEvent ??
     data.events.find((event) => event.id === selectedEventId) ??
@@ -90,6 +93,41 @@ export function FixtureGenerationPanel({
     ? buildConfigurationWarnings(selectedEvent, activeTeamCount)
     : [];
   const warnings = [...configurationWarnings, ...(bracket?.warnings ?? [])];
+
+  async function handleRegenerateFixture() {
+    if (!selectedEvent) return;
+
+    setRegeneratingFixture(true);
+    try {
+      const response = await fetch("/api/admin/fixture-regenerate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ eventId: selectedEvent.id })
+      });
+      const payload = (await response.json().catch(() => null)) as
+        | {
+            ok?: boolean;
+            error?: string;
+            matchCount?: number;
+            preliminaryCount?: number;
+          }
+        | null;
+
+      if (!response.ok || payload?.ok === false) {
+        toast.error(payload?.error ?? "No se pudo regenerar el fixture.");
+        return;
+      }
+
+      toast.success(
+        `Fixture regenerado: ${payload?.matchCount ?? 0} partido(s), ${payload?.preliminaryCount ?? 0} preliminar(es).`
+      );
+      router.refresh();
+    } catch {
+      toast.error("No se pudo regenerar el fixture.");
+    } finally {
+      setRegeneratingFixture(false);
+    }
+  }
 
   async function handleSendFixtureEmail() {
     if (!selectedEvent) return;
@@ -199,9 +237,16 @@ export function FixtureGenerationPanel({
         ) : null}
         <ConflictSummary conflicts={conflicts} />
         <div className="mt-5 flex flex-wrap items-center gap-3">
-          <Button disabled={!selectedEvent || !canRegenerateFixtureManually(selectedEvent.fixtureStatus ?? "draft_auto")}>
+          <Button
+            disabled={
+              !selectedEvent ||
+              regeneratingFixture ||
+              !canRegenerateFixtureManually(selectedEvent.fixtureStatus ?? "draft_auto")
+            }
+            onClick={() => void handleRegenerateFixture()}
+          >
             <Wand2 className="h-4 w-4" />
-            Regenerar preliminar
+            {regeneratingFixture ? "Regenerando..." : "Regenerar preliminar"}
           </Button>
           <Button variant="secondary" disabled={!selectedEvent || selectedEvent.fixtureStatus !== "draft_auto"}>
             <Snowflake className="h-4 w-4" />

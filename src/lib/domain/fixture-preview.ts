@@ -27,20 +27,27 @@ export function buildEventFixturePreview({
 
   const eventTeams = getEventFixtureTeams(event, teams);
   const eventMatches = matches.filter((match) => match.eventId === event.id);
+  const eventExhibitionMatches = eventMatches.filter(isExhibitionMatch);
+  const teamFingerprint = buildFixtureTeamFingerprint(eventTeams);
+  const savedFixtureSeed = event.scheduleConfig?.fixtureRandomSeed;
+  const savedTeamFingerprint = event.scheduleConfig?.fixtureTeamFingerprint;
+  const shouldReuseSavedFixture = Boolean(
+    savedFixtureSeed && savedTeamFingerprint === teamFingerprint
+  );
   const bracket = generateKnockoutBracket({
     eventId: event.id,
     teams: eventTeams,
-    matches: eventMatches,
+    matches: shouldReuseSavedFixture ? eventMatches.filter((match) => !isExhibitionMatch(match)) : [],
     thirdPlace: event.thirdPlace ?? true,
     maxTeams: event.maxTeams,
     allowByes: event.allowByes ?? true,
     seedingMode: event.seedingMode ?? "registration_order",
-    randomSeed: buildFixtureRandomSeed(event, eventTeams),
+    randomSeed: savedFixtureSeed ?? buildFixtureRandomSeed(event, eventTeams),
     fixtureStatus: event.fixtureStatus ?? "draft_auto"
   });
   const schedule =
     bracket.matches.length > 0
-      ? generateOneDaySchedule([...bracket.matches, ...exhibitionMatchesForSchedule(eventMatches, bracket.matches)], {
+      ? generateOneDaySchedule([...bracket.matches, ...exhibitionMatchesForSchedule(eventExhibitionMatches, bracket.matches)], {
           eventDate: event.eventDate ?? eventMatches[0]?.scheduledAt ?? new Date().toISOString(),
           startTime: event.scheduleConfig?.startTime ?? "09:00",
           matchDurationMinutes: event.scheduleConfig?.matchDurationMinutes ?? 20,
@@ -65,20 +72,22 @@ export function getEventFixtureTeams(event: Pick<TournamentEvent, "id">, teams: 
 }
 
 export function buildFixtureRandomSeed(
-  event: Pick<TournamentEvent, "id" | "eventDate" | "registrationOpenUntil">,
+  event: Pick<TournamentEvent, "id" | "eventDate" | "registrationOpenUntil" | "scheduleConfig">,
   teams: Team[]
 ) {
-  const teamFingerprint = teams
-    .map((team) => `${team.id}:${team.createdAt ?? ""}`)
-    .sort()
-    .join("|");
-
   return [
     event.id,
     event.eventDate ?? "",
     event.registrationOpenUntil ?? "",
-    teamFingerprint
+    buildFixtureTeamFingerprint(teams)
   ].join("::");
+}
+
+export function buildFixtureTeamFingerprint(teams: Team[]) {
+  return teams
+    .map((team) => `${team.id}:${team.createdAt ?? ""}:${team.status}`)
+    .sort()
+    .join("|");
 }
 
 export function buildVisibleFixtureMatches({
@@ -116,7 +125,7 @@ export function shouldBuildPreliminaryFixture(event: TournamentEvent) {
   );
 }
 
-function isExhibitionMatch(match: Match) {
+export function isExhibitionMatch(match: Match) {
   const text = `${match.label ?? ""} ${match.notes ?? ""}`
     .normalize("NFD")
     .replace(/[\u0300-\u036f]/g, "")
@@ -125,7 +134,7 @@ function isExhibitionMatch(match: Match) {
   return text.includes("exhibicion") || match.label === "EX";
 }
 
-function exhibitionMatchesForSchedule(eventMatches: Match[], bracketMatches: Match[]) {
+export function exhibitionMatchesForSchedule(eventMatches: Match[], bracketMatches: Match[]) {
   const semifinalRound = bracketMatches.find((match) => match.stage === "semi_finals")?.round;
   const fallbackRound = Math.max(1, ...bracketMatches.map((match) => match.round));
   const round = semifinalRound ?? fallbackRound;
