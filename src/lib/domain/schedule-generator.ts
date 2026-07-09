@@ -1,4 +1,4 @@
-import { addMinutes, differenceInMinutes, format, parse } from "date-fns";
+import { addMinutes, differenceInMinutes } from "date-fns";
 import type { Match } from "../types";
 import type { ScheduleConflict } from "./conflict-detector";
 
@@ -39,15 +39,15 @@ export interface GeneratedSchedule {
 export function generateDaySlots(config: DayScheduleConfig): DaySlot[] {
   const slots: DaySlot[] = [];
   const datePart = config.eventDate.slice(0, 10);
-  const start = parse(`${datePart} ${config.startTime}`, "yyyy-MM-dd HH:mm", new Date());
-  const end = parse(`${datePart} ${config.endTime}`, "yyyy-MM-dd HH:mm", new Date());
+  const start = parsePeruDateTime(datePart, config.startTime);
+  const end = parsePeruDateTime(datePart, config.endTime);
 
   for (const venue of config.venues.filter((item) => item.active)) {
     let cursor = start;
     while (addMinutes(cursor, config.matchDurationMinutes).getTime() <= end.getTime()) {
       const slotEnd = addMinutes(cursor, config.matchDurationMinutes);
       slots.push({
-        id: `${venue.id}-${format(cursor, "HHmm")}`,
+        id: `${venue.id}-${peruTimeKey(cursor)}`,
         venueId: venue.id,
         court: venue.name,
         startsAt: cursor.toISOString(),
@@ -66,7 +66,7 @@ export function generateOneDaySchedule(matches: Match[], config: OneDayScheduleC
   const scheduled: Match[] = [];
   const slots: DaySlot[] = [];
   const datePart = config.eventDate.slice(0, 10);
-  let cursor = parse(`${datePart} ${config.startTime}`, "yyyy-MM-dd HH:mm", new Date());
+  let cursor = parsePeruDateTime(datePart, config.startTime);
   const matchesByRound = groupByRound(sortedMatches);
 
   for (const roundMatches of matchesByRound) {
@@ -81,7 +81,7 @@ export function generateOneDaySchedule(matches: Match[], config: OneDayScheduleC
       );
       const endsAt = addMinutes(startsAt, config.matchDurationMinutes);
       slots.push({
-        id: `${court}-${format(startsAt, "HHmm")}`,
+        id: `${court}-${peruTimeKey(startsAt)}`,
         court,
         startsAt: startsAt.toISOString(),
         endsAt: endsAt.toISOString()
@@ -151,6 +151,23 @@ export function previewSingleDaySchedule({
     matches: scheduled,
     unassignedCount: Math.max(0, matches.length - slots.length)
   };
+}
+
+function parsePeruDateTime(datePart: string, time: string) {
+  const normalizedTime = time.length === 5 ? `${time}:00` : time;
+  const date = new Date(`${datePart}T${normalizedTime}-05:00`);
+  if (!Number.isNaN(date.getTime())) return date;
+
+  return new Date(`${datePart}T00:00:00-05:00`);
+}
+
+function peruTimeKey(date: Date) {
+  return new Intl.DateTimeFormat("en-GB", {
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+    timeZone: "America/Lima"
+  }).format(date).replace(":", "");
 }
 
 function groupByRound(matches: Match[]) {

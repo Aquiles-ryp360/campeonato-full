@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { generateKnockoutBracket } from "../src/lib/domain/bracket-generator";
 import { buildEventFixturePreview } from "../src/lib/domain/fixture-preview";
+import { generateOneDaySchedule } from "../src/lib/domain/schedule-generator";
 import { buildGroupQualificationPlan } from "../src/lib/domain/standings";
 import type { Group, GroupStanding, GroupTeam, Team, TournamentEvent, Venue } from "../src/lib/types";
 
@@ -169,6 +170,27 @@ test("fixture preview uses only active teams and keeps random draw stable", () =
     firstPreview.matches.map((match) => [match.label, match.homeTeamId, match.awayTeamId]),
     secondPreview.matches.map((match) => [match.label, match.homeTeamId, match.awayTeamId])
   );
+});
+
+test("one day schedule interprets configured start time as Peru time", () => {
+  const match = generateKnockoutBracket({
+    eventId: baseEvent.id,
+    teams: [team(1), team(2)],
+    thirdPlace: false,
+    fixtureStatus: "draft_auto"
+  }).matches[0];
+  const schedule = generateOneDaySchedule([match], {
+    eventDate: "2026-07-09T05:00:00+00:00",
+    startTime: "08:00",
+    matchDurationMinutes: 30,
+    transitionMinutes: 10,
+    courts: ["Cancha A"],
+    minimumRestMinutes: 30,
+    respectRoundDependencies: true,
+    allowCompactPreview: true
+  });
+
+  assert.equal(schedule.matches[0]?.scheduledAt, "2026-07-09T13:00:00.000Z");
 });
 
 test("group qualification adds best thirds to complete knockout size", () => {
