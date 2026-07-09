@@ -4,7 +4,8 @@ import { generateKnockoutBracket } from "../src/lib/domain/bracket-generator";
 import {
   buildEventFixturePreview,
   buildFixtureTeamFingerprint,
-  buildVisibleFixtureMatches
+  buildVisibleFixtureMatches,
+  fixtureStatusForVisibleMatches
 } from "../src/lib/domain/fixture-preview";
 import { generateOneDaySchedule } from "../src/lib/domain/schedule-generator";
 import { buildGroupQualificationPlan } from "../src/lib/domain/standings";
@@ -283,6 +284,50 @@ test("published regenerated fixture reuses saved draw by bracket label", () => {
   assert.equal(p1?.homeTeamId, savedP1?.homeTeamId);
   assert.equal(p1?.awayTeamId, savedP1?.awayTeamId);
   assert.equal(p1?.scheduledAt, savedP1?.scheduledAt);
+});
+
+test("visible fixture matches drive bracket display even while fixture is draft", () => {
+  const activeTeams = Array.from({ length: 10 }, (_, index) => team(index + 1));
+  const savedFixture = generateKnockoutBracket({
+    eventId: baseEvent.id,
+    teams: activeTeams,
+    thirdPlace: false,
+    seedingMode: "random",
+    randomSeed: "saved-voley-draw",
+    fixtureStatus: "published"
+  }).matches.map((match) =>
+    match.label === "P1"
+      ? {
+          ...match,
+          id: "db-P1",
+          homeTeamId: "team-1",
+          awayTeamId: "team-2",
+          homePlaceholder: "Equipo 1",
+          awayPlaceholder: "Equipo 2"
+        }
+      : match
+  );
+  const event: TournamentEvent = {
+    ...baseEvent,
+    sport: "voley",
+    seedingMode: "random",
+    thirdPlace: false,
+    fixtureStatus: "draft_auto"
+  };
+  const displayBracket = generateKnockoutBracket({
+    eventId: event.id,
+    teams: activeTeams,
+    matches: savedFixture,
+    thirdPlace: false,
+    seedingMode: "random",
+    randomSeed: "different-preview-draw",
+    fixtureStatus: fixtureStatusForVisibleMatches(event, savedFixture)
+  });
+  const p1 = displayBracket.matches.find((match) => match.label === "P1");
+
+  assert.equal(p1?.id, "db-P1");
+  assert.equal(p1?.homeTeamId, "team-1");
+  assert.equal(p1?.awayTeamId, "team-2");
 });
 
 test("one day schedule interprets configured start time as Peru time", () => {

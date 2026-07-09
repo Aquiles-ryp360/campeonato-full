@@ -2,6 +2,7 @@
 
 import { Check, Shuffle, Trophy, UsersRound } from "lucide-react";
 import { generateKnockoutBracket } from "@/lib/domain/bracket-generator";
+import { fixtureStatusForVisibleMatches, isExhibitionMatch } from "@/lib/domain/fixture-preview";
 import type { FixtureStatus, Match, SeedingMode, Team } from "@/lib/types";
 import { Badge } from "@/components/ui";
 import { cn, formatDateTime } from "@/lib/utils";
@@ -31,6 +32,7 @@ export function KnockoutBracket({
   fixtureStatus?: FixtureStatus;
   onOpenTeam?: (team: Team) => void;
 }) {
+  const displayFixtureStatus = fixtureStatusForVisibleMatches({ id: eventId, fixtureStatus }, matches);
   const bracket = generateKnockoutBracket({
     eventId,
     teams,
@@ -40,7 +42,7 @@ export function KnockoutBracket({
     allowByes,
     seedingMode,
     randomSeed,
-    fixtureStatus
+    fixtureStatus: displayFixtureStatus
   });
   const rounds = bracket.rounds.filter((round) => round.stage !== "third_place");
   const exhibitionMatches = matches.filter((match) => match.eventId === eventId && isExhibitionMatch(match));
@@ -218,15 +220,6 @@ function bracketSummary(bracket: ReturnType<typeof generateKnockoutBracket>) {
   }
 
   return `Llave pareja de ${bracket.lowerPowerOfTwo} equipos, sin preliminar.`;
-}
-
-function isExhibitionMatch(match: Match) {
-  const text = `${match.label ?? ""} ${match.notes ?? ""}`
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .toLowerCase();
-
-  return text.includes("exhibicion") || match.label === "EX";
 }
 
 function TeamLine({

@@ -13,7 +13,15 @@ export default async function ChampionshipFixturePage({
 }) {
   const [{ championshipSlug }, data] = await Promise.all([params, getPublicCompetitionData()]);
   const selected = getChampionshipPublicContext(data, championshipSlug);
-  const fixture = getFixtureContext(data);
+  const fixture = selected.event
+    ? {
+        events: [selected.event],
+        teams: selected.teams,
+        players: selected.players,
+        matches: selected.matches,
+        venues: selected.venues
+      }
+    : getFixtureContext(data);
   const activeTeams = fixture.teams.filter((team) => isActiveRegistrationTeamStatus(team.status));
   const visibleMatches = buildVisibleFixtureMatches({
     events: fixture.events,

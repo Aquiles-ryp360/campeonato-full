@@ -1,4 +1,4 @@
-import type { Match, Team, TournamentEvent, Venue } from "../types";
+import type { FixtureStatus, Match, Team, TournamentEvent, Venue } from "../types";
 import { generateKnockoutBracket, type GeneratedBracket } from "./bracket-generator";
 import { isActiveRegistrationTeamStatus } from "./registration-rules";
 import { generateOneDaySchedule, type GeneratedSchedule } from "./schedule-generator";
@@ -145,6 +145,20 @@ export function buildVisibleFixtureMatches({
     (match) => !generatedByEvent.has(match.eventId)
   );
   return [...staticMatches, ...Array.from(generatedByEvent.values()).flat()];
+}
+
+export function fixtureStatusForVisibleMatches(
+  event: Pick<TournamentEvent, "id" | "fixtureStatus">,
+  matches: Match[]
+): FixtureStatus {
+  const hasVisibleOfficialFixture = matches.some(
+    (match) =>
+      match.eventId === event.id &&
+      match.stage !== "group_stage" &&
+      !isExhibitionMatch(match)
+  );
+
+  return hasVisibleOfficialFixture ? "published" : event.fixtureStatus ?? "draft_auto";
 }
 
 export function shouldBuildPreliminaryFixture(event: TournamentEvent) {
