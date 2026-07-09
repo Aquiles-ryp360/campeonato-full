@@ -83,6 +83,8 @@ Ruta principal:
 - `/arbitro`: lista partidos asignados al correo del arbitro.
 - `/arbitro/partidos/[id]/live`: permite iniciar partido, registrar goles, tarjetas, penales, anular ultimo evento propio, enviar resultado y ver marcador en vivo.
 
+Para grabar o practicar el flujo completo con el campeonato de capacitacion, usa `docs/guia-grabacion-capacitacion-arbitros.md`.
+
 Solo el arbitro asignado al partido, o un admin, puede editar el partido. La validacion se hace en servidor antes de cada accion.
 
 El resultado cargado por el arbitro se publica inmediatamente como oficial. Cuando el arbitro presiona `Enviar resultado` o finaliza una tanda de penales:

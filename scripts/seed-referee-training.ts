@@ -12,9 +12,9 @@ const eventId = "77777777-7777-4777-8777-777777777712";
 const eventSlug = "capacitacion-arbitros-12-equipos";
 const eventName = "Capacitacion Arbitros - 12 Equipos";
 const courts = ["Cancha Capacitacion A", "Cancha Capacitacion B"];
-const today = limaDateString();
-const eventDate = `${today}T08:00:00-05:00`;
-const registrationClosedAt = `${today}T07:30:00-05:00`;
+const trainingDate = trainingDateString();
+const eventDate = `${trainingDate}T08:00:00-05:00`;
+const registrationClosedAt = `${trainingDate}T07:30:00-05:00`;
 const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
@@ -123,6 +123,7 @@ async function main() {
   console.log("Campeonato de capacitacion generado en Supabase.");
   console.log(`Campeonato: ${eventName}`);
   console.log(`Slug publico: /c/${eventSlug}`);
+  console.log(`Fecha: ${trainingDate} 08:00 America/Lima`);
   console.log(`Equipos: ${teams.length}`);
   console.log(`Jugadores: ${teams.length * 14}`);
   console.log(`Partidos de llave: ${matches.length}`);
@@ -308,7 +309,7 @@ async function seedEvent(supabase: AdminClient, sportId: string, formatId: strin
         courtCount: courts.length,
         minimumRestMinutes: 30,
         allowCompactPreview: true,
-        estimatedEndTime: "13:00",
+        estimatedEndTime: "11:25",
         branding: {
           organizerName: "Comision deportiva de capacitacion",
           careerName: "Capacitacion arbitral",
@@ -326,7 +327,7 @@ async function seedBases(supabase: AdminClient) {
   await requireOk(
     supabase.from("tournament_bases").insert({
       championship_name: eventName,
-      year: Number(today.slice(0, 4)),
+      year: Number(trainingDate.slice(0, 4)),
       organizer: "Comision deportiva de capacitacion",
       start_date: eventDate,
       end_date: eventDate,
@@ -360,7 +361,7 @@ function buildTeams(): Team[] {
     status: "approved",
     primaryColor: color,
     secondaryColor: "#f8fafc",
-    createdAt: `${today}T07:${String(index).padStart(2, "0")}:00-05:00`
+    createdAt: `${trainingDate}T07:${String(index).padStart(2, "0")}:00-05:00`
   }));
 }
 
@@ -452,7 +453,7 @@ function buildScheduledMatches(teams: Team[]) {
     thirdPlace: true,
     allowByes: true,
     seedingMode: "random",
-    randomSeed: `${eventId}:${today}:capacitacion-arbitros`,
+    randomSeed: `${eventId}:${trainingDate}:capacitacion-arbitros`,
     fixtureStatus: "published"
   });
   const generatedIdToUuid = new Map(generated.map((match, index) => [match.id, matchId(index + 1)]));
@@ -680,17 +681,11 @@ async function requireOk<T>(
   if (error) throw new Error(`Fallo al insertar ${label}: ${error.message}`);
 }
 
-function limaDateString(date = new Date()) {
-  const parts = new Intl.DateTimeFormat("en-US", {
-    timeZone: "America/Lima",
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit"
-  }).formatToParts(date);
-  const year = parts.find((part) => part.type === "year")?.value ?? "2026";
-  const month = parts.find((part) => part.type === "month")?.value ?? "01";
-  const day = parts.find((part) => part.type === "day")?.value ?? "01";
-  return `${year}-${month}-${day}`;
+function trainingDateString() {
+  const configured = process.env.REFEREE_TRAINING_DATE?.trim();
+  if (!configured) return "2026-07-09";
+  if (/^\d{4}-\d{2}-\d{2}$/.test(configured)) return configured;
+  throw new Error("REFEREE_TRAINING_DATE debe tener formato YYYY-MM-DD.");
 }
 
 function loadEnvFile(file: string) {
