@@ -34,6 +34,7 @@ export function buildEventFixturePreview({
   const shouldReuseSavedFixture = Boolean(
     savedFixtureSeed && savedTeamFingerprint === teamFingerprint
   );
+  const fixtureStatus = event.fixtureStatus ?? "draft_auto";
   const bracket = generateKnockoutBracket({
     eventId: event.id,
     teams: eventTeams,
@@ -43,11 +44,14 @@ export function buildEventFixturePreview({
     allowByes: event.allowByes ?? true,
     seedingMode: event.seedingMode ?? "registration_order",
     randomSeed: savedFixtureSeed ?? buildFixtureRandomSeed(event, eventTeams),
-    fixtureStatus: event.fixtureStatus ?? "draft_auto"
+    fixtureStatus: shouldReuseSavedFixture ? "published" : fixtureStatus
   });
+  const previewMatches = [...bracket.matches, ...exhibitionMatchesForSchedule(eventExhibitionMatches, bracket.matches)];
   const schedule =
-    bracket.matches.length > 0
-      ? generateOneDaySchedule([...bracket.matches, ...exhibitionMatchesForSchedule(eventExhibitionMatches, bracket.matches)], {
+    previewMatches.length > 0
+      ? shouldReuseSavedFixture
+        ? savedFixtureSchedule(previewMatches)
+        : generateOneDaySchedule(previewMatches, {
           eventDate: event.eventDate ?? eventMatches[0]?.scheduledAt ?? new Date().toISOString(),
           startTime: event.scheduleConfig?.startTime ?? "09:00",
           matchDurationMinutes: event.scheduleConfig?.matchDurationMinutes ?? 20,
@@ -64,6 +68,31 @@ export function buildEventFixturePreview({
     schedule,
     teams: eventTeams,
     matches: schedule?.matches ?? bracket.matches
+  };
+}
+
+function savedFixtureSchedule(matches: Match[]): GeneratedSchedule {
+  const scheduled = [...matches].sort(
+    (a, b) =>
+      a.round - b.round ||
+      stageRank(a.stage) - stageRank(b.stage) ||
+      (a.bracketPosition ?? 0) - (b.bracketPosition ?? 0) ||
+      a.scheduledAt.localeCompare(b.scheduledAt) ||
+      a.id.localeCompare(b.id)
+  );
+
+  return {
+    matches: scheduled,
+    warnings: [],
+    slots: scheduled
+      .filter((match) => match.scheduledAt)
+      .map((match) => ({
+        id: `${match.id}-saved`,
+        venueId: match.venueId,
+        court: match.court,
+        startsAt: match.scheduledAt,
+        endsAt: match.scheduledEndAt ?? match.scheduledAt
+      }))
   };
 }
 
@@ -151,6 +180,20 @@ export function exhibitionMatchesForSchedule(eventMatches: Match[], bracketMatch
       sourceMatchIds: [],
       dependsOnMatchIds: []
     }));
+}
+
+function stageRank(stage: Match["stage"]) {
+  const rank: Record<Match["stage"], number> = {
+    group_stage: 0,
+    preliminary: 1,
+    round_of_16: 2,
+    quarter_finals: 3,
+    semi_finals: 4,
+    final: 5,
+    third_place: 6
+  };
+
+  return rank[stage];
 }
 
 function normalizedCourts(event: TournamentEvent, venues: Venue[]) {

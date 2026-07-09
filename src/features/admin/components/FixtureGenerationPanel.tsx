@@ -22,6 +22,7 @@ import { Badge, Button, Card, SectionHeader } from "@/components/ui";
 import { DaySchedule } from "@/features/fixture/components/DaySchedule";
 import { fixtureStatusLabel } from "@/lib/utils";
 import { RefereeAssignmentsPanel } from "./RefereeAssignmentsPanel";
+import { FixtureManualEditor } from "./FixtureManualEditor";
 
 export function FixtureGenerationPanel({
   data,
@@ -280,6 +281,14 @@ export function FixtureGenerationPanel({
           </div>
         ) : null}
       </Card>
+      {selectedEvent ? (
+        <FixtureManualEditor
+          event={selectedEvent}
+          teams={scopedTeams}
+          matches={scopedMatches}
+          venues={data.venues}
+        />
+      ) : null}
       <RefereeAssignmentsPanel
         events={scopedEvents}
         teams={scopedTeams}

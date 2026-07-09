@@ -282,6 +282,7 @@ test("published regenerated fixture reuses saved draw by bracket label", () => {
   assert.equal(p1?.id, "db-P1");
   assert.equal(p1?.homeTeamId, savedP1?.homeTeamId);
   assert.equal(p1?.awayTeamId, savedP1?.awayTeamId);
+  assert.equal(p1?.scheduledAt, savedP1?.scheduledAt);
 });
 
 test("one day schedule interprets configured start time as Peru time", () => {
