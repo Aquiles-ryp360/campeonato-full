@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { Edit, FileText, ListChecks } from "lucide-react";
 import { toast } from "sonner";
 import type { CompetitionData } from "@/lib/data-mappers";
@@ -15,6 +15,7 @@ import { DelegateRegistrationForm } from "./DelegateRegistrationForm";
 import { DelegateRosterManager } from "./DelegateRosterManager";
 import { DelegateMatchesView } from "./DelegateMatchesView";
 import { DelegateNotices } from "./DelegateNotices";
+import { DelegateRosterDownloadButton } from "./DelegateRosterDownloadButton";
 
 export type DelegateView = "dashboard" | "registration" | "roster" | "matches" | "notices";
 
@@ -29,12 +30,20 @@ export function DelegateDashboard({
   const [delegateEmail, setDelegateEmail] = useState<string | null>(null);
   const [teamId, setTeamId] = useState<string | undefined>();
 
+  const refreshDelegateData = useCallback(async () => {
+    const updatedData = await fetchBrowserCompetitionData({ includeRegistrationCodes: true });
+    setData(updatedData);
+  }, []);
+
+  useEffect(() => {
+    setData(initialData);
+  }, [initialData]);
+
   useEffect(() => {
     setDelegateEmail(getStoredSession()?.username.toLowerCase() ?? null);
-    fetchBrowserCompetitionData({ includeRegistrationCodes: true })
-      .then(setData)
+    refreshDelegateData()
       .catch(() => toast.error("No se pudieron cargar los datos actualizados del delegado."));
-  }, []);
+  }, [refreshDelegateData]);
 
   const context = useMemo(
     () => getDelegateTeamContext(data, teamId, delegateEmail),
@@ -69,12 +78,15 @@ export function DelegateDashboard({
           title={`${context.team.name} - ${context.event.name}`}
           description="Gestiona solo la informacion de tu equipo y sus partidos."
           action={
-            <DelegateTeamSwitcher
-              teams={context.delegateTeams}
-              events={data.events}
-              value={context.team.id}
-              onChange={setTeamId}
-            />
+            <div className="flex flex-wrap justify-end gap-2">
+              <DelegateRosterDownloadButton teamId={context.team.id} teamName={context.team.name} />
+              <DelegateTeamSwitcher
+                teams={context.delegateTeams}
+                events={data.events}
+                value={context.team.id}
+                onChange={setTeamId}
+              />
+            </div>
           }
         />
       </div>
@@ -126,9 +138,16 @@ export function DelegateDashboard({
         </>
       ) : null}
 
-      {view === "registration" ? <DelegateRegistrationForm event={context.event} team={context.team} /> : null}
+      {view === "registration" ? (
+        <DelegateRegistrationForm event={context.event} team={context.team} onSaved={refreshDelegateData} />
+      ) : null}
       {view === "roster" ? (
-        <DelegateRosterManager event={context.event} team={context.team} players={context.players} />
+        <DelegateRosterManager
+          event={context.event}
+          team={context.team}
+          players={context.players}
+          onRosterChanged={refreshDelegateData}
+        />
       ) : null}
       {view === "matches" ? (
         <DelegateMatchesView event={context.event} team={context.team} teams={data.teams} matches={context.matches} />

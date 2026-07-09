@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Save } from "lucide-react";
 import { toast } from "sonner";
@@ -10,10 +10,12 @@ import { Button, Card, Field, SectionHeader, inputClass } from "@/components/ui"
 
 export function DelegateRegistrationForm({
   event,
-  team
+  team,
+  onSaved
 }: {
   event: TournamentEvent;
   team: Team;
+  onSaved?: () => Promise<void> | void;
 }) {
   const editable = canEditRegistration(event, team);
   const router = useRouter();
@@ -22,6 +24,13 @@ export function DelegateRegistrationForm({
   const [delegatePhone, setDelegatePhone] = useState(team.delegatePhone);
   const [academicCareer, setAcademicCareer] = useState(team.academicCareer ?? "");
   const [isSaving, setIsSaving] = useState(false);
+
+  useEffect(() => {
+    setName(team.name);
+    setDelegateName(team.delegateName);
+    setDelegatePhone(team.delegatePhone);
+    setAcademicCareer(team.academicCareer ?? "");
+  }, [team]);
 
   async function submitChanges(submitEvent: React.FormEvent<HTMLFormElement>) {
     submitEvent.preventDefault();
@@ -50,6 +59,7 @@ export function DelegateRegistrationForm({
       }
 
       toast.success("Inscripcion actualizada.");
+      await refreshRegistrationView(onSaved);
       router.refresh();
     } catch {
       toast.error("No se pudo guardar la inscripcion.");
@@ -133,4 +143,14 @@ export function DelegateRegistrationForm({
       </form>
     </Card>
   );
+}
+
+async function refreshRegistrationView(onSaved?: () => Promise<void> | void) {
+  if (!onSaved) return;
+
+  try {
+    await onSaved();
+  } catch {
+    toast.error("Se guardo, pero no se pudo refrescar la vista de la inscripcion.");
+  }
 }

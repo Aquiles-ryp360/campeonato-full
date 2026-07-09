@@ -33,6 +33,7 @@ import {
 } from "@/features/identity/components/IdentityLookupPanel";
 import { EnrollmentFilePicker } from "@/components/enrollment-file-picker";
 import { PlayerTable } from "@/features/teams/components/PlayerTable";
+import { DelegateRosterDownloadButton } from "./DelegateRosterDownloadButton";
 
 const footballPositions = ["Arquero", "Defensa", "Medio", "Delantero"];
 const voleyPositions = ["Armador", "Punta", "Central", "Opuesto", "Libero"];
@@ -56,11 +57,13 @@ const emptyDraft = {
 export function DelegateRosterManager({
   event,
   team,
-  players
+  players,
+  onRosterChanged
 }: {
   event: TournamentEvent;
   team: Team;
   players: Player[];
+  onRosterChanged?: () => Promise<void> | void;
 }) {
   const router = useRouter();
   const editable = canEditRoster(event, team);
@@ -167,6 +170,7 @@ export function DelegateRosterManager({
       toast.success("Jugador agregado.");
       setDraft(emptyDraft);
       setEnrollmentFile(null);
+      await refreshRosterView(onRosterChanged);
       router.refresh();
     } catch {
       toast.error("No se pudo agregar el jugador.");
@@ -204,6 +208,7 @@ export function DelegateRosterManager({
       }
 
       toast.success("Numero actualizado.");
+      await refreshRosterView(onRosterChanged);
       router.refresh();
     } catch {
       toast.error("No se pudo cambiar el numero.");
@@ -219,15 +224,18 @@ export function DelegateRosterManager({
           title="Plantel"
           description={`Minimo ${event.minPlayers}, maximo ${event.maxPlayers}. Estado: ${limit}.`}
           action={
-            <Button
-              form="delegate-add-player-form"
-              type="submit"
-              variant="secondary"
-              disabled={!canAddMore || isAdding}
-            >
-              <Plus className="h-4 w-4" />
-              {isAdding ? "Agregando..." : "Agregar jugador"}
-            </Button>
+            <div className="flex flex-wrap justify-end gap-2">
+              <DelegateRosterDownloadButton teamId={team.id} teamName={team.name} />
+              <Button
+                form="delegate-add-player-form"
+                type="submit"
+                variant="secondary"
+                disabled={!canAddMore || isAdding}
+              >
+                <Plus className="h-4 w-4" />
+                {isAdding ? "Agregando..." : "Agregar jugador"}
+              </Button>
+            </div>
           }
         />
       </div>
@@ -426,4 +434,14 @@ function missingDraftFieldMessage(draft: typeof emptyDraft) {
   if (!draft.studentCode.trim()) return "Falta codigo del jugador.";
   if (!draft.semester.trim()) return "Falta ciclo/semestre del jugador.";
   return null;
+}
+
+async function refreshRosterView(onRosterChanged?: () => Promise<void> | void) {
+  if (!onRosterChanged) return;
+
+  try {
+    await onRosterChanged();
+  } catch {
+    toast.error("Se guardo, pero no se pudo refrescar la vista del plantel.");
+  }
 }
