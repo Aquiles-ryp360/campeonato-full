@@ -43,6 +43,7 @@ export function KnockoutBracket({
     fixtureStatus
   });
   const rounds = bracket.rounds.filter((round) => round.stage !== "third_place");
+  const exhibitionMatches = matches.filter((match) => match.eventId === eventId && isExhibitionMatch(match));
   const filledTeamCount = teams.length;
   const capacityCount = Math.max(maxTeams ?? 0, filledTeamCount);
 
@@ -83,7 +84,7 @@ export function KnockoutBracket({
         style={{ gridTemplateColumns: `repeat(${Math.max(1, rounds.length)}, minmax(180px, 1fr))` }}
       >
         {rounds.map((round, roundIndex) => (
-          <section key={round.id} className="flex min-h-[360px] flex-col gap-3">
+          <section key={round.id} className="relative flex min-h-[360px] flex-col gap-3">
             <div className="flex items-center justify-between gap-2 rounded-md bg-white/10 px-3 py-2">
               <p className="text-xs font-black uppercase">{round.name}</p>
               <Badge tone="dark">{round.slots.length}</Badge>
@@ -135,6 +136,15 @@ export function KnockoutBracket({
                 </div>
               ))}
             </div>
+            {round.stage === "semi_finals" && exhibitionMatches.length > 0 ? (
+              <div className="pointer-events-none absolute left-1/2 top-1/2 z-20 w-[calc(100%-1rem)] max-w-[230px] -translate-x-1/2 -translate-y-1/2">
+                <ExhibitionFloatingMatch
+                  match={exhibitionMatches[0]}
+                  teams={teams}
+                  onOpenTeam={onOpenTeam}
+                />
+              </div>
+            ) : null}
           </section>
         ))}
       </div>
@@ -158,6 +168,46 @@ export function KnockoutBracket({
   );
 }
 
+function ExhibitionFloatingMatch({
+  match,
+  teams,
+  onOpenTeam
+}: {
+  match: Match;
+  teams: Team[];
+  onOpenTeam?: (team: Team) => void;
+}) {
+  return (
+    <div className="pointer-events-auto rounded-md border-2 border-brand-yellow bg-brand-yellow p-3 text-brand-navy shadow-panel">
+      <div className="mb-2 flex items-center justify-between gap-2">
+        <span className="rounded bg-brand-navy px-2 py-1 text-[10px] font-black uppercase text-white">
+          {match.label ?? "EX"}
+        </span>
+        <span className="text-[10px] font-black uppercase">Exhibicion</span>
+      </div>
+      <TeamLine
+        side="home"
+        match={match}
+        teamId={match.homeTeamId}
+        fallback={match.homePlaceholder ?? "Equipo exhibicion"}
+        teams={teams}
+        onOpenTeam={onOpenTeam}
+      />
+      <TeamLine
+        side="away"
+        match={match}
+        teamId={match.awayTeamId}
+        fallback={match.awayPlaceholder ?? "Equipo invitado"}
+        teams={teams}
+        onOpenTeam={onOpenTeam}
+      />
+      <p className="mt-2 truncate text-[11px] font-bold text-brand-navy/75">
+        {match.scheduledAt ? `${formatDateTime(match.scheduledAt)} · ${match.court}` : "Horario por definir"}
+      </p>
+    </div>
+  );
+}
+
 function bracketSummary(bracket: ReturnType<typeof generateKnockoutBracket>) {
   if (bracket.status === "incomplete") {
     return bracket.warnings[0] ?? "Se necesitan mas equipos para generar la llave.";
@@ -168,6 +218,15 @@ function bracketSummary(bracket: ReturnType<typeof generateKnockoutBracket>) {
   }
 
   return `Llave pareja de ${bracket.lowerPowerOfTwo} equipos, sin preliminar.`;
+}
+
+function isExhibitionMatch(match: Match) {
+  const text = `${match.label ?? ""} ${match.notes ?? ""}`
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase();
+
+  return text.includes("exhibicion") || match.label === "EX";
 }
 
 function TeamLine({
