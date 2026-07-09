@@ -6,6 +6,7 @@ import { requireDelegateTeamAccess, ServerAccessError } from "@/lib/server-acces
 import {
   canChangeJerseyNumberAfterStart,
   canDelegateEditBeforeStart,
+  delegatePlayerAddObservation,
   findCrossTeamDuplicate,
   findDuplicateNormalizedValue,
   isEventStarted,
@@ -196,9 +197,15 @@ export async function POST(request: Request) {
       }
 
       if (team.status === "approved") {
+        const now = new Date().toISOString();
         await admin
           .from("teams")
-          .update({ status: "observed", updated_at: new Date().toISOString() })
+          .update({
+            status: "observed",
+            admin_observation: delegatePlayerAddObservation,
+            observed_at: now,
+            updated_at: now
+          })
           .eq("id", team.id);
       }
 

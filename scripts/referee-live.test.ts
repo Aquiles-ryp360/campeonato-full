@@ -14,6 +14,8 @@ import {
 import {
   canChangeJerseyNumberAfterStart,
   canDelegateEditBeforeStart,
+  delegatePlayerAddObservation,
+  delegateTeamUpdateObservation,
   findCrossTeamDuplicate,
   findDuplicateNormalizedValue,
   registrationAvailability,
@@ -311,6 +313,12 @@ test("delegate edits are blocked after the event starts", () => {
 
   assert.equal(canDelegateEditBeforeStart(event, new Date("2026-07-01T13:30:00.000Z")), true);
   assert.equal(canDelegateEditBeforeStart(event, new Date("2026-07-01T15:30:00.000Z")), false);
+});
+
+test("automatic delegate observations explain why teams need review", () => {
+  assert.match(delegateTeamUpdateObservation, /modifico datos del equipo/);
+  assert.match(delegatePlayerAddObservation, /agrego jugadores/);
+  assert.match(delegatePlayerAddObservation, /aprobado/);
 });
 
 test("registration rejects invalid enrollment files and duplicate identities", () => {

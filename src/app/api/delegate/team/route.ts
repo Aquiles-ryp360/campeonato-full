@@ -2,7 +2,10 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { createSupabaseAdminClient } from "@/lib/supabase-admin";
 import { requireDelegateTeamAccess, ServerAccessError } from "@/lib/server-access";
-import { canDelegateEditBeforeStart } from "@/lib/domain/registration-rules";
+import {
+  canDelegateEditBeforeStart,
+  delegateTeamUpdateObservation
+} from "@/lib/domain/registration-rules";
 import type { Team, TournamentEvent } from "@/lib/types";
 
 export const runtime = "nodejs";
@@ -58,7 +61,8 @@ export async function PATCH(request: Request) {
       return jsonError("La inscripcion ya no permite editar datos del equipo.", 409);
     }
 
-    const nextStatus = team.status === "approved" ? "observed" : team.status;
+    const now = new Date().toISOString();
+    const needsRevision = team.status === "approved";
 
     const { error } = await admin
       .from("teams")
@@ -67,8 +71,10 @@ export async function PATCH(request: Request) {
         delegate_name: parsed.data.delegateName,
         delegate_phone: parsed.data.delegatePhone,
         academic_career: parsed.data.academicCareer || null,
-        status: nextStatus,
-        updated_at: new Date().toISOString()
+        status: needsRevision ? "observed" : team.status,
+        admin_observation: needsRevision ? delegateTeamUpdateObservation : undefined,
+        observed_at: needsRevision ? now : undefined,
+        updated_at: now
       })
       .eq("id", parsed.data.teamId);
 

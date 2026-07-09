@@ -31,6 +31,12 @@ export type TeamApprovalIssue =
 
 const activeTeamStatuses: Team["status"][] = ["registered", "observed", "approved"];
 
+export const delegateTeamUpdateObservation =
+  "Revision automatica: el delegado modifico datos del equipo despues de que el equipo fue aprobado.";
+
+export const delegatePlayerAddObservation =
+  "Revision automatica: el delegado agrego jugadores despues de que el equipo fue aprobado.";
+
 export function isRegistrationOpen(event: TournamentEvent, now = new Date()) {
   return registrationAvailability({ event, now }).open;
 }
