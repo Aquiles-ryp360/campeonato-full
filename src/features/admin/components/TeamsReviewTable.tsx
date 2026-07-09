@@ -109,15 +109,26 @@ export function TeamsReviewTable({ data }: { data: CompetitionData }) {
                 : [];
               const canApprove = issues.length === 0;
               const observation = observations[team.id] ?? "";
+              const savedObservation = team.adminObservation?.trim();
+              const needsAdminObservation = team.status === "observed" || team.status === "rejected";
 
               return (
                 <tr key={team.id} className="align-top transition hover:bg-brand-electric/5">
                   <td className="px-5 py-4">
                     <p className="font-bold text-ink">{team.name}</p>
                     <Badge tone={teamStatusTone(team.status)}>{teamStatusLabel(team.status)}</Badge>
-                    {team.adminObservation ? (
-                      <p className="mt-2 max-w-[220px] text-xs font-semibold text-brand-muted">
-                        {team.adminObservation}
+                    {savedObservation ? (
+                      <div className="mt-2 max-w-[260px] rounded-md border border-brand-yellow/70 bg-brand-yellow/20 p-2">
+                        <p className="text-[11px] font-black uppercase text-brand-navy">
+                          Observacion admin
+                        </p>
+                        <p className="mt-1 text-xs font-semibold leading-5 text-brand-navy">
+                          {savedObservation}
+                        </p>
+                      </div>
+                    ) : needsAdminObservation ? (
+                      <p className="mt-2 max-w-[220px] text-xs font-semibold text-red-800">
+                        Sin observacion registrada.
                       </p>
                     ) : null}
                   </td>

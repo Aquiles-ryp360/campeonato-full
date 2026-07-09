@@ -21,6 +21,7 @@ export function DelegateAlerts({
   allEvents: TournamentEvent[];
 }) {
   const rosterState = rosterLimitState({ event, playerCount: players.length });
+  const adminObservation = team.adminObservation?.trim();
   const conflicts = detectScheduleConflicts({
     matches,
     teams: allTeams,
@@ -39,7 +40,16 @@ export function DelegateAlerts({
     !isRegistrationOpen(event)
       ? "Inscripciones cerradas: el plantel queda en solo lectura."
       : null,
-    team.status === "observed" ? "Inscripcion observada por administracion." : null,
+    team.status === "observed"
+      ? adminObservation
+        ? `Inscripcion observada por administracion. Motivo: ${adminObservation}`
+        : "Inscripcion observada por administracion. Motivo pendiente de registrar."
+      : null,
+    team.status === "rejected"
+      ? adminObservation
+        ? `Inscripcion rechazada por administracion. Motivo: ${adminObservation}`
+        : "Inscripcion rechazada por administracion. Motivo pendiente de registrar."
+      : null,
     ...conflicts.map((conflict) => conflict.message)
   ].filter((alert): alert is string => Boolean(alert));
 
