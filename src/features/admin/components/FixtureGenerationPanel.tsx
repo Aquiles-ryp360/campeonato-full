@@ -1,7 +1,8 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { AlertTriangle, Info as InfoIcon, Lock, Send, Snowflake, Wand2 } from "lucide-react";
+import { AlertTriangle, Info as InfoIcon, Lock, Mail, Send, Snowflake, Wand2 } from "lucide-react";
+import { toast } from "sonner";
 import type { CompetitionData } from "@/lib/data-mappers";
 import type { TournamentEvent } from "@/lib/types";
 import type { GeneratedBracket } from "@/lib/domain/bracket-generator";
@@ -29,6 +30,7 @@ export function FixtureGenerationPanel({
   activeEvent?: TournamentEvent | null;
 }) {
   const [selectedEventId, setSelectedEventId] = useState(activeEvent?.id ?? data.events[0]?.id ?? "");
+  const [sendingFixtureEmail, setSendingFixtureEmail] = useState(false);
   const selectedEvent =
     activeEvent ??
     data.events.find((event) => event.id === selectedEventId) ??
@@ -88,6 +90,49 @@ export function FixtureGenerationPanel({
     ? buildConfigurationWarnings(selectedEvent, activeTeamCount)
     : [];
   const warnings = [...configurationWarnings, ...(bracket?.warnings ?? [])];
+
+  async function handleSendFixtureEmail() {
+    if (!selectedEvent) return;
+
+    setSendingFixtureEmail(true);
+    try {
+      const response = await fetch("/api/admin/fixture-email", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ eventId: selectedEvent.id })
+      });
+      const payload = (await response.json().catch(() => null)) as {
+        ok?: boolean;
+        error?: string;
+        sent?: Array<{ email: string }>;
+        failed?: Array<{ email: string; error: string }>;
+        skipped?: string[];
+      } | null;
+      const sentCount = payload?.sent?.length ?? 0;
+      const failedCount = payload?.failed?.length ?? 0;
+
+      if (!response.ok && response.status !== 207) {
+        toast.error(payload?.error ?? "No se pudo enviar el fixture.");
+        return;
+      }
+
+      if (sentCount > 0 && failedCount === 0) {
+        toast.success(`Fixture enviado a ${sentCount} correo(s).`);
+        return;
+      }
+
+      if (sentCount > 0 && failedCount > 0) {
+        toast.warning(`Fixture enviado a ${sentCount}; fallaron ${failedCount}.`);
+        return;
+      }
+
+      toast.error(payload?.error ?? "No se envio ningun correo.");
+    } catch {
+      toast.error("No se pudo enviar el fixture.");
+    } finally {
+      setSendingFixtureEmail(false);
+    }
+  }
 
   return (
     <div className="space-y-6">
@@ -165,6 +210,14 @@ export function FixtureGenerationPanel({
           <Button variant="secondary" disabled={!selectedEvent || !canPublishFixture(selectedEvent.fixtureStatus ?? "draft_auto")}>
             <Send className="h-4 w-4" />
             Publicar fixture
+          </Button>
+          <Button
+            variant="highlight"
+            disabled={!selectedEvent || scopedMatches.length === 0 || sendingFixtureEmail}
+            onClick={() => void handleSendFixtureEmail()}
+          >
+            <Mail className="h-4 w-4" />
+            {sendingFixtureEmail ? "Enviando..." : "Enviar fixture"}
           </Button>
           <Button variant="secondary" disabled={!selectedEvent || selectedEvent.fixtureStatus === "locked"}>
             <Lock className="h-4 w-4" />
