@@ -59,7 +59,7 @@ for (const match of matches) {
 assert(new Date(labels.get("S1")!.scheduledAt) > new Date(labels.get("C1")!.scheduledAt), "Semifinal antes de cuartos.");
 assert(new Date(labels.get("F")!.scheduledAt) > new Date(labels.get("S1")!.scheduledAt), "Final antes de semifinal.");
 assert(shouldAutoRegenerateFixture("draft_auto"), "draft_auto debe regenerar automaticamente.");
-assert(!shouldAutoRegenerateFixture("published"), "published no debe regenerar automaticamente.");
+assert(shouldAutoRegenerateFixture("published"), "published debe usar la ultima version de equipos.");
 assert(!shouldAutoRegenerateFixture("locked"), "locked no debe regenerar automaticamente.");
 
 const delegateTeam = data.teams[0];

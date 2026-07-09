@@ -165,6 +165,14 @@ const legacyMatchColumns = `
   notes
 `;
 
+const matchColumns = `
+  *,
+  venue:venue_id (
+    id,
+    name
+  )
+`;
+
 type CompetitionDataOptions = {
   includePrivatePlayerFields?: boolean;
 };
@@ -198,7 +206,7 @@ export async function getPublicCompetitionData({
     supabase.from("events").select("*").order("created_at", { ascending: true }),
     supabase.from("teams").select(publicTeamColumns).order("created_at", { ascending: true }),
     supabase.from("players").select(playerSelect as "*").order("created_at", { ascending: true }),
-    supabase.from("matches").select("*").order("scheduled_at", { ascending: true }),
+    supabase.from("matches").select(matchColumns).order("scheduled_at", { ascending: true }),
     supabase.from("sports").select("*").order("name", { ascending: true }),
     supabase.from("competition_formats").select("*").order("name", { ascending: true }),
     supabase.from("venues").select("*").order("name", { ascending: true }),

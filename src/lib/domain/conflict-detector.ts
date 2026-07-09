@@ -108,9 +108,9 @@ export function detectScheduleConflicts({
       conflicts.push(createConflict({
         type: "fixture_published",
         severity: "info",
-        message: "Fixture publicado: no se regenera automaticamente.",
+        message: "Fixture publicado: la vista publica usa los equipos activos mas recientes.",
         affectedMatchIds: eventMatches.map((match) => match.id),
-        suggestion: "Si hubo cambios posteriores, revisa y regenera manualmente."
+        suggestion: "Bloquea el fixture solo cuando la organizacion ya no acepte cambios de equipos."
       }));
     }
     if (status === "locked") {
@@ -128,11 +128,11 @@ export function detectScheduleConflicts({
 }
 
 export function shouldAutoRegenerateFixture(status: FixtureStatus) {
-  return status === "draft_auto";
+  return status !== "locked";
 }
 
 export function canRegenerateFixtureManually(status: FixtureStatus) {
-  return status === "draft_auto" || status === "draft_review";
+  return status === "draft_auto" || status === "draft_review" || status === "published";
 }
 
 export function canPublishFixture(status: FixtureStatus) {

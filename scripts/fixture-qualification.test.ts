@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { generateKnockoutBracket } from "../src/lib/domain/bracket-generator";
-import { buildEventFixturePreview } from "../src/lib/domain/fixture-preview";
+import { buildEventFixturePreview, buildVisibleFixtureMatches } from "../src/lib/domain/fixture-preview";
 import { generateOneDaySchedule } from "../src/lib/domain/schedule-generator";
 import { buildGroupQualificationPlan } from "../src/lib/domain/standings";
 import type { Group, GroupStanding, GroupTeam, Team, TournamentEvent, Venue } from "../src/lib/types";
@@ -170,6 +170,68 @@ test("fixture preview uses only active teams and keeps random draw stable", () =
     firstPreview.matches.map((match) => [match.label, match.homeTeamId, match.awayTeamId]),
     secondPreview.matches.map((match) => [match.label, match.homeTeamId, match.awayTeamId])
   );
+});
+
+test("published visible fixture uses latest active teams and keeps exhibition match", () => {
+  const activeTeams = Array.from({ length: 11 }, (_, index) => team(index + 1));
+  const rejected = {
+    ...team(12),
+    id: "team-rejected",
+    name: "Equipo exhibicion",
+    status: "rejected" as const
+  };
+  const event: TournamentEvent = {
+    ...baseEvent,
+    thirdPlace: false,
+    fixtureStatus: "published",
+    eventDate: "2026-07-09T05:00:00+00:00",
+    scheduleConfig: {
+      startTime: "08:00",
+      matchDurationMinutes: 25,
+      transitionMinutes: 10,
+      courts: ["Cancha A"],
+      minimumRestMinutes: 35,
+      allowCompactPreview: true
+    }
+  };
+  const stalePublishedMatch = {
+    ...generateKnockoutBracket({
+      eventId: event.id,
+      teams: activeTeams.slice(0, 9),
+      thirdPlace: false,
+      fixtureStatus: "published"
+    }).matches[0],
+    id: "db-published-p1",
+    label: "P1"
+  };
+  const exhibitionMatch = {
+    ...stalePublishedMatch,
+    id: "db-exhibition",
+    label: "EX",
+    stage: "group_stage" as const,
+    homeTeamId: rejected.id,
+    awayTeamId: activeTeams[0].id,
+    notes: "Partido de exhibicion."
+  };
+  const matches = buildVisibleFixtureMatches({
+    events: [event],
+    teams: [...activeTeams, rejected],
+    matches: [stalePublishedMatch, exhibitionMatch],
+    venues: []
+  });
+  const official = matches.filter((match) => match.label !== "EX");
+  const preliminaries = official.filter((match) => match.stage === "preliminary");
+  const latestP1 = preliminaries.find((match) => match.label === "P1");
+  const latestC4 = official.find((match) => match.label === "C4");
+  const exhibition = matches.find((match) => match.label === "EX");
+
+  assert.equal(official.length, 10);
+  assert.equal(preliminaries.length, 3);
+  assert.equal(latestP1?.homeTeamId, "team-6");
+  assert.equal(latestP1?.awayTeamId, "team-11");
+  assert.equal(exhibition?.id, "db-exhibition");
+  assert(exhibition?.scheduledAt && latestC4?.scheduledAt);
+  assert(exhibition.scheduledAt > latestC4.scheduledAt);
 });
 
 test("one day schedule interprets configured start time as Peru time", () => {

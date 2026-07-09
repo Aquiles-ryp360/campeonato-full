@@ -40,7 +40,7 @@ export function buildEventFixturePreview({
   });
   const schedule =
     bracket.matches.length > 0
-      ? generateOneDaySchedule(bracket.matches, {
+      ? generateOneDaySchedule([...bracket.matches, ...exhibitionMatchesForSchedule(eventMatches, bracket.matches)], {
           eventDate: event.eventDate ?? eventMatches[0]?.scheduledAt ?? new Date().toISOString(),
           startTime: event.scheduleConfig?.startTime ?? "09:00",
           matchDurationMinutes: event.scheduleConfig?.matchDurationMinutes ?? 20,
@@ -103,17 +103,45 @@ export function buildVisibleFixtureMatches({
 
   if (generatedByEvent.size === 0) return matches;
 
-  const staticMatches = matches.filter((match) => !generatedByEvent.has(match.eventId));
+  const staticMatches = matches.filter(
+    (match) => !generatedByEvent.has(match.eventId)
+  );
   return [...staticMatches, ...Array.from(generatedByEvent.values()).flat()];
 }
 
 export function shouldBuildPreliminaryFixture(event: TournamentEvent) {
   return (
     event.format === "single_elimination" &&
-    (event.fixtureStatus === undefined ||
-      event.fixtureStatus === "draft_auto" ||
-      event.fixtureStatus === "draft_review")
+    event.fixtureStatus !== "locked"
   );
+}
+
+function isExhibitionMatch(match: Match) {
+  const text = `${match.label ?? ""} ${match.notes ?? ""}`
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase();
+
+  return text.includes("exhibicion") || match.label === "EX";
+}
+
+function exhibitionMatchesForSchedule(eventMatches: Match[], bracketMatches: Match[]) {
+  const semifinalRound = bracketMatches.find((match) => match.stage === "semi_finals")?.round;
+  const fallbackRound = Math.max(1, ...bracketMatches.map((match) => match.round));
+  const round = semifinalRound ?? fallbackRound;
+
+  return eventMatches
+    .filter(isExhibitionMatch)
+    .map((match, index) => ({
+      ...match,
+      round,
+      stage: "group_stage" as const,
+      bracketPosition: index,
+      homeSourceMatchId: undefined,
+      awaySourceMatchId: undefined,
+      sourceMatchIds: [],
+      dependsOnMatchIds: []
+    }));
 }
 
 function normalizedCourts(event: TournamentEvent, venues: Venue[]) {

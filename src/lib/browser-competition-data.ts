@@ -154,6 +154,14 @@ const legacyMatchColumns = `
   notes
 `;
 
+const matchColumns = `
+  *,
+  venue:venue_id (
+    id,
+    name
+  )
+`;
+
 const registrationCodeColumns = `
   id,
   event_id,
@@ -191,7 +199,7 @@ export async function fetchBrowserCompetitionData({
     supabase.from("events").select("*").order("created_at", { ascending: true }),
     supabase.from("teams").select(teamSelect).order("created_at", { ascending: true }),
     supabase.from("players").select(playerColumns).order("created_at", { ascending: true }),
-    supabase.from("matches").select("*").order("scheduled_at", { ascending: true }),
+    supabase.from("matches").select(matchColumns).order("scheduled_at", { ascending: true }),
     includeRegistrationCodes
       ? supabase
           .from("registration_codes")
