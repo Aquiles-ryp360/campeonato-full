@@ -78,7 +78,14 @@ export function FixtureManualEditor({
           clearTeamFromOtherOfficialSlots(next, teamId, matchId, side);
         }
       } else if (teamId) {
-        if (targetIsOfficial) clearTeamFromOtherOfficialSlots(next, teamId, matchId, side);
+        if (targetIsOfficial) {
+          const sourceSlot = findEditableOfficialSlotWithTeam(next, teamId, matchId, side);
+          if (sourceSlot && targetCurrentTeamId) {
+            setSideTeam(sourceSlot.match, sourceSlot.side, targetCurrentTeamId, teamById.get(targetCurrentTeamId));
+          } else {
+            clearTeamFromOtherOfficialSlots(next, teamId, matchId, side);
+          }
+        }
       }
 
       setSideTeam(target, side, teamId, team);
@@ -148,6 +155,17 @@ export function FixtureManualEditor({
           eventId: event.id,
           matches: draftMatches.map((match) => ({
             id: match.id,
+            round: match.round,
+            stage: match.stage,
+            bracketPosition: match.bracketPosition ?? null,
+            label: match.label ?? null,
+            nextMatchId: match.nextMatchId ?? null,
+            isHomeNext: match.isHomeNext ?? null,
+            homeSourceMatchId: match.homeSourceMatchId ?? null,
+            awaySourceMatchId: match.awaySourceMatchId ?? null,
+            sourceMatchIds: match.sourceMatchIds ?? [],
+            dependsOnMatchIds: match.dependsOnMatchIds ?? [],
+            notes: match.notes ?? null,
             homeTeamId: match.homeTeamId || null,
             awayTeamId: match.awayTeamId || null,
             scheduledAt: match.scheduledAt,
@@ -465,6 +483,19 @@ function clearTeamFromOtherOfficialSlots(matches: Match[], teamId: string, targe
       }
     }
   }
+}
+
+function findEditableOfficialSlotWithTeam(matches: Match[], teamId: string, targetMatchId: string, targetSide: DraftSide) {
+  for (const match of matches) {
+    if (isExhibitionMatch(match)) continue;
+    for (const side of ["home", "away"] as const) {
+      if (match.id === targetMatchId && side === targetSide) continue;
+      if (!isSideEditable(match, side)) continue;
+      if (getSideTeamId(match, side) === teamId) return { match, side };
+    }
+  }
+
+  return null;
 }
 
 function buildPeruDateTime(referenceDate: string | undefined, time: string) {

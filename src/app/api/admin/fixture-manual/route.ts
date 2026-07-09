@@ -11,7 +11,11 @@ import {
   type TeamRow,
   type VenueRow
 } from "@/lib/data-mappers";
-import { buildFixtureTeamFingerprint, isExhibitionMatch } from "@/lib/domain/fixture-preview";
+import {
+  buildEventFixturePreview,
+  buildFixtureTeamFingerprint,
+  isExhibitionMatch
+} from "@/lib/domain/fixture-preview";
 import { isActiveRegistrationTeamStatus } from "@/lib/domain/registration-rules";
 import { createSupabaseAdminClient } from "@/lib/supabase-admin";
 import { requireAdminUser, ServerAccessError, type AdminClient } from "@/lib/server-access";
@@ -24,7 +28,26 @@ const manualFixtureSchema = z.object({
   matches: z
     .array(
       z.object({
-        id: z.string().uuid(),
+        id: z.string().trim().min(1),
+        round: z.number().int().positive(),
+        stage: z.enum([
+          "group_stage",
+          "preliminary",
+          "round_of_16",
+          "quarter_finals",
+          "semi_finals",
+          "final",
+          "third_place"
+        ]),
+        bracketPosition: z.number().int().nullable().optional(),
+        label: z.string().nullable().optional(),
+        nextMatchId: z.string().nullable().optional(),
+        isHomeNext: z.boolean().nullable().optional(),
+        homeSourceMatchId: z.string().nullable().optional(),
+        awaySourceMatchId: z.string().nullable().optional(),
+        sourceMatchIds: z.array(z.string()).optional(),
+        dependsOnMatchIds: z.array(z.string()).optional(),
+        notes: z.string().nullable().optional(),
         homeTeamId: z.string().uuid().nullable().optional(),
         awayTeamId: z.string().uuid().nullable().optional(),
         scheduledAt: z.string().trim().min(1),
@@ -51,20 +74,21 @@ export async function PATCH(request: Request) {
       return jsonError("Este fixture esta bloqueado. Desbloquealo antes de editar.", 409);
     }
 
-    const matchById = new Map(matches.map((match) => [match.id, match]));
     const activeTeams = teams.filter((team) => isActiveRegistrationTeamStatus(team.status));
     const activeTeamById = new Map(activeTeams.map((team) => [team.id, team]));
-    const draftMatches = matches.map((match) => ({ ...match }));
+    const preview = buildEventFixturePreview({ event, teams, matches, venues });
+    const draftMatches = (preview?.matches ?? matches).map((match) => ({ ...match }));
+    const persistedMatchByIdentity = new Map(matches.map((match) => [matchIdentityKey(match), match]));
 
     for (const change of input.matches) {
-      const match = draftMatches.find((item) => item.id === change.id);
-      const current = matchById.get(change.id);
+      const match = resolveDraftMatch(draftMatches, change);
+      const current = matches.find((item) => item.id === match?.id) ?? persistedMatchByIdentity.get(changeIdentityKey(change));
 
-      if (!match || !current) {
+      if (!match) {
         return jsonError("Uno de los partidos ya no existe.", 404);
       }
 
-      if (hasStartedMatch(current)) {
+      if (current && hasStartedMatch(current)) {
         return jsonError(`No se puede editar ${current.label ?? "un partido"} porque ya fue iniciado o tiene resultado.`, 409);
       }
 
@@ -107,14 +131,13 @@ export async function PATCH(request: Request) {
       return jsonError(`${repeatedTeam.name} aparece dos veces en la llave principal.`, 400);
     }
 
-    const rows = input.matches.map((change) => {
-      const match = draftMatches.find((item) => item.id === change.id);
-      if (!match) throw new ServerAccessError("Partido no encontrado.", 404);
-      return matchToUpdateRow(match, venues, fixtureStatus);
-    });
+    const idMap = buildManualMatchIdMap(draftMatches, matches);
+    const remappedMatches = draftMatches.map((match) => remapMatchIds(match, idMap));
+    const rows = remappedMatches.map((match) => matchToPersistRow(match, venues, fixtureStatus));
 
     await persistManualFixture(admin, {
       event,
+      matches,
       activeTeams,
       rows
     });
@@ -164,18 +187,41 @@ async function loadFixtureData(admin: AdminClient, eventId: string) {
   };
 }
 
-function matchToUpdateRow(match: Match, venues: Venue[], fixtureStatus: NonNullable<TournamentEvent["fixtureStatus"]>) {
+type ManualFixtureChange = z.infer<typeof manualFixtureSchema>["matches"][number];
+
+function resolveDraftMatch(matches: Match[], change: ManualFixtureChange) {
+  return (
+    matches.find((match) => match.id === change.id) ??
+    matches.find((match) => matchIdentityKey(match) === changeIdentityKey(change))
+  );
+}
+
+function matchToPersistRow(match: Match, venues: Venue[], fixtureStatus: NonNullable<TournamentEvent["fixtureStatus"]>) {
   return {
     id: match.id,
+    event_id: match.eventId,
+    round: match.round,
+    stage: match.stage,
+    bracket_position: match.bracketPosition ?? null,
+    next_match_id: isUuid(match.nextMatchId) ? match.nextMatchId : null,
+    is_home_next: match.isHomeNext ?? null,
+    label: match.label ?? null,
     home_team_id: match.homeTeamId || null,
     away_team_id: match.awayTeamId || null,
     home_placeholder: match.homePlaceholder ?? null,
     away_placeholder: match.awayPlaceholder ?? null,
+    home_source_match_id: match.homeSourceMatchId ?? null,
+    away_source_match_id: match.awaySourceMatchId ?? null,
+    source_match_ids: match.sourceMatchIds ?? [],
+    depends_on_match_ids: match.dependsOnMatchIds ?? [],
     scheduled_at: match.scheduledAt,
     scheduled_end_at: match.scheduledEndAt ?? null,
     venue_id: venues.find((venue) => venue.name === match.court)?.id ?? null,
+    status: match.status ?? "scheduled",
+    live_status: match.liveStatus ?? "scheduled",
     fixture_status: fixtureStatus,
     is_fixture_preliminary: fixtureStatus === "draft_auto" || fixtureStatus === "draft_review",
+    notes: match.notes ?? null,
     updated_at: new Date().toISOString()
   };
 }
@@ -184,24 +230,28 @@ async function persistManualFixture(
   admin: AdminClient,
   {
     event,
+    matches,
     activeTeams,
     rows
   }: {
     event: TournamentEvent;
+    matches: Match[];
     activeTeams: Team[];
-    rows: ReturnType<typeof matchToUpdateRow>[];
+    rows: ReturnType<typeof matchToPersistRow>[];
   }
 ) {
-  for (const row of rows) {
-    const { id, ...update } = row;
-    const response = await admin
-      .from("matches")
-      .update(update)
-      .eq("id", id)
-      .eq("event_id", event.id);
+  const keepIds = new Set(rows.map((row) => row.id));
+  const obsoleteMatchIds = matches
+    .filter((match) => !isExhibitionMatch(match) && !keepIds.has(match.id))
+    .map((match) => match.id);
 
-    if (response.error) throw new ServerAccessError(response.error.message, 500);
+  if (obsoleteMatchIds.length > 0) {
+    const deleteResponse = await admin.from("matches").delete().in("id", obsoleteMatchIds);
+    if (deleteResponse.error) throw new ServerAccessError(deleteResponse.error.message, 500);
   }
+
+  const upsertResponse = await admin.from("matches").upsert(rows, { onConflict: "id" });
+  if (upsertResponse.error) throw new ServerAccessError(upsertResponse.error.message, 500);
 
   const updateEventResponse = await admin
     .from("events")
@@ -218,6 +268,47 @@ async function persistManualFixture(
   if (updateEventResponse.error) {
     throw new ServerAccessError(updateEventResponse.error.message, 500);
   }
+}
+
+function buildManualMatchIdMap(draftMatches: Match[], persistedMatches: Match[]) {
+  const persistedByIdentity = new Map(persistedMatches.map((match) => [matchIdentityKey(match), match.id]));
+
+  return new Map(
+    draftMatches.map((match) => [
+      match.id,
+      isUuid(match.id) ? match.id : persistedByIdentity.get(matchIdentityKey(match)) ?? crypto.randomUUID()
+    ])
+  );
+}
+
+function remapMatchIds(match: Match, idMap: Map<string, string>): Match {
+  const remap = (value?: string) => (value ? idMap.get(value) ?? value : undefined);
+
+  return {
+    ...match,
+    id: idMap.get(match.id) ?? match.id,
+    nextMatchId: remap(match.nextMatchId),
+    homeSourceMatchId: remap(match.homeSourceMatchId),
+    awaySourceMatchId: remap(match.awaySourceMatchId),
+    sourceMatchIds: match.sourceMatchIds?.map((id) => idMap.get(id) ?? id),
+    dependsOnMatchIds: match.dependsOnMatchIds?.map((id) => idMap.get(id) ?? id)
+  };
+}
+
+function matchIdentityKey(match: Pick<Match, "stage" | "label" | "bracketPosition">) {
+  return [
+    match.stage,
+    match.label ?? "",
+    match.bracketPosition ?? ""
+  ].join(":");
+}
+
+function changeIdentityKey(change: Pick<ManualFixtureChange, "stage" | "label" | "bracketPosition">) {
+  return [
+    change.stage,
+    change.label ?? "",
+    change.bracketPosition ?? ""
+  ].join(":");
 }
 
 function firstRepeatedOfficialTeam(matches: Match[]) {
@@ -261,6 +352,13 @@ function hasStartedMatch(match: Match) {
 
 function normalizeTeamId(value?: string | null) {
   return value?.trim() || null;
+}
+
+function isUuid(value?: string | null) {
+  return Boolean(
+    value &&
+      /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value)
+  );
 }
 
 function jsonError(error: string, status: number) {
