@@ -1,7 +1,7 @@
 "use client";
 
-import { useMemo, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useEffect, useMemo, useState } from "react";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { AlertTriangle, Info as InfoIcon, Lock, Mail, Send, Snowflake, Wand2 } from "lucide-react";
 import { toast } from "sonner";
 import type { CompetitionData } from "@/lib/data-mappers";
@@ -32,7 +32,13 @@ export function FixtureGenerationPanel({
   activeEvent?: TournamentEvent | null;
 }) {
   const router = useRouter();
-  const [selectedEventId, setSelectedEventId] = useState(activeEvent?.id ?? data.events[0]?.id ?? "");
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const queryEventId = searchParams.get("eventId") ?? "";
+  const hasQueryEvent = data.events.some((event) => event.id === queryEventId);
+  const [selectedEventId, setSelectedEventId] = useState(
+    activeEvent?.id ?? (hasQueryEvent ? queryEventId : data.events[0]?.id ?? "")
+  );
   const [sendingFixtureEmail, setSendingFixtureEmail] = useState(false);
   const [regeneratingFixture, setRegeneratingFixture] = useState(false);
   const selectedEvent =
@@ -40,6 +46,22 @@ export function FixtureGenerationPanel({
     data.events.find((event) => event.id === selectedEventId) ??
     data.events[0] ??
     null;
+
+  useEffect(() => {
+    if (activeEvent?.id) {
+      setSelectedEventId(activeEvent.id);
+      return;
+    }
+
+    if (hasQueryEvent && queryEventId !== selectedEventId) {
+      setSelectedEventId(queryEventId);
+      return;
+    }
+
+    if (!data.events.some((event) => event.id === selectedEventId)) {
+      setSelectedEventId(data.events[0]?.id ?? "");
+    }
+  }, [activeEvent?.id, data.events, hasQueryEvent, queryEventId, selectedEventId]);
   const scopedEvents = useMemo(() => {
     if (!selectedEvent) return [];
     return [selectedEvent];
@@ -173,6 +195,16 @@ export function FixtureGenerationPanel({
     }
   }
 
+  function handleSelectEvent(eventId: string) {
+    setSelectedEventId(eventId);
+
+    if (activeEvent) return;
+
+    const params = new URLSearchParams(searchParams.toString());
+    params.set("eventId", eventId);
+    router.replace(`${pathname}?${params.toString()}`, { scroll: false });
+  }
+
   return (
     <div className="space-y-6">
       <Card className="p-5">
@@ -191,7 +223,7 @@ export function FixtureGenerationPanel({
             <select
               className="mt-1 min-h-10 w-full rounded-md border border-ink/10 bg-white px-3 py-2 text-sm font-semibold text-ink outline-none transition focus:border-field focus:ring-2 focus:ring-field/20"
               value={selectedEvent?.id ?? ""}
-              onChange={(event) => setSelectedEventId(event.target.value)}
+              onChange={(event) => handleSelectEvent(event.target.value)}
             >
               {data.events.map((event) => (
                 <option key={event.id} value={event.id}>
@@ -283,6 +315,7 @@ export function FixtureGenerationPanel({
       </Card>
       {selectedEvent ? (
         <FixtureManualEditor
+          key={selectedEvent.id}
           event={selectedEvent}
           teams={scopedTeams}
           matches={scopedMatches}

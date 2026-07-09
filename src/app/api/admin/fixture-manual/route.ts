@@ -29,6 +29,7 @@ const manualFixtureSchema = z.object({
     .array(
       z.object({
         id: z.string().trim().min(1),
+        eventId: z.string().uuid().optional(),
         round: z.number().int().positive(),
         stage: z.enum([
           "group_stage",
@@ -81,11 +82,18 @@ export async function PATCH(request: Request) {
     const persistedMatchByIdentity = new Map(matches.map((match) => [matchIdentityKey(match), match]));
 
     for (const change of input.matches) {
+      if (change.eventId && change.eventId !== input.eventId) {
+        return jsonError("El editor tiene partidos de otro campeonato. Recarga el fixture seleccionado.", 400);
+      }
+
       const match = resolveDraftMatch(draftMatches, change);
       const current = matches.find((item) => item.id === match?.id) ?? persistedMatchByIdentity.get(changeIdentityKey(change));
 
       if (!match) {
         return jsonError("Uno de los partidos ya no existe.", 404);
+      }
+      if (match.eventId !== event.id) {
+        return jsonError("No se puede guardar un partido en otro campeonato.", 400);
       }
 
       if (current && hasStartedMatch(current)) {

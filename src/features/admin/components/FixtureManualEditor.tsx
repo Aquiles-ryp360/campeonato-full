@@ -29,7 +29,11 @@ export function FixtureManualEditor({
   venues: Venue[];
 }) {
   const router = useRouter();
-  const [draftMatches, setDraftMatches] = useState(() => sortedMatches(matches));
+  const eventMatches = useMemo(
+    () => sortedMatches(matches.filter((match) => match.eventId === event.id)),
+    [event.id, matches]
+  );
+  const [draftMatches, setDraftMatches] = useState(eventMatches);
   const [saving, setSaving] = useState(false);
   const activeTeams = useMemo(
     () => teams.filter((team) => isActiveRegistrationTeamStatus(team.status)),
@@ -43,11 +47,11 @@ export function FixtureManualEditor({
     return Array.from(new Set([...configured, ...fromMatches, ...fromVenues])).sort();
   }, [draftMatches, event.scheduleConfig?.courts, venues]);
   const groupedRounds = useMemo(() => groupMatchesByStage(draftMatches), [draftMatches]);
-  const dirty = useMemo(() => hasChanges(matches, draftMatches), [draftMatches, matches]);
+  const dirty = useMemo(() => hasChanges(eventMatches, draftMatches), [draftMatches, eventMatches]);
 
   useEffect(() => {
-    setDraftMatches(sortedMatches(matches));
-  }, [matches]);
+    setDraftMatches(eventMatches);
+  }, [eventMatches]);
 
   function assignTeam({
     matchId,
@@ -145,6 +149,11 @@ export function FixtureManualEditor({
       toast.info("No hay cambios para guardar.");
       return;
     }
+    if (draftMatches.some((match) => match.eventId !== event.id)) {
+      toast.error("Hay partidos de otro campeonato en el editor. Vuelve a seleccionar el campeonato.");
+      setDraftMatches(eventMatches);
+      return;
+    }
 
     setSaving(true);
     try {
@@ -155,6 +164,7 @@ export function FixtureManualEditor({
           eventId: event.id,
           matches: draftMatches.map((match) => ({
             id: match.id,
+            eventId: match.eventId,
             round: match.round,
             stage: match.stage,
             bracketPosition: match.bracketPosition ?? null,
@@ -191,7 +201,7 @@ export function FixtureManualEditor({
     }
   }
 
-  if (event.format !== "single_elimination" || matches.length === 0) {
+  if (event.format !== "single_elimination" || eventMatches.length === 0) {
     return null;
   }
 
