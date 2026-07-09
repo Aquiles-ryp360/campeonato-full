@@ -26,6 +26,7 @@ export function MatchCard({
   const homeTeam = teams.find((team) => team.id === match.homeTeamId);
   const awayTeam = teams.find((team) => team.id === match.awayTeamId);
   const fixturePreliminary = match.isFixturePreliminary || match.fixtureStatus === "draft_auto" || match.fixtureStatus === "draft_review";
+  const exhibitionMatch = isExhibitionMatch(match);
   const liveStatus = match.liveStatus ?? "scheduled";
   const publicLiveScore = event?.publicLiveScores !== false && liveStatus !== "scheduled";
   const scoreVisible = match.status === "finished" || publicLiveScore;
@@ -39,6 +40,7 @@ export function MatchCard({
           </Badge>
           {event ? <Badge tone="neutral">{event.name}</Badge> : null}
           {fixturePreliminary ? <Badge tone="amber">{fixtureStatusLabel(match.fixtureStatus)}</Badge> : null}
+          {exhibitionMatch ? <Badge tone="blue">Partido exhibicion</Badge> : null}
         </div>
         <ConflictBadge conflicts={conflicts} />
       </div>
@@ -73,6 +75,15 @@ export function MatchCard({
       </div>
     </article>
   );
+}
+
+function isExhibitionMatch(match: Match) {
+  const text = `${match.label ?? ""} ${match.notes ?? ""}`
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase();
+
+  return text.includes("exhibicion") || match.label === "EX";
 }
 
 function matchStatusLabel(liveStatus: Match["liveStatus"], status: Match["status"]) {
