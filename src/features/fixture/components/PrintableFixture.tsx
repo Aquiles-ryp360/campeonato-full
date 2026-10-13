@@ -86,6 +86,12 @@ export function PrintableFixture({
         </div>
       </header>
 
+      <div className="mb-5 grid grid-cols-3 gap-3 text-xs font-bold uppercase tracking-wide text-brand-muted">
+        <FillField label="Fecha" />
+        <FillField label="Responsable" />
+        <FillField label="Cancha / Zona" />
+      </div>
+
       {sections.length === 0 ? (
         <p className="py-10 text-center text-sm font-semibold text-brand-muted">
           Todavia no hay partidos programados.
@@ -100,21 +106,33 @@ export function PrintableFixture({
               <table className="w-full border-collapse text-sm">
                 <thead>
                   <tr className="border-b border-ink/25 text-left text-xs font-black uppercase text-brand-muted">
-                    <th className="w-10 py-1.5 pr-2">#</th>
+                    <th className="w-8 py-1.5 pr-2">#</th>
                     <th className="py-1.5 pr-2">Partido</th>
-                    <th className="w-32 py-1.5 text-right">Cancha</th>
+                    <th className="w-20 py-1.5 pr-2">Cancha</th>
+                    <th className="w-28 py-1.5 pr-2 text-center">Resultado</th>
+                    <th className="w-40 py-1.5 pr-2">Observacion</th>
                   </tr>
                 </thead>
                 <tbody>
                   {section.matches.map((match, index) => (
-                    <tr key={match.id} className="border-b border-ink/10 align-top">
-                      <td className="py-1.5 pr-2 font-bold text-brand-muted">{index + 1}</td>
-                      <td className="py-1.5 pr-2 font-semibold text-ink">
+                    <tr key={match.id} className="border-b border-ink/10 align-middle">
+                      <td className="py-2 pr-2 font-bold text-brand-muted">{index + 1}</td>
+                      <td className="py-2 pr-2 font-semibold text-ink">
                         <span>{getMatchSideLabel(match, teams, "home")}</span>
                         <span className="mx-1.5 text-brand-electric">vs</span>
                         <span>{getMatchSideLabel(match, teams, "away")}</span>
                       </td>
-                      <td className="py-1.5 text-right text-brand-muted">{match.court}</td>
+                      <td className="py-2 pr-2 text-brand-muted">{match.court}</td>
+                      <td className="py-2 pr-2">
+                        <div className="flex items-center justify-center gap-1.5">
+                          <BlankBox />
+                          <span className="text-brand-towerMid">-</span>
+                          <BlankBox />
+                        </div>
+                      </td>
+                      <td className="py-2 pr-2">
+                        <span className="block h-6 border-b border-dashed border-ink/30" />
+                      </td>
                     </tr>
                   ))}
                 </tbody>
@@ -123,6 +141,24 @@ export function PrintableFixture({
           ))}
         </div>
       )}
+
+      <footer className="mt-8 flex items-end justify-between gap-6 text-xs font-bold uppercase tracking-wide text-brand-muted">
+        <span>Firma del responsable</span>
+        <span className="flex-1 border-t border-ink/30" />
+      </footer>
     </main>
   );
+}
+
+function FillField({ label }: { label: string }) {
+  return (
+    <div>
+      <p>{label}</p>
+      <span className="mt-1 block h-6 border-b border-ink/30" />
+    </div>
+  );
+}
+
+function BlankBox() {
+  return <span className="inline-block h-6 w-9 rounded-sm border border-ink/40" />;
 }

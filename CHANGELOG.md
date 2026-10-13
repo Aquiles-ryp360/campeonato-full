@@ -24,7 +24,7 @@
 - Semilla `src/lib/futbol-18-seed.ts` para el campeonato "Futbol Relampago 2026": 18 equipos en 5 grupos (4, 4, 4, 3 y 3), 24 partidos de grupos y llave final de 10 equipos (2 preliminares, 4 cuartos, 2 semifinales, tercer lugar y final) para 34 partidos en 2 canchas.
 - Scripts `npm run seed:futbol-18` y `npm run validate:futbol-18` con prueba `scripts/futbol-18.test.ts`.
 - Migracion `supabase/migrations/023_group_qualification.sql` que agrega `events.qualify_best_thirds`.
-- Pagina imprimible del fixture `/imprimir/[championshipSlug]` con enlace "Version imprimible" desde el fixture publico. Lista cruces por grupo y fase sin mostrar la hora de cada partido.
+- Pagina imprimible del fixture `/imprimir/[championshipSlug]` con enlace "Version imprimible" desde el fixture publico. Lista cruces por grupo y fase sin mostrar la hora de cada partido, con casillas en blanco para anotar el resultado, observaciones, responsable y firma a mano.
 
 ### Changed
 
