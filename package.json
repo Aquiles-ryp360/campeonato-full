@@ -11,8 +11,10 @@
     "typecheck": "tsc --noEmit",
     "verify:schema": "tsx scripts/verify-schema.ts",
     "seed": "tsx scripts/reset-and-seed-futsal-10.ts",
+    "seed:futbol-18": "tsx scripts/reset-and-seed-futbol-18.ts",
     "seed:referee-training": "tsx scripts/seed-referee-training.ts",
-    "validate:fixture": "tsx scripts/validate-futsal-10.ts"
+    "validate:fixture": "tsx scripts/validate-futsal-10.ts",
+    "validate:futbol-18": "tsx scripts/validate-futbol-18.ts"
   },
   "dependencies": {
     "@supabase/ssr": "^0.7.0",

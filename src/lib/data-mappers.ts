@@ -212,6 +212,7 @@ export type EventRow = {
   third_place?: boolean | null;
   allow_byes?: boolean | null;
   penalties_enabled?: boolean | null;
+  qualify_best_thirds?: boolean | null;
   public_live_scores?: boolean | null;
   champion_team_id?: string | null;
   champion_match_id?: string | null;
@@ -514,6 +515,7 @@ export function mapEvent(row: EventRow): TournamentEvent {
     thirdPlace: row.third_place ?? undefined,
     allowByes: row.allow_byes ?? undefined,
     penaltiesEnabled: row.penalties_enabled ?? undefined,
+    qualifyBestThirds: row.qualify_best_thirds ?? undefined,
     publicLiveScores: row.public_live_scores ?? undefined,
     championTeamId: row.champion_team_id ?? undefined,
     championMatchId: row.champion_match_id ?? undefined,

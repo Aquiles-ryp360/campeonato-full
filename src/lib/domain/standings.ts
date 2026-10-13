@@ -69,7 +69,8 @@ export function buildGroupQualificationPlan({
   groupStandings,
   teams,
   matches,
-  directPerGroup = 2
+  directPerGroup = 2,
+  includeBestThirds = event.qualifyBestThirds ?? true
 }: {
   event: TournamentEvent;
   groups: Group[];
@@ -78,6 +79,7 @@ export function buildGroupQualificationPlan({
   teams: Team[];
   matches: Match[];
   directPerGroup?: number;
+  includeBestThirds?: boolean;
 }): GroupQualificationPlan {
   const groupRows = new Map<string, GroupStandingDisplayRow[]>();
   const qualifiedTeamIds = new Set<string>();
@@ -113,11 +115,18 @@ export function buildGroupQualificationPlan({
   }
 
   const directQualifiedCount = qualifiedTeamIds.size;
-  const knockoutSize = directQualifiedCount > 0 ? nextPowerOfTwo(directQualifiedCount) : 0;
-  const bestThirdCount = Math.min(
-    bestThirdCandidates.length,
-    Math.max(0, knockoutSize - directQualifiedCount)
-  );
+  // Los mejores terceros solo se suman cuando alcanzan a completar la siguiente
+  // potencia de dos. Si no alcanzan (por ejemplo 5 grupos y solo se clasifican
+  // los dos primeros = 10 equipos) la llave se arma con los clasificados
+  // directos y una ronda preliminar, sin forzar terceros.
+  const targetKnockoutSize = directQualifiedCount > 0 ? nextPowerOfTwo(directQualifiedCount) : 0;
+  const bestThirdSlotsNeeded = Math.max(0, targetKnockoutSize - directQualifiedCount);
+  const canCompleteWithBestThirds =
+    includeBestThirds &&
+    bestThirdSlotsNeeded > 0 &&
+    bestThirdCandidates.length >= bestThirdSlotsNeeded;
+  const bestThirdCount = canCompleteWithBestThirds ? bestThirdSlotsNeeded : 0;
+  const knockoutSize = canCompleteWithBestThirds ? targetKnockoutSize : directQualifiedCount;
   const selectedBestThirds = [...bestThirdCandidates]
     .sort(compareStandingRows)
     .slice(0, bestThirdCount)

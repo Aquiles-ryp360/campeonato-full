@@ -173,6 +173,7 @@ export interface TournamentEvent {
   thirdPlace?: boolean;
   allowByes?: boolean;
   penaltiesEnabled?: boolean;
+  qualifyBestThirds?: boolean;
   publicLiveScores?: boolean;
   championTeamId?: string;
   championMatchId?: string;
