@@ -58,6 +58,23 @@ a {
   color: var(--brand-navy);
 }
 
+@media print {
+  @page {
+    margin: 12mm;
+  }
+
+  .fixture-print {
+    max-width: none;
+    padding: 0;
+    color: #11142d;
+  }
+
+  .fixture-print section,
+  .fixture-print tr {
+    page-break-inside: avoid;
+  }
+}
+
 @layer utilities {
   .bg-technical-blue {
     background:

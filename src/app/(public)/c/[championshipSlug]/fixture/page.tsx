@@ -1,3 +1,5 @@
+import { Printer } from "lucide-react";
+import { Button } from "@/components/ui";
 import { DaySchedule } from "@/features/fixture/components/DaySchedule";
 import { buildVisibleFixtureMatches } from "@/lib/domain/fixture-preview";
 import { isActiveRegistrationTeamStatus } from "@/lib/domain/registration-rules";
@@ -31,13 +33,21 @@ export default async function ChampionshipFixturePage({
   });
 
   return (
-    <DaySchedule
-      events={fixture.events}
-      teams={activeTeams}
-      players={fixture.players}
-      matches={visibleMatches}
-      venues={fixture.venues}
-      initialEventId={selected.event?.id}
-    />
+    <div className="space-y-4">
+      <div className="flex justify-end">
+        <Button href={`/imprimir/${championshipSlug}`} variant="secondary">
+          <Printer className="h-4 w-4" />
+          Version imprimible
+        </Button>
+      </div>
+      <DaySchedule
+        events={fixture.events}
+        teams={activeTeams}
+        players={fixture.players}
+        matches={visibleMatches}
+        venues={fixture.venues}
+        initialEventId={selected.event?.id}
+      />
+    </div>
   );
 }
