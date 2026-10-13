@@ -1,7 +1,28 @@
+import type { CompetitionData } from "./data-mappers";
 import type { ParsedAudioResult } from "./types";
 import { buildFutsal10Seed } from "./futsal-10-seed";
+import { buildFutbol18Seed } from "./futbol-18-seed";
 
-export const mockCompetitionData = buildFutsal10Seed();
+function combineSeeds(...seeds: CompetitionData[]): CompetitionData {
+  return {
+    events: seeds.flatMap((seed) => seed.events),
+    teams: seeds.flatMap((seed) => seed.teams),
+    players: seeds.flatMap((seed) => seed.players),
+    matches: seeds.flatMap((seed) => seed.matches),
+    matchLiveEvents: seeds.flatMap((seed) => seed.matchLiveEvents ?? []),
+    registrationCodes: seeds.flatMap((seed) => seed.registrationCodes),
+    sports: seeds.flatMap((seed) => seed.sports),
+    competitionFormats: seeds.flatMap((seed) => seed.competitionFormats),
+    venues: seeds.flatMap((seed) => seed.venues),
+    timeSlots: seeds.flatMap((seed) => seed.timeSlots),
+    groups: seeds.flatMap((seed) => seed.groups),
+    groupTeams: seeds.flatMap((seed) => seed.groupTeams),
+    groupStandings: seeds.flatMap((seed) => seed.groupStandings),
+    tournamentBases: seeds.flatMap((seed) => seed.tournamentBases)
+  };
+}
+
+export const mockCompetitionData = combineSeeds(buildFutsal10Seed(), buildFutbol18Seed());
 
 export const sports = mockCompetitionData.sports;
 export const competitionFormats = mockCompetitionData.competitionFormats;
