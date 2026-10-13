@@ -43,6 +43,7 @@ export default async function PrintableFixturePage({
       teams={activeTeams}
       matches={matches}
       groups={selected.groups}
+      groupTeams={selected.groupTeams}
     />
   );
 }
