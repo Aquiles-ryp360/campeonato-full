@@ -81,6 +81,9 @@ export async function POST(request: Request) {
     const slug = `${slugify(input.name)}-${id.slice(0, 8)}`;
     const eventDateIso = dateOnlyToIso(input.eventDate);
     const registrationOpenUntilIso = localDateTimeToIso(input.registrationOpenUntil);
+    // New championships should accept registrations immediately. Existing championships
+    // continue to honor the status explicitly selected by the administrator.
+    const eventStatus = input.id ? input.status : "registration";
     const scheduleConfig = {
       startTime: input.startTime,
       matchDurationMinutes: input.matchDuration,
@@ -116,7 +119,7 @@ export async function POST(request: Request) {
         sport_id: sportId,
         category: input.category,
         format_id: formatId,
-        status: input.status,
+        status: eventStatus,
         registration_fee: input.registrationFee,
         registration_open_until: registrationOpenUntilIso,
         max_teams: input.maxTeams,
@@ -158,7 +161,7 @@ export async function POST(request: Request) {
         pointsDraw: normalized.pointsDraw,
         pointsLoss: normalized.pointsLoss,
         maxPlayers: Math.max(input.minPlayers, input.maxPlayers),
-        published: input.status !== "draft"
+        published: eventStatus !== "draft"
       }),
       upsertVenues(admin, input.courts, sportId)
     ]);
