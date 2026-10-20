@@ -2,6 +2,7 @@ import type { CompetitionData } from "./data-mappers";
 import type { ParsedAudioResult } from "./types";
 import { buildFutsal10Seed } from "./futsal-10-seed";
 import { buildFutbol18Seed } from "./futbol-18-seed";
+import { buildFutsal18Seed } from "./futsal-18-seed";
 
 function combineSeeds(...seeds: CompetitionData[]): CompetitionData {
   return {
@@ -22,7 +23,7 @@ function combineSeeds(...seeds: CompetitionData[]): CompetitionData {
   };
 }
 
-export const mockCompetitionData = combineSeeds(buildFutsal10Seed(), buildFutbol18Seed());
+export const mockCompetitionData = combineSeeds(buildFutsal10Seed(), buildFutbol18Seed(), buildFutsal18Seed());
 
 export const sports = mockCompetitionData.sports;
 export const competitionFormats = mockCompetitionData.competitionFormats;
