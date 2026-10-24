@@ -1,4 +1,4 @@
-import { ExternalLink, MapPin, ShieldCheck } from "lucide-react";
+import { ExternalLink, MapPin, Navigation, ShieldCheck } from "lucide-react";
 import type { ChampionshipVenue } from "@/lib/server/championship-venue";
 import { Card } from "@/components/ui";
 
@@ -24,15 +24,26 @@ export function DelegateVenueCard({ venue }: { venue: ChampionshipVenue }) {
               Esta ubicación es reservada. Compártela solo con los jugadores de tu equipo.
             </p>
           </div>
-          <a
-            href={venue.mapsUrl}
-            target="_blank"
-            rel="noreferrer"
-            className="inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-md bg-brand-yellow px-4 py-2 text-sm font-bold text-brand-navy shadow-lift transition hover:bg-brand-yellowHover sm:w-auto sm:self-start"
-          >
-            <ExternalLink className="h-4 w-4" />
-            Abrir en Google Maps
-          </a>
+          <div className="flex flex-col gap-2 sm:flex-row">
+            <a
+              href={venue.mapsUrl}
+              target="_blank"
+              rel="noreferrer"
+              className="inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-md bg-brand-yellow px-4 py-2 text-sm font-bold text-brand-navy shadow-lift transition hover:bg-brand-yellowHover sm:w-auto"
+            >
+              <ExternalLink className="h-4 w-4" />
+              Abrir en Google Maps
+            </a>
+            <a
+              href={venue.directionsUrl}
+              target="_blank"
+              rel="noreferrer"
+              className="inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-md bg-white/10 px-4 py-2 text-sm font-bold text-white ring-1 ring-white/25 transition hover:bg-white/20 sm:w-auto"
+            >
+              <Navigation className="h-4 w-4" />
+              Cómo llegar
+            </a>
+          </div>
         </div>
         <iframe
           title={`Mapa de ${venue.name}`}
