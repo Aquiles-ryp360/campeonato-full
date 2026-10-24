@@ -22,6 +22,7 @@ import { TeamDetailsModal } from "./TeamDetailsModal";
 import { ChampionshipHero } from "./ChampionshipHero";
 import { ChampionshipSummaryCards } from "./ChampionshipSummaryCards";
 import { FormatRenderer } from "./FormatRenderer";
+import { RegistrationCallout } from "@/features/registration/components/RegistrationCallout";
 
 const championshipLocationUrl = "https://maps.app.goo.gl/6UXhMSPc8SGkTxoT8";
 
@@ -94,6 +95,8 @@ export function PublicHome({
           setSelectedTeamId(null);
         }}
       />
+
+      <RegistrationCallout events={context.events} />
 
       <Card className="p-5">
         <SectionHeader

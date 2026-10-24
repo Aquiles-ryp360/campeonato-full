@@ -7,6 +7,7 @@ import {
   Building2,
   Download,
   FileText,
+  KeyRound,
   MessageCircle,
   Plus,
   Smartphone,
@@ -43,6 +44,7 @@ import {
   type IdentityLookupApplyPayload
 } from "@/features/identity/components/IdentityLookupPanel";
 import { EnrollmentFilePicker } from "@/components/enrollment-file-picker";
+import { AccessCodeGate } from "@/features/registration/components/AccessCodeGate";
 import { Badge, Button, Card, Field, SectionHeader, inputClass } from "./ui";
 
 interface PlayerFormRow {
@@ -129,6 +131,7 @@ export function RegistrationForm({
   const [delegateEmail, setDelegateEmail] = useState("");
   const [paymentMethod, setPaymentMethod] = useState<"yape" | "plin">("yape");
   const [registrationCode, setRegistrationCode] = useState("");
+  const [isCodeValidated, setIsCodeValidated] = useState(false);
   const [lastReceipt, setLastReceipt] = useState<RegistrationReceipt | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [identityConsentAccepted, setIdentityConsentAccepted] = useState(true);
@@ -412,6 +415,23 @@ export function RegistrationForm({
     );
   }
 
+  if (!isCodeValidated) {
+    return (
+      <AccessCodeGate
+        events={openEvents}
+        event={event}
+        primaryColor={branding.primaryColor}
+        initialCode={registrationCode}
+        onEventChange={setEventId}
+        onValidated={(code, method) => {
+          setRegistrationCode(code);
+          setPaymentMethod(method);
+          setIsCodeValidated(true);
+        }}
+      />
+    );
+  }
+
   return (
     <form className="space-y-6 pb-20 md:pb-0" onSubmit={submitRegistration}>
       <div className="overflow-hidden rounded-lg border border-brand-towerMid/25 bg-white shadow-panel">
@@ -471,8 +491,9 @@ export function RegistrationForm({
             <Field label="Campeonato">
               <select
                 className={inputClass}
-                value={eventId}
-                onChange={(changeEvent) => setEventId(changeEvent.target.value)}
+                value={event.id}
+                disabled
+                aria-describedby="registration-event-locked"
               >
                 {openEvents.map((current) => (
                   <option key={current.id} value={current.id}>
@@ -514,14 +535,29 @@ export function RegistrationForm({
                 type="email"
               />
             </Field>
-            <Field label="Codigo unico">
-              <input
-                className={inputClass}
-                value={registrationCode}
-                onChange={(changeEvent) => setRegistrationCode(changeEvent.target.value)}
-                placeholder="Ej. FUT-2026-AB7K"
-              />
+            <Field label="Codigo de acceso validado">
+              <div className="flex gap-2">
+                <div className="relative min-w-0 flex-1">
+                  <KeyRound className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-green-700" />
+                  <input
+                    className={`${inputClass} bg-green-50 pl-9 font-mono uppercase`}
+                    value={registrationCode}
+                    readOnly
+                  />
+                </div>
+                <Button
+                  type="button"
+                  variant="secondary"
+                  onClick={() => setIsCodeValidated(false)}
+                  disabled={isSubmitting}
+                >
+                  Cambiar
+                </Button>
+              </div>
             </Field>
+            <p id="registration-event-locked" className="text-xs text-brand-muted sm:col-span-2">
+              El campeonato queda fijado por el codigo validado. Usa &quot;Cambiar&quot; para ingresar otro codigo.
+            </p>
           </div>
         </Card>
 
@@ -550,10 +586,11 @@ export function RegistrationForm({
                         type="button"
                         key={method}
                         onClick={() => setPaymentMethod(method)}
+                        disabled={!selected}
                         className={`rounded-md border px-3 py-2 text-sm font-bold uppercase transition ${
                           selected
                             ? "text-white"
-                            : "border-brand-towerMid/25 bg-white text-ink hover:border-brand-electric/35"
+                            : "border-brand-towerMid/25 bg-white text-ink opacity-50"
                         }`}
                         style={
                           selected

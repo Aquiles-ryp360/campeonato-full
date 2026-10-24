@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { mapEvent, type EventRow } from "../src/lib/data-mappers";
 import {
+  buildOrganizerContactLinks,
   buildPaymentContactLinks,
   DEFAULT_PAYMENT_CONTACT_PHONE,
   DEFAULT_PAYMENT_CONTACT_WHATSAPP_URL
@@ -72,7 +73,7 @@ test("normalizes whatsapp url to the configured phone", () => {
   assert.equal(event.paymentContactWhatsappUrl, "https://wa.me/51984000201?text=Hola");
 });
 
-test("builds both official payment whatsapp contacts without names", () => {
+test("builds all official payment whatsapp contacts without names", () => {
   const contacts = buildPaymentContactLinks(
     DEFAULT_PAYMENT_CONTACT_PHONE,
     DEFAULT_PAYMENT_CONTACT_WHATSAPP_URL
@@ -80,10 +81,32 @@ test("builds both official payment whatsapp contacts without names", () => {
 
   assert.deepEqual(
     contacts.map((contact) => contact.displayPhone),
-    ["984000201", "923037653"]
+    ["984000201", "988765715", "921580174", "923037653"]
   );
   assert.equal(
-    contacts[1].whatsappUrl,
+    contacts[3].whatsappUrl,
     "https://wa.me/51923037653?text=Hola%2C%20solicito%20mi%20c%C3%B3digo%20%C3%BAnico%20de%20inscripci%C3%B3n.%20Adjunto%20la%20captura%20del%20Yape%20para%20validar%20el%20pago."
+  );
+});
+
+test("builds organizer whatsapp links with a message per sport", () => {
+  const futsal = buildOrganizerContactLinks("futsal");
+  const voley = buildOrganizerContactLinks("voley");
+
+  assert.deepEqual(
+    futsal.map((contact) => contact.displayPhone),
+    ["988 765 715", "921 580 174", "984 000 201", "923 037 653"]
+  );
+  assert.deepEqual(
+    futsal.map((contact) => new URL(contact.whatsappUrl).pathname),
+    ["/51988765715", "/51921580174", "/51984000201", "/51923037653"]
+  );
+  assert.equal(
+    new URL(futsal[0].whatsappUrl).searchParams.get("text"),
+    "Hola, buenas tardes. Quiero inscribir a mi equipo en el campeonato de futsal. Deseo realizar el pago y solicitar mi código de acceso. ¿Podrían brindarme información?"
+  );
+  assert.equal(
+    new URL(voley[2].whatsappUrl).searchParams.get("text"),
+    "Hola, buenas tardes. Quiero inscribir a mi equipo en el campeonato de vóley. Deseo realizar el pago y solicitar mi código de acceso. ¿Podrían brindarme información?"
   );
 });
