@@ -69,7 +69,7 @@ export function PublicHome({
         <SectionHeader
           eyebrow="Vista publica"
           title="No hay campeonatos configurados"
-          description="Cuando exista informacion en Supabase o mocks, se mostrara aqui."
+          description="Cuando exista información en Supabase o mocks, se mostrará aquí."
         />
       </Card>
     );
@@ -133,7 +133,7 @@ export function PublicHome({
       <Card className="p-5">
         <SectionHeader
           title="Equipos inscritos"
-          description="Selecciona un equipo para ver detalle publico sin DNI ni documentos."
+          description="Toca un equipo para ver su detalle público (sin DNI ni documentos)."
         />
         <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
           {activeTeams.length > 0 ? (
@@ -398,7 +398,7 @@ function liveClockLabel(match: Match, event: TournamentEvent) {
   }
 
   if (status === "penalties") return "Penales en curso";
-  if (status === "referee_submitted" || status === "submitted") return "Resultado cargado por arbitro";
+  if (status === "referee_submitted" || status === "submitted") return "Resultado cargado por árbitro";
   if (status === "under_review") return "Resultado en revision";
   if (status === "corrected") return "Resultado corregido";
   if (status === "validated") return "Resultado validado";

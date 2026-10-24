@@ -17,9 +17,9 @@ export function PlayerTable({
             <th className="px-4 py-3">Jugador</th>
             <th className="px-3 py-3">Rol</th>
             <th className="px-3 py-3">Camiseta</th>
-            <th className="px-3 py-3">Posicion</th>
+            <th className="px-3 py-3">Posición</th>
             {privateView ? <th className="px-3 py-3">Identidad</th> : null}
-            {privateView ? <th className="px-3 py-3">Codigo</th> : null}
+            {privateView ? <th className="px-3 py-3">Código</th> : null}
             {privateView ? <th className="px-4 py-3">DNI</th> : null}
           </tr>
         </thead>

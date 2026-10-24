@@ -123,7 +123,7 @@ export function FormatRenderer({
 
         {event.format === "single_elimination" ? (
           <Card className="min-w-0 p-5">
-            <SectionHeader title="Llave de eliminacion" description="Generada segun cantidad de equipos, con byes cuando corresponde." />
+            <SectionHeader title="Llave de eliminación" description="Generada según la cantidad de equipos, con byes cuando corresponde." />
             <div className="mt-4">
               <KnockoutBracket
                 eventId={event.id}
@@ -143,7 +143,7 @@ export function FormatRenderer({
       </div>
 
       <Card className="min-w-0 p-5">
-        <SectionHeader title="Proximos partidos" description="Cruces inmediatos del campeonato seleccionado." />
+        <SectionHeader title="Próximos partidos" description="Cruces inmediatos del campeonato seleccionado." />
         <div className="mt-4 space-y-3">
           {upcomingMatches.length > 0 ? (
             upcomingMatches.map((match) => (

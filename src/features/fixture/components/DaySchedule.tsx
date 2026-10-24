@@ -61,7 +61,7 @@ export function DaySchedule({
     <div className="space-y-6 pb-20 md:pb-0">
       <Card className="p-5">
         <SectionHeader
-          eyebrow="Fixture del dia"
+          eyebrow="Fixture del día"
           title="Linea de tiempo de partidos"
           description="Filtra por campeonato, cancha, equipo o estado sin navegar a menus separados."
         />

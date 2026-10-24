@@ -13,6 +13,15 @@ import {
 import { Badge, Button } from "@/components/ui";
 import { ChampionshipSwitcher } from "./ChampionshipSwitcher";
 
+const statusDotClass: Record<string, string> = {
+  green: "bg-green-400",
+  amber: "bg-brand-yellow",
+  red: "bg-red-400",
+  blue: "bg-sky-300",
+  neutral: "bg-white/70",
+  dark: "bg-white/70"
+};
+
 export function ChampionshipHero({
   event,
   events,
@@ -40,10 +49,16 @@ export function ChampionshipHero({
         }}
       />
       <div className="relative flex flex-wrap items-center gap-2">
-        <Badge tone="dark">{sportDisplayName(event)}</Badge>
-        <Badge tone={eventStatusTone(event.status)}>{eventStatusLabel(event.status)}</Badge>
-        <Badge tone="amber">{fixtureStatusLabel(event.fixtureStatus)}</Badge>
-        <Badge tone="dark">{tournamentFormatLabel(event.format)}</Badge>
+        <Badge tone="glass">{sportDisplayName(event)}</Badge>
+        <Badge tone="glass">
+          <span
+            aria-hidden="true"
+            className={`mr-1.5 h-2 w-2 rounded-full ${statusDotClass[eventStatusTone(event.status)] ?? "bg-white"}`}
+          />
+          {eventStatusLabel(event.status)}
+        </Badge>
+        <Badge tone="glass">{fixtureStatusLabel(event.fixtureStatus)}</Badge>
+        <Badge tone="glass">{tournamentFormatLabel(event.format)}</Badge>
       </div>
 
       <div className="relative mt-7 flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
@@ -65,7 +80,7 @@ export function ChampionshipHero({
         <div className="flex flex-wrap gap-2 lg:justify-end">
           <Button href={`/c/${slug}/fixture`} variant="secondary">
             <CalendarDays className="h-4 w-4" />
-            Fixture del dia
+            Fixture del día
           </Button>
           <Button href={`/c/${slug}/bases`} variant="secondary">
             <FileText className="h-4 w-4" />

@@ -56,13 +56,21 @@ export function DelegateDashboard({
 
   if (!context.team || !context.event) {
     return (
-      <Card className="p-6">
-        <SectionHeader
-          eyebrow="Panel delegado"
-          title="Aun no tienes equipo vinculado"
-          description="Ingresa con el correo usado en la inscripcion para ver tus equipos."
-        />
-      </Card>
+      <div className="space-y-6 pb-20 md:pb-0">
+        {venue ? <DelegateVenueCard venue={venue} /> : null}
+        <Card className="p-6">
+          <SectionHeader
+            eyebrow="Panel delegado"
+            title="Aún no tienes un equipo vinculado"
+            description={`Entraste con ${delegateEmail ?? "un correo sin equipo"}. Para ver la sede y tus partidos, cierra sesión y entra con el mismo Gmail que usaste al inscribir tu equipo.`}
+            action={
+              <Button href="/#inscripciones" variant="secondary">
+                Inscribir un equipo
+              </Button>
+            }
+          />
+        </Card>
+      </div>
     );
   }
 
@@ -76,24 +84,41 @@ export function DelegateDashboard({
 
   return (
     <div className="space-y-6 pb-20 md:pb-0">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-        <SectionHeader
-          eyebrow="Panel delegado"
-          title={`${context.team.name} - ${context.event.name}`}
-          description="Gestiona solo la informacion de tu equipo y sus partidos."
-          action={
-            <div className="flex flex-wrap justify-end gap-2">
-              <DelegateRosterDownloadButton teamId={context.team.id} teamName={context.team.name} />
-              <DelegateTeamSwitcher
-                teams={context.delegateTeams}
-                events={data.events}
-                value={context.team.id}
-                onChange={setTeamId}
-              />
-            </div>
-          }
+      <section className="relative overflow-hidden rounded-lg bg-technical-blue p-5 text-white shadow-panel sm:p-6">
+        <div
+          aria-hidden="true"
+          className="absolute inset-y-0 right-0 hidden w-1/3 opacity-25 lg:block"
+          style={{
+            background:
+              "repeating-linear-gradient(135deg, transparent 0 18px, rgba(240,232,52,0.45) 18px 20px, transparent 20px 38px)"
+          }}
         />
-      </div>
+        <div className="relative flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+          <div className="flex min-w-0 items-center gap-4">
+            <span
+              className="grid h-14 w-14 shrink-0 place-items-center rounded-full border-4 bg-brand-yellow text-xl font-black text-brand-navy shadow-lift"
+              style={{ borderColor: context.team.primaryColor || "rgba(255,255,255,0.3)" }}
+              aria-hidden="true"
+            >
+              {context.team.name.trim().charAt(0).toUpperCase()}
+            </span>
+            <div className="min-w-0">
+              <p className="text-xs font-black uppercase text-brand-yellow">Panel del delegado</p>
+              <h1 className="mt-1 text-2xl font-black leading-tight sm:text-3xl">{context.team.name}</h1>
+              <p className="mt-1 text-sm font-semibold text-white/70">{context.event.name}</p>
+            </div>
+          </div>
+          <div className="flex flex-wrap gap-2 lg:justify-end">
+            <DelegateRosterDownloadButton teamId={context.team.id} teamName={context.team.name} />
+            <DelegateTeamSwitcher
+              teams={context.delegateTeams}
+              events={data.events}
+              value={context.team.id}
+              onChange={setTeamId}
+            />
+          </div>
+        </div>
+      </section>
 
       <DelegateSummaryCards
         event={context.event}
@@ -115,11 +140,11 @@ export function DelegateDashboard({
             allEvents={data.events}
           />
           <Card className="p-5">
-            <SectionHeader title="Acciones rapidas" />
+            <SectionHeader title="Acciones rápidas" />
             <div className="mt-4 flex flex-wrap gap-2">
               <Button href="/delegado/inscripcion" variant="secondary">
                 <Edit className="h-4 w-4" />
-                Editar inscripcion
+                Editar inscripción
               </Button>
               <Button href="/delegado/plantel" variant="secondary">
                 <ListChecks className="h-4 w-4" />

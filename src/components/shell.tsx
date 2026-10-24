@@ -17,11 +17,15 @@ import {
   Calendar,
   ClipboardCheck
 } from "lucide-react";
+import { buildOrganizerContactLinks } from "@/lib/payment-contact";
 import { AuthGate, MobileLogoutAction, MobileSessionAction, SessionActions } from "./auth-gate";
+
+const footerContacts = buildOrganizerContactLinks();
 
 type ShellNavLink = {
   href: string;
   label: string;
+  shortLabel?: string;
   icon: ComponentType<{ className?: string }>;
 };
 
@@ -29,32 +33,32 @@ type ShellNavItem = ShellNavLink;
 
 const publicNav: ShellNavItem[] = [
   { href: "/", label: "Inicio", icon: Trophy },
-  { href: "/c/default/fixture", label: "Fixture del dia", icon: Calendar },
+  { href: "/c/default/fixture", label: "Fixture del día", shortLabel: "Fixture", icon: Calendar },
   { href: "/c/default/bases", label: "Bases", icon: BookOpen },
-  { href: "/c/default/registro", label: "Inscribir equipo", icon: UserPlus }
+  { href: "/c/default/registro", label: "Inscribir equipo", shortLabel: "Inscribir", icon: UserPlus }
 ];
 
 const adminNav: ShellNavItem[] = [
   { href: "/admin", label: "Resumen", icon: LayoutDashboard },
-  { href: "/admin/campeonatos", label: "Campeonatos", icon: Trophy },
-  { href: "/admin/equipos", label: "Inscripciones", icon: UsersRound },
-  { href: "/admin/codigos", label: "Codigos", icon: KeyRound },
+  { href: "/admin/campeonatos", label: "Campeonatos", shortLabel: "Torneos", icon: Trophy },
+  { href: "/admin/equipos", label: "Inscripciones", shortLabel: "Equipos", icon: UsersRound },
+  { href: "/admin/codigos", label: "Códigos", icon: KeyRound },
   { href: "/admin/fixture", label: "Fixture", icon: Calendar },
   { href: "/admin/resultados", label: "Resultados", icon: BarChart3 },
-  { href: "/admin/configuracion", label: "Configuracion", icon: Settings2 }
+  { href: "/admin/configuracion", label: "Configuración", shortLabel: "Ajustes", icon: Settings2 }
 ];
 
 const delegateNav: ShellNavItem[] = [
   { href: "/delegado", label: "Resumen", icon: LayoutDashboard },
-  { href: "/delegado/inscripcion", label: "Mi inscripcion", icon: ShieldCheck },
+  { href: "/delegado/inscripcion", label: "Mi inscripción", shortLabel: "Inscripción", icon: ShieldCheck },
   { href: "/delegado/plantel", label: "Plantel", icon: UsersRound },
-  { href: "/delegado/partidos", label: "Mis partidos", icon: Calendar },
-  { href: "/delegado/avisos", label: "Avisos y bases", icon: FileText }
+  { href: "/delegado/partidos", label: "Mis partidos", shortLabel: "Partidos", icon: Calendar },
+  { href: "/delegado/avisos", label: "Avisos y bases", shortLabel: "Avisos", icon: FileText }
 ];
 
 const refereeNav: ShellNavItem[] = [
   { href: "/arbitro", label: "Mis partidos", icon: ClipboardCheck },
-  { href: "/c/default/fixture", label: "Fixture del dia", icon: Calendar },
+  { href: "/c/default/fixture", label: "Fixture del día", shortLabel: "Fixture", icon: Calendar },
   { href: "/c/default/bases", label: "Bases", icon: BookOpen }
 ];
 
@@ -137,13 +141,16 @@ function MobileNav({
             <Link
               key={item.href}
               href={item.href}
-              className={`flex min-h-[58px] min-w-0 flex-col items-center justify-center gap-1 px-1.5 py-2 text-[10.5px] font-bold transition ${
+              className={`relative flex min-h-[58px] min-w-0 flex-col items-center justify-center gap-1 px-1.5 py-2 text-[11px] font-bold transition ${
                 active ? "text-brand-electric" : "text-brand-muted hover:text-brand-navy"
               }`}
               aria-current={active ? "page" : undefined}
             >
-              <Icon className="h-4 w-4" />
-              <span className="w-full truncate text-center leading-tight">{item.label}</span>
+              {active ? (
+                <span aria-hidden="true" className="absolute inset-x-4 top-0 h-0.5 rounded-full bg-brand-electric" />
+              ) : null}
+              <Icon className="h-5 w-5" />
+              <span className="w-full truncate text-center leading-tight">{item.shortLabel ?? item.label}</span>
             </Link>
           );
         })}
@@ -173,6 +180,25 @@ function ShellFrame({
     <div className="min-h-screen">
       <Header nav={nav} eyebrow={eyebrow} showPanelLink={showPanelLink} />
       <main className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:py-8">{children}</main>
+      <footer className="border-t border-brand-towerMid/25 bg-white/60 pb-24 md:pb-0">
+        <div className="mx-auto flex max-w-7xl flex-col gap-2 px-4 py-5 text-xs font-semibold text-brand-muted sm:flex-row sm:items-center sm:justify-between sm:px-6">
+          <p>Comisión deportiva · Ingeniería Mecánica Eléctrica · UNA Puno</p>
+          <p className="flex flex-wrap items-center gap-x-3 gap-y-1">
+            <span>Informes por WhatsApp:</span>
+            {footerContacts.map((contact) => (
+              <a
+                key={contact.phone}
+                href={contact.whatsappUrl}
+                target="_blank"
+                rel="noreferrer"
+                className="font-bold text-brand-navy hover:text-brand-electric"
+              >
+                {contact.displayPhone}
+              </a>
+            ))}
+          </p>
+        </div>
+      </footer>
       <MobileNav
         nav={nav}
         showSessionAction={showMobileSessionAction}

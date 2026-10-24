@@ -5,9 +5,11 @@
 import { useMemo, useState } from "react";
 import {
   Building2,
+  CheckCircle2,
   Download,
   FileText,
   KeyRound,
+  LogIn,
   MessageCircle,
   Plus,
   Smartphone,
@@ -526,14 +528,18 @@ export function RegistrationForm({
                 placeholder="999 999 999"
               />
             </Field>
-            <Field label="Correo del delegado">
+            <Field label="Correo Gmail del delegado">
               <input
                 className={inputClass}
                 value={delegateEmail}
                 onChange={(changeEvent) => setDelegateEmail(changeEvent.target.value)}
-                placeholder="delegado@correo.com"
+                placeholder="delegado@gmail.com"
                 type="email"
+                autoComplete="email"
               />
+              <span className="block text-xs leading-5 text-brand-muted">
+                Con este correo de Google entrarás a tu panel para ver la sede, tus partidos y tu plantel.
+              </span>
             </Field>
             <Field label="Codigo de acceso validado">
               <div className="flex gap-2">
@@ -799,6 +805,29 @@ export function RegistrationForm({
           ))}
         </div>
       </Card>
+
+      {lastReceipt ? (
+        <Card className="overflow-hidden border-green-600/30">
+          <div className="flex flex-col gap-4 bg-green-50 p-5 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex items-start gap-3">
+              <div className="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-green-600 text-white">
+                <CheckCircle2 className="h-6 w-6" />
+              </div>
+              <div>
+                <p className="text-lg font-black text-ink">¡Equipo inscrito!</p>
+                <p className="mt-1 text-sm leading-6 text-brand-muted">
+                  Entra con Google usando <strong className="text-ink">{lastReceipt.delegateAccess.email}</strong>{" "}
+                  para ver la ubicación de la sede, tus partidos y gestionar tu plantel.
+                </p>
+              </div>
+            </div>
+            <Button href="/login?next=%2Fdelegado" className="w-full shrink-0 sm:w-auto">
+              <LogIn className="h-4 w-4" />
+              Entrar a mi panel
+            </Button>
+          </div>
+        </Card>
+      ) : null}
 
       {lastReceipt ? (
         <Card className="p-5">

@@ -20,7 +20,7 @@ export function ChampionshipSummaryCards({
     .sort((a, b) => a.scheduledAt.localeCompare(b.scheduledAt))[0];
 
   return (
-    <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+    <section className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
       <Metric label="Equipos inscritos" value={`${teamCount}/${event.maxTeams}`} icon={UsersRound} />
       <Metric label="Formato" value={tournamentFormatLabel(event.format)} icon={Trophy} tone="blue" />
       <Metric

@@ -35,7 +35,7 @@ export async function sendDelegateAccessEmail({
     throw new Error("SMTP env vars are not configured");
   }
 
-  const loginUrl = `${appUrl.replace(/\/$/, "")}/login`;
+  const loginUrl = `${appUrl.replace(/\/$/, "")}/login?next=%2Fdelegado`;
   const subject = `Acceso delegado - ${teamName}`;
   const text = [
     `Hola ${delegateName},`,
@@ -47,7 +47,8 @@ export async function sendDelegateAccessEmail({
     `Correo de acceso: ${to}`,
     `Login: ${loginUrl}`,
     "",
-    "Usa este mismo correo Google/Gmail para entrar al panel de delegado. No necesitas contrasena temporal."
+    "Usa este mismo correo Google/Gmail para entrar al panel de delegado. No necesitas contrasena temporal.",
+    "En tu panel veras la ubicacion de la sede, tus partidos y tu plantel."
   ].join("\n");
   const html = `
     <div style="font-family: Arial, sans-serif; color: #17211f; line-height: 1.5;">
@@ -75,6 +76,9 @@ export async function sendDelegateAccessEmail({
       </p>
       <p style="font-size: 13px; color: #5f6c67;">
         Usa este mismo correo Google/Gmail para entrar al panel de delegado. No necesitas contrasena temporal.
+      </p>
+      <p style="font-size: 13px; color: #5f6c67;">
+        En tu panel veras la ubicacion de la sede, tus partidos y tu plantel.
       </p>
     </div>
   `;

@@ -9,9 +9,10 @@ export function Badge({
   tone = "neutral"
 }: {
   children: React.ReactNode;
-  tone?: "neutral" | "green" | "amber" | "red" | "blue" | "dark";
+  tone?: "neutral" | "green" | "amber" | "red" | "blue" | "dark" | "glass";
 }) {
   const tones = {
+    glass: "border-white/20 bg-white/10 text-white",
     neutral: "border-brand-towerMid/35 bg-white text-brand-muted",
     green: "border-green-600/20 bg-green-600/10 text-green-800",
     amber: "border-brand-yellow/70 bg-brand-yellow/25 text-brand-navy",
@@ -360,13 +361,13 @@ export function Metric({
   };
 
   return (
-    <Card className="p-4 transition hover:-translate-y-0.5 hover:border-brand-electric/25 hover:shadow-lift">
-      <div className="flex items-center justify-between gap-4">
-        <div>
-          <p className="text-sm font-semibold text-brand-muted">{label}</p>
-          <p className="mt-1 text-2xl font-black text-ink">{value}</p>
+    <Card className="p-3 transition hover:-translate-y-0.5 hover:border-brand-electric/25 hover:shadow-lift sm:p-4">
+      <div className="flex flex-col-reverse gap-2 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
+        <div className="min-w-0">
+          <p className="text-xs font-semibold text-brand-muted sm:text-sm">{label}</p>
+          <p className="mt-1 text-lg font-black leading-tight text-ink sm:text-2xl">{value}</p>
         </div>
-        <div className={cn("grid h-10 w-10 place-items-center rounded-md", tones[tone])}>
+        <div className={cn("grid h-9 w-9 shrink-0 place-items-center rounded-md sm:h-10 sm:w-10", tones[tone])}>
           <Icon className="h-5 w-5" />
         </div>
       </div>

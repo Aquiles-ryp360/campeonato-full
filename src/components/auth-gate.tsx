@@ -117,7 +117,7 @@ export function SessionActions({ showPanelLink = true }: { showPanelLink?: boole
       : session.role === "delegate"
         ? "Mi equipo"
         : session.role === "referee"
-          ? "Arbitro"
+          ? "Árbitro"
           : "Vista publica";
   const PanelIcon =
     session.role === "admin"
@@ -185,7 +185,7 @@ export function MobileSessionAction() {
       : session.role === "delegate"
         ? "Equipo"
         : session.role === "referee"
-          ? "Arbitro"
+          ? "Árbitro"
         : "Cuenta"
     : "Ingresar";
   const Icon = session
@@ -201,9 +201,9 @@ export function MobileSessionAction() {
   return (
     <Link
       href={href}
-      className="flex min-h-[58px] min-w-0 flex-col items-center justify-center gap-1 px-1.5 py-2 text-[10.5px] font-bold text-brand-muted"
+      className="flex min-h-[58px] min-w-0 flex-col items-center justify-center gap-1 px-1.5 py-2 text-[11px] font-bold text-brand-muted"
     >
-      <Icon className="h-4 w-4" />
+      <Icon className="h-5 w-5" />
       <span className="w-full truncate text-center leading-tight">{label}</span>
     </Link>
   );
@@ -225,9 +225,9 @@ export function MobileLogoutAction() {
         clearStoredSession();
         window.location.href = "/";
       }}
-      className="flex min-h-[58px] min-w-0 flex-col items-center justify-center gap-1 px-1.5 py-2 text-[10.5px] font-bold text-red-800"
+      className="flex min-h-[58px] min-w-0 flex-col items-center justify-center gap-1 px-1.5 py-2 text-[11px] font-bold text-red-800"
     >
-      <LogOut className="h-4 w-4" />
+      <LogOut className="h-5 w-5" />
       <span className="w-full truncate text-center leading-tight">Salir</span>
     </button>
   );

@@ -114,7 +114,7 @@ export function LoginPanel() {
       <Card className="p-5">
         <SectionHeader
           eyebrow="Acceso"
-          title="Iniciar sesion"
+          title="Iniciar sesión"
           description={
             supabaseConfigured
               ? "Entra con el mismo correo Google/Gmail usado en la inscripcion."
@@ -133,9 +133,20 @@ export function LoginPanel() {
               <Mail className="h-4 w-4" />
               {isGoogleSubmitting ? "Abriendo Google..." : "Entrar con Google"}
             </Button>
-            <p className="text-sm leading-6 text-brand-muted">
-              Si eres delegado o arbitro, el correo debe coincidir con la inscripcion o
-              con una asignacion de partido. Otros correos entran como visitante.
+            <div className="rounded-md border border-brand-electric/20 bg-brand-electric/5 p-4">
+              <p className="flex items-center gap-2 text-sm font-black text-ink">
+                <UserRoundCheck className="h-4 w-4 text-brand-electric" />
+                ¿Inscribiste un equipo?
+              </p>
+              <ul className="mt-2 space-y-1.5 text-sm leading-6 text-brand-muted">
+                <li>1. Entra con el mismo Gmail que usaste en la inscripción.</li>
+                <li>2. Tu cuenta se vincula sola a tu equipo.</li>
+                <li>3. En tu panel verás la sede, tus partidos y tu plantel.</li>
+              </ul>
+            </div>
+            <p className="text-xs leading-5 text-brand-muted">
+              Si eres árbitro, usa el correo asignado a tus partidos. Otros correos entran como
+              visitante.
             </p>
           </div>
         ) : (
@@ -151,12 +162,12 @@ export function LoginPanel() {
               />
             </Field>
 
-            <Field label="Contrasena">
+            <Field label="Contraseña">
               <input
                 className={inputClass}
                 value={password}
                 onChange={(event) => setPassword(event.target.value)}
-                placeholder="Contrasena"
+                placeholder="Contraseña"
                 type="password"
                 autoComplete="current-password"
               />
@@ -171,6 +182,35 @@ export function LoginPanel() {
       </Card>
 
       <div className="space-y-4">
+        <Card className="border-brand-electric/30 p-5">
+          <div className="flex items-start gap-3">
+            <div className="grid h-11 w-11 shrink-0 place-items-center rounded-md bg-brand-institutional/10 text-brand-institutional">
+              <UserRoundCheck className="h-5 w-5" />
+            </div>
+            <div>
+              <div className="flex flex-wrap items-center gap-2">
+                <p className="font-bold text-ink">Delegado</p>
+                <Badge tone="blue">Equipo</Badge>
+              </div>
+              {supabaseConfigured ? (
+                <p className="mt-3 text-sm leading-6 text-brand-muted">
+                  El delegado usa el mismo correo Google/Gmail que dejó en la inscripción.
+                  Al coincidir, el sistema vincula su usuario con su equipo y le muestra la sede.
+                </p>
+              ) : (
+                <>
+                  <p className="mt-2 text-sm text-brand-muted">
+                    Usuario demo: <strong>{demoDelegateCredentials.username}</strong>
+                  </p>
+                  <p className="mt-1 text-sm text-brand-muted">
+                    Contrasena demo: <strong>{demoDelegateCredentials.password}</strong>
+                  </p>
+                </>
+              )}
+            </div>
+          </div>
+        </Card>
+
         <Card className="p-5">
           <div className="flex items-start gap-3">
             <div className="grid h-11 w-11 shrink-0 place-items-center rounded-md bg-brand-electric/10 text-brand-electric">
@@ -200,34 +240,6 @@ export function LoginPanel() {
           </div>
         </Card>
 
-        <Card className="p-5">
-          <div className="flex items-start gap-3">
-            <div className="grid h-11 w-11 shrink-0 place-items-center rounded-md bg-brand-institutional/10 text-brand-institutional">
-              <UserRoundCheck className="h-5 w-5" />
-            </div>
-            <div>
-              <div className="flex flex-wrap items-center gap-2">
-                <p className="font-bold text-ink">Delegado</p>
-                <Badge tone="blue">Equipo</Badge>
-              </div>
-              {supabaseConfigured ? (
-                <p className="mt-3 text-sm leading-6 text-brand-muted">
-                  El delegado usa el mismo correo Google/Gmail que dejo en la inscripcion.
-                  Al coincidir, el sistema vincula su usuario con su equipo.
-                </p>
-              ) : (
-                <>
-                  <p className="mt-2 text-sm text-brand-muted">
-                    Usuario demo: <strong>{demoDelegateCredentials.username}</strong>
-                  </p>
-                  <p className="mt-1 text-sm text-brand-muted">
-                    Contrasena demo: <strong>{demoDelegateCredentials.password}</strong>
-                  </p>
-                </>
-              )}
-            </div>
-          </div>
-        </Card>
 
         <Card className="p-5">
           <div className="flex items-start gap-3">
@@ -236,7 +248,7 @@ export function LoginPanel() {
             </div>
             <div>
               <div className="flex flex-wrap items-center gap-2">
-                <p className="font-bold text-ink">Arbitro</p>
+                <p className="font-bold text-ink">Árbitro</p>
                 <Badge tone="green">Partidos asignados</Badge>
               </div>
               <p className="mt-3 text-sm leading-6 text-brand-muted">

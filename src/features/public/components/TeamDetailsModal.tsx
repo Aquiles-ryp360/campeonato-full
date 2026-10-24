@@ -60,7 +60,7 @@ export function TeamDetailsModal({
           <div className="grid gap-4 md:grid-cols-[0.95fr_1.05fr]">
             <DelegateInfo team={team} />
             <div className="rounded-md border border-brand-towerMid/25 bg-brand-wash p-4 text-sm">
-              <p className="text-xs font-black uppercase text-brand-muted">Proximo partido</p>
+              <p className="text-xs font-black uppercase text-brand-muted">Próximo partido</p>
               {nextMatch ? (
                 <div className="mt-2 space-y-1 font-semibold text-brand-muted">
                   <p className="font-bold text-ink">

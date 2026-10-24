@@ -17,16 +17,18 @@ export function TeamCard({
     <button
       type="button"
       onClick={() => onOpen(team)}
-      className="w-full rounded-md border border-brand-towerMid/25 bg-white p-4 text-left shadow-insetLine transition hover:-translate-y-0.5 hover:border-brand-electric/45 hover:shadow-lift focus:outline-none focus:ring-2 focus:ring-brand-electric/30"
+      className="w-full min-w-0 rounded-md border border-brand-towerMid/25 bg-white p-4 text-left shadow-insetLine transition hover:-translate-y-0.5 hover:border-brand-electric/45 hover:shadow-lift focus:outline-none focus:ring-2 focus:ring-brand-electric/30"
     >
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           <p className="truncate font-bold text-ink">{team.name}</p>
           <p className="mt-1 text-sm font-semibold text-brand-muted">{playerCount} jugadores</p>
         </div>
-        <Badge tone={team.status === "approved" ? "green" : "amber"}>
-          {teamStatusLabel(team.status)}
-        </Badge>
+        <span className="shrink-0">
+          <Badge tone={team.status === "approved" ? "green" : "amber"}>
+            {teamStatusLabel(team.status)}
+          </Badge>
+        </span>
       </div>
       <div className="mt-4 flex gap-1.5">
         <span

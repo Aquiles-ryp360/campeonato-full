@@ -69,7 +69,7 @@ export function KnockoutBracket({
             </Badge>
             <Badge tone={seedingMode === "random" ? "amber" : "dark"}>
               <Shuffle className="mr-1 h-3.5 w-3.5" />
-              {seedingMode === "random" ? "Sorteo aleatorio" : "Orden de inscripcion"}
+              {seedingMode === "random" ? "Sorteo aleatorio" : "Orden de inscripción"}
             </Badge>
             {bracket.preliminaryMatches > 0 ? (
               <Badge tone="amber">{bracket.preliminaryMatches} preliminares</Badge>
