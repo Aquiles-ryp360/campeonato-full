@@ -110,3 +110,11 @@ test("builds organizer whatsapp links with a message per sport", () => {
     "Hola, buenas tardes. Quiero inscribir a mi equipo en el campeonato de vóley. Deseo realizar el pago y solicitar mi código de acceso. ¿Podrían brindarme información?"
   );
 });
+
+test("includes the team name in the whatsapp message when provided", () => {
+  const [contact] = buildOrganizerContactLinks("voley", "  Los Inges  ");
+  assert.equal(
+    new URL(contact.whatsappUrl).searchParams.get("text"),
+    "Hola, buenas tardes. Quiero inscribir a mi equipo «Los Inges» en el campeonato de vóley. Deseo realizar el pago y solicitar mi código de acceso. ¿Podrían brindarme información?"
+  );
+});

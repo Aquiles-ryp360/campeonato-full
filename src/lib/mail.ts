@@ -92,6 +92,75 @@ export async function sendDelegateAccessEmail({
   });
 }
 
+type OrganizerRegistrationNoticeInput = {
+  to: string[];
+  eventName: string;
+  teamName: string;
+  delegateName: string;
+  delegatePhone: string;
+  delegateEmail: string;
+  registrationCode: string;
+  playerCount: number;
+};
+
+export async function sendOrganizerRegistrationNotice({
+  to,
+  eventName,
+  teamName,
+  delegateName,
+  delegatePhone,
+  delegateEmail,
+  registrationCode,
+  playerCount
+}: OrganizerRegistrationNoticeInput) {
+  const from = process.env.MAIL_FROM;
+  if (!from || to.length === 0) {
+    throw new Error("SMTP env vars or organizer recipients are not configured");
+  }
+
+  const adminUrl = `${appBaseUrl().replace(/\/$/, "")}/admin/equipos`;
+  const rows: Array<[string, string]> = [
+    ["Campeonato", eventName],
+    ["Equipo", teamName],
+    ["Delegado", delegateName],
+    ["Celular", delegatePhone],
+    ["Correo", delegateEmail],
+    ["Código usado", registrationCode],
+    ["Jugadores", String(playerCount)]
+  ];
+  const text = [
+    "Nueva inscripción registrada.",
+    "",
+    ...rows.map(([label, value]) => `${label}: ${value}`),
+    "",
+    `Revisar: ${adminUrl}`
+  ].join("\n");
+  const html = `
+    <div style="font-family: Arial, sans-serif; color: #17211f; line-height: 1.5;">
+      <h1 style="font-size: 20px; margin-bottom: 12px;">Nueva inscripción: ${escapeHtml(teamName)}</h1>
+      <table style="border-collapse: collapse; margin: 12px 0; width: 100%; max-width: 560px;">
+        ${rows
+          .map(
+            ([label, value]) => `<tr>
+          <td style="padding: 8px; border: 1px solid #dde4e0; font-weight: 700;">${escapeHtml(label)}</td>
+          <td style="padding: 8px; border: 1px solid #dde4e0;">${escapeHtml(value)}</td>
+        </tr>`
+          )
+          .join("")}
+      </table>
+      <p><a href="${adminUrl}">Revisar inscripciones en el panel</a></p>
+    </div>
+  `;
+
+  return mailTransporter().sendMail({
+    from,
+    to: to.join(", "),
+    subject: `Nueva inscripción - ${teamName} (${eventName})`,
+    html,
+    text
+  });
+}
+
 export async function sendFixtureEmail({
   to,
   recipientName,

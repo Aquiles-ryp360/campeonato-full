@@ -1,3 +1,4 @@
+import { createHash } from "node:crypto";
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { createSupabaseAdminClient } from "@/lib/supabase-admin";
@@ -38,8 +39,12 @@ type RegistrationCodeRow = {
   used_by_team_id: string | null;
 };
 
+const persistentWindowMs = 10 * 60_000;
+const persistentLimit = 20;
+
 export async function POST(request: Request) {
-  const rateLimit = validationLimiter.check(`code:${clientIpFromRequest(request)}`);
+  const clientIp = clientIpFromRequest(request);
+  const rateLimit = validationLimiter.check(`code:${clientIp}`);
   if (!rateLimit.allowed) {
     return jsonError("Demasiados intentos. Espera un minuto e inténtalo otra vez.", 429);
   }
@@ -54,6 +59,10 @@ export async function POST(request: Request) {
     supabase = createSupabaseAdminClient();
   } catch {
     return jsonError("El servidor no tiene configurado Supabase para validar códigos.", 500);
+  }
+
+  if (!(await registerPersistentAttempt(supabase, clientIp))) {
+    return jsonError("Demasiados intentos. Espera unos minutos e inténtalo otra vez.", 429);
   }
 
   const { eventId, registrationCode } = parsed.data;
@@ -127,6 +136,35 @@ export async function POST(request: Request) {
   }
 
   return NextResponse.json({ ok: true, paymentMethod: code.method });
+}
+
+// Limite compartido entre instancias (tabla de la migracion 025).
+// Si la tabla no existe, solo aplica el limite en memoria.
+async function registerPersistentAttempt(
+  supabase: ReturnType<typeof createSupabaseAdminClient>,
+  clientIp: string
+) {
+  const ipHash = createHash("sha256").update(`registration-code:${clientIp}`).digest("hex");
+  const since = new Date(Date.now() - persistentWindowMs).toISOString();
+
+  const { count, error } = await supabase
+    .from("registration_code_attempts")
+    .select("id", { count: "exact", head: true })
+    .eq("ip_hash", ipHash)
+    .gte("attempted_at", since);
+
+  if (error) return true;
+  if ((count ?? 0) >= persistentLimit) return false;
+
+  await supabase.from("registration_code_attempts").insert({ ip_hash: ipHash });
+  if (Math.random() < 0.02) {
+    await supabase
+      .from("registration_code_attempts")
+      .delete()
+      .lt("attempted_at", new Date(Date.now() - 24 * 60 * 60_000).toISOString());
+  }
+
+  return true;
 }
 
 function jsonError(error: string, status: number) {

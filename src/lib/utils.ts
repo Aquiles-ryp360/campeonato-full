@@ -36,8 +36,8 @@ export function sportLabel(sport: TournamentEvent["sport"]) {
 export function formatLabel(formatValue: TournamentEvent["format"]) {
   const labels: Record<TournamentEvent["format"], string> = {
     league: "Liga por puntos",
-    single_elimination: "Eliminacion directa",
-    groups_then_knockout: "Grupos + eliminacion"
+    single_elimination: "Eliminación directa",
+    groups_then_knockout: "Grupos + eliminación"
   };
   return labels[formatValue];
 }

@@ -2,6 +2,7 @@ import { DelegateDashboard } from "@/features/delegate/components/DelegateDashbo
 import { isActiveRegistrationTeamStatus } from "@/lib/domain/registration-rules";
 import { getDelegateTeamContext } from "@/lib/queries/delegate";
 import { getChampionshipVenue } from "@/lib/server/championship-venue";
+import { getAnnouncements } from "@/lib/server/announcements";
 import { requireServerRole } from "@/lib/server-page-access";
 import { getPublicCompetitionData } from "@/lib/supabase-data";
 
@@ -10,7 +11,10 @@ export const dynamic = "force-dynamic";
 export default async function DelegatePage() {
   // La sede es privada: se verifica la sesion aqui ademas del layout.
   const access = await requireServerRole("delegate", "/delegado");
-  const data = await getPublicCompetitionData({ includePrivatePlayerFields: true });
+  const [data, announcements] = await Promise.all([
+    getPublicCompetitionData({ includePrivatePlayerFields: true }),
+    getAnnouncements()
+  ]);
   const hasActiveTeam =
     access.bypassed ||
     access.role === "admin" ||
@@ -22,6 +26,7 @@ export default async function DelegatePage() {
     <DelegateDashboard
       initialData={data}
       venue={hasActiveTeam ? getChampionshipVenue() : undefined}
+      announcements={hasActiveTeam ? announcements : []}
     />
   );
 }

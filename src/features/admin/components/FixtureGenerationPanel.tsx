@@ -366,8 +366,8 @@ function isPowerOfTwo(value: number) {
 function formatLabel(format: TournamentEvent["format"]) {
   const labels: Record<TournamentEvent["format"], string> = {
     league: "Liga por puntos",
-    single_elimination: "Eliminacion directa",
-    groups_then_knockout: "Grupos + eliminacion"
+    single_elimination: "Eliminación directa",
+    groups_then_knockout: "Grupos + eliminación"
   };
 
   return labels[format];

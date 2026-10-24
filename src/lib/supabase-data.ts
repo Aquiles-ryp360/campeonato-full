@@ -1,6 +1,6 @@
 import "server-only";
 
-import { createClient } from "@supabase/supabase-js";
+import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import {
   applyCatalogLabels,
   mapEvent,
@@ -32,6 +32,9 @@ import {
   type TournamentBasesRow
 } from "./data-mappers";
 import { mockCompetitionData } from "./mock-data";
+import { createSupabaseAdminClient } from "./supabase-admin";
+import { isActiveRegistrationTeamStatus } from "./domain/registration-rules";
+import { createSupabaseRouteClient } from "./supabase-server";
 
 const legacyEventColumns = `
   id,
@@ -180,11 +183,25 @@ type CompetitionDataOptions = {
 type PublicPlayerRow = Omit<PlayerRow, "dni" | "enrollment_file"> &
   Partial<Pick<PlayerRow, "dni" | "enrollment_file">>;
 
-export async function getPublicCompetitionData({
-  includePrivatePlayerFields = false
-}: CompetitionDataOptions = {}): Promise<CompetitionData> {
-  const supabase = createPublicSupabaseClient();
-  if (!supabase) return filterPrivatePlayerFields(mockCompetitionData, includePrivatePlayerFields);
+export async function getPublicCompetitionData(
+  options: CompetitionDataOptions = {}
+): Promise<CompetitionData> {
+  const supabase = createServerDataClient();
+  if (!supabase) {
+    return filterPrivatePlayerFields(mockCompetitionData, Boolean(options.includePrivatePlayerFields));
+  }
+
+  const [data, viewerTeamIds] = await Promise.all([
+    loadCompetitionData(supabase, options),
+    getViewerPrivateTeamIds(supabase)
+  ]);
+  return applyViewerVisibility(data, viewerTeamIds, Boolean(options.includePrivatePlayerFields));
+}
+
+async function loadCompetitionData(
+  supabase: SupabaseClient,
+  { includePrivatePlayerFields = false }: CompetitionDataOptions
+): Promise<CompetitionData> {
 
   const playerSelect = includePrivatePlayerFields ? privatePlayerColumns : publicPlayerColumns;
 
@@ -284,7 +301,7 @@ export async function getPublicCompetitionData({
 }
 
 async function getLegacyPublicCompetitionData(
-  supabase: NonNullable<ReturnType<typeof createPublicSupabaseClient>>,
+  supabase: SupabaseClient,
   includePrivatePlayerFields: boolean
 ): Promise<CompetitionData> {
   const playerSelect = includePrivatePlayerFields
@@ -341,6 +358,72 @@ function filterPrivatePlayerFields(data: CompetitionData, includePrivatePlayerFi
       enrollmentFile: ""
     }))
   };
+}
+
+// El servidor lee con service role (RLS cerrado al publico); sin clave, usa anon.
+function createServerDataClient(): SupabaseClient | null {
+  try {
+    return createSupabaseAdminClient();
+  } catch {
+    return createPublicSupabaseClient();
+  }
+}
+
+// Replica en el servidor lo que antes filtraba RLS: equipos activos para todos,
+// y DNI/ficha solo para el admin o el delegado del propio equipo.
+function applyViewerVisibility(
+  data: CompetitionData,
+  ownTeamIds: "all" | Set<string>,
+  includePrivatePlayerFields: boolean
+): CompetitionData {
+  if (ownTeamIds === "all") return data;
+
+  const teams = data.teams.filter(
+    (team) => isActiveRegistrationTeamStatus(team.status) || ownTeamIds.has(team.id)
+  );
+  const visibleTeamIds = new Set(teams.map((team) => team.id));
+
+  return {
+    ...data,
+    teams,
+    players: data.players
+      .filter((player) => visibleTeamIds.has(player.teamId))
+      .map((player) =>
+        includePrivatePlayerFields && ownTeamIds.has(player.teamId)
+          ? player
+          : { ...player, dni: "", enrollmentFile: "" }
+      )
+  };
+}
+
+async function getViewerPrivateTeamIds(supabase: SupabaseClient): Promise<"all" | Set<string>> {
+  try {
+    const routeClient = await createSupabaseRouteClient();
+    const { data: userData } = await routeClient.auth.getUser();
+    const user = userData.user;
+    if (!user) return new Set();
+
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("role")
+      .eq("id", user.id)
+      .maybeSingle<{ role: string }>();
+    if (profile?.role === "admin") return "all";
+
+    const email = user.email?.trim().toLowerCase() ?? "";
+    const [byUser, byEmail] = await Promise.all([
+      supabase.from("teams").select("id").eq("delegate_user_id", user.id),
+      email
+        ? supabase.from("teams").select("id").eq("delegate_email", email)
+        : Promise.resolve({ data: [] as Array<{ id: string }> })
+    ]);
+
+    return new Set(
+      [...(byUser.data ?? []), ...(byEmail.data ?? [])].map((row) => (row as { id: string }).id)
+    );
+  } catch {
+    return new Set();
+  }
 }
 
 function createPublicSupabaseClient() {

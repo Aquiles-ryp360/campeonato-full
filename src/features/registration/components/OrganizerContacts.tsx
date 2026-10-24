@@ -1,8 +1,14 @@
 import { MessageCircle, Phone } from "lucide-react";
 import { buildOrganizerContactLinks, type RegistrationSport } from "@/lib/payment-contact";
 
-export function OrganizerContacts({ sport }: { sport?: RegistrationSport }) {
-  const contacts = buildOrganizerContactLinks(sport);
+export function OrganizerContacts({
+  sport,
+  teamName
+}: {
+  sport?: RegistrationSport;
+  teamName?: string;
+}) {
+  const contacts = buildOrganizerContactLinks(sport, teamName);
 
   return (
     <ul className="grid gap-2 sm:grid-cols-2">

@@ -87,16 +87,17 @@ const registrationSportNames: Record<RegistrationSport, string> = {
   futbol: "fútbol"
 };
 
-export function buildRegistrationWhatsappText(sport?: RegistrationSport) {
+export function buildRegistrationWhatsappText(sport?: RegistrationSport, teamName?: string) {
   const championship = sport
     ? `el campeonato de ${registrationSportNames[sport]}`
     : "el campeonato";
+  const team = teamName?.trim() ? `mi equipo «${teamName.trim().slice(0, 60)}»` : "mi equipo";
 
-  return `Hola, buenas tardes. Quiero inscribir a mi equipo en ${championship}. Deseo realizar el pago y solicitar mi código de acceso. ¿Podrían brindarme información?`;
+  return `Hola, buenas tardes. Quiero inscribir a ${team} en ${championship}. Deseo realizar el pago y solicitar mi código de acceso. ¿Podrían brindarme información?`;
 }
 
-export function buildOrganizerContactLinks(sport?: RegistrationSport) {
-  const text = buildRegistrationWhatsappText(sport);
+export function buildOrganizerContactLinks(sport?: RegistrationSport, teamName?: string) {
+  const text = buildRegistrationWhatsappText(sport, teamName);
 
   return DEFAULT_PAYMENT_CONTACT_PHONES.map((phone) => {
     const local = formatPaymentContactPhone(phone.replace(/\D/g, ""));

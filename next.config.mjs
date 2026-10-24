@@ -1,5 +1,9 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  // Fuentes locales para la imagen de vista previa (opengraph-image).
+  outputFileTracingIncludes: {
+    "/opengraph-image": ["./assets/fonts/**"]
+  },
   async headers() {
     return [
       {

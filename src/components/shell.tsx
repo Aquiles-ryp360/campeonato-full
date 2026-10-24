@@ -15,7 +15,8 @@ import {
   UsersRound,
   BookOpen,
   Calendar,
-  ClipboardCheck
+  ClipboardCheck,
+  Megaphone
 } from "lucide-react";
 import { buildOrganizerContactLinks } from "@/lib/payment-contact";
 import { AuthGate, MobileLogoutAction, MobileSessionAction, SessionActions } from "./auth-gate";
@@ -41,6 +42,7 @@ const adminNav: ShellNavItem[] = [
   { href: "/admin/campeonatos", label: "Campeonatos", shortLabel: "Torneos", icon: Trophy },
   { href: "/admin/equipos", label: "Inscripciones", shortLabel: "Equipos", icon: UsersRound },
   { href: "/admin/codigos", label: "Códigos", icon: KeyRound },
+  { href: "/admin/avisos", label: "Avisos", icon: Megaphone },
   { href: "/admin/fixture", label: "Fixture", icon: Calendar },
   { href: "/admin/resultados", label: "Resultados", icon: BarChart3 },
   { href: "/admin/configuracion", label: "Configuración", shortLabel: "Ajustes", icon: Settings2 }
@@ -71,6 +73,7 @@ function Header({
   showPanelLink: boolean;
 }) {
   const pathname = usePathname();
+  const compactNav = nav.length > 6;
 
   return (
     <header className="sticky top-0 z-30 border-b border-white/10 bg-brand-navy/95 text-white shadow-panel backdrop-blur">
@@ -99,9 +102,10 @@ function Header({
                     : "text-white/70 hover:bg-white/10 hover:text-white"
                 }`}
                 aria-current={active ? "page" : undefined}
+                title={item.label}
               >
                 <Icon className="h-4 w-4" />
-                {item.label}
+                <span className={compactNav ? "sr-only 2xl:not-sr-only" : undefined}>{item.label}</span>
               </Link>
             );
           })}

@@ -50,6 +50,7 @@ export function AccessCodeGate({
   const [code, setCode] = useState(initialCode);
   const [error, setError] = useState("");
   const [isValidating, setIsValidating] = useState(false);
+  const [teamName, setTeamName] = useState("");
 
   async function validateCode(submitEvent: React.FormEvent<HTMLFormElement>) {
     submitEvent.preventDefault();
@@ -181,8 +182,18 @@ export function AccessCodeGate({
           Escribe a uno de nuestros organizadores por WhatsApp para realizar el pago y solicitar tu
           código.
         </p>
+        <label className="mt-4 block space-y-1.5">
+          <span className="text-sm font-bold text-ink">Nombre de tu equipo (opcional)</span>
+          <input
+            className={inputClass}
+            value={teamName}
+            onChange={(changeEvent) => setTeamName(changeEvent.target.value)}
+            placeholder="Se incluirá en tu mensaje de WhatsApp"
+            maxLength={60}
+          />
+        </label>
         <div className="mt-4">
-          <OrganizerContacts sport={event.sport} />
+          <OrganizerContacts sport={event.sport} teamName={teamName} />
         </div>
         <p className="mt-4 flex items-start gap-2 rounded-md border border-brand-yellow/70 bg-brand-yellow/20 p-3 text-sm font-semibold text-brand-navy">
           <Info className="mt-0.5 h-4 w-4 shrink-0" />

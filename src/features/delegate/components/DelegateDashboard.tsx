@@ -1,10 +1,12 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Edit, FileText, ListChecks, Trophy } from "lucide-react";
+import { Edit, FileText, ListChecks, Megaphone, Trophy } from "lucide-react";
 import { toast } from "sonner";
 import type { CompetitionData } from "@/lib/data-mappers";
 import type { ChampionshipVenue } from "@/lib/server/championship-venue";
+import type { Announcement } from "@/lib/server/announcements";
+import { formatDateTime } from "@/lib/utils";
 import { fetchBrowserCompetitionData } from "@/lib/browser-competition-data";
 import { getStoredSession } from "@/lib/auth";
 import { getDelegateTeamContext } from "@/lib/queries/delegate";
@@ -24,11 +26,13 @@ export type DelegateView = "dashboard" | "registration" | "roster" | "matches" |
 export function DelegateDashboard({
   initialData,
   view = "dashboard",
-  venue
+  venue,
+  announcements = []
 }: {
   initialData: CompetitionData;
   view?: DelegateView;
   venue?: ChampionshipVenue;
+  announcements?: Announcement[];
 }) {
   const [data, setData] = useState(initialData);
   const [delegateEmail, setDelegateEmail] = useState<string | null>(null);
@@ -73,6 +77,10 @@ export function DelegateDashboard({
       </div>
     );
   }
+
+  const latestAnnouncement = announcements.find(
+    (item) => !item.eventId || item.eventId === context.event?.id
+  );
 
   const bases =
     data.tournamentBases.find((base) =>
@@ -129,6 +137,27 @@ export function DelegateDashboard({
 
       {view === "dashboard" ? (
         <>
+          {latestAnnouncement ? (
+            <Card className="border-brand-electric/30 p-5">
+              <div className="flex items-start gap-3">
+                <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-brand-electric text-white">
+                  <Megaphone className="h-5 w-5" />
+                </span>
+                <div className="min-w-0 flex-1">
+                  <p className="text-xs font-bold uppercase text-brand-electric">
+                    Último aviso · {formatDateTime(latestAnnouncement.createdAt)}
+                  </p>
+                  <p className="mt-1 font-black text-ink">{latestAnnouncement.title}</p>
+                  <p className="mt-1 line-clamp-3 whitespace-pre-line text-sm leading-6 text-brand-muted">
+                    {latestAnnouncement.body}
+                  </p>
+                  <Button href="/delegado/avisos" variant="secondary" className="mt-3">
+                    Ver todos los avisos
+                  </Button>
+                </div>
+              </div>
+            </Card>
+          ) : null}
           {venue ? <DelegateVenueCard venue={venue} /> : null}
           <DelegateAlerts
             event={context.event}
@@ -187,7 +216,12 @@ export function DelegateDashboard({
         <DelegateMatchesView event={context.event} team={context.team} teams={data.teams} matches={context.matches} />
       ) : null}
       {view === "notices" ? (
-        <DelegateNotices event={context.event} team={context.team} bases={bases} />
+        <DelegateNotices
+          event={context.event}
+          team={context.team}
+          bases={bases}
+          announcements={announcements}
+        />
       ) : null}
 
       <Badge tone="blue">Correo delegado: {delegateEmail ?? "sesion pendiente"}</Badge>

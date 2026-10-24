@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Barlow_Condensed, Inter } from "next/font/google";
 import { Toaster } from "sonner";
 import "./globals.css";
@@ -12,14 +12,23 @@ const display = Barlow_Condensed({
 });
 
 export const metadata: Metadata = {
-  title: "Campeonato Carreras",
-  description: "Gestion de eventos deportivos por carrera con inscripciones, fixture y arbitraje en vivo.",
+  title: "Inscripciones · Campeonato de Futsal y Vóley",
+  description:
+    "Inscribe a tu equipo: solicita tu código de acceso por WhatsApp, realiza el pago y completa el registro.",
   metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL ?? "https://campeonato-full.vercel.app"),
+  applicationName: "Campeonato UNA Puno",
+  appleWebApp: { capable: true, title: "Campeonato", statusBarStyle: "black-translucent" },
+  icons: { apple: "/apple-touch-icon.png" },
   openGraph: {
-    title: "Campeonato Carreras",
-    description: "Fixture, arbitraje en vivo y resultados oficiales.",
-    type: "website"
+    title: "Inscribe a tu equipo · Campeonato de Futsal y Vóley",
+    description: "Solicita tu código de acceso por WhatsApp y completa la inscripción en línea.",
+    type: "website",
+    locale: "es_PE"
   }
+};
+
+export const viewport: Viewport = {
+  themeColor: "#171B4F"
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

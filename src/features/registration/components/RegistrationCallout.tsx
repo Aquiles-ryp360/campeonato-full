@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { ChevronRight, ClipboardCheck, Info, KeyRound, MessageCircle } from "lucide-react";
+import { ChevronRight, ClipboardCheck, Download, Info, KeyRound, MessageCircle } from "lucide-react";
 import Link from "next/link";
 import type { TournamentEvent } from "@/lib/types";
 import { registrationAvailability } from "@/lib/domain/registration-rules";
@@ -128,6 +128,14 @@ export function RegistrationCallout({ events }: { events: TournamentEvent[] }) {
           <Info className="mt-0.5 h-4 w-4 shrink-0" />
           El código de acceso será proporcionado por un organizador después de verificar tu pago.
         </p>
+        <a
+          href="/afiche-campeonato.jpg"
+          download="afiche-campeonato.jpg"
+          className="mt-3 inline-flex items-center gap-1.5 text-xs font-bold text-brand-electric hover:underline"
+        >
+          <Download className="h-3.5 w-3.5" />
+          Descargar afiche oficial para compartir
+        </a>
       </div>
     </Card>
     </section>

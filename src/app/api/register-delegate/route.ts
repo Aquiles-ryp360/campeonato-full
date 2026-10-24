@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { sendDelegateAccessEmail } from "@/lib/mail";
+import { sendDelegateAccessEmail, sendOrganizerRegistrationNotice } from "@/lib/mail";
 import { createSupabaseAdminClient } from "@/lib/supabase-admin";
 import { identityConsentTextVersion, maskDni } from "@/lib/identity/identity-lookup";
 import {
@@ -390,6 +390,25 @@ async function registerDelegateTeam(
       });
     }
 
+    try {
+      await sendOrganizerRegistrationNotice({
+        to: await organizerNotificationEmails(supabase),
+        eventName: event.name,
+        teamName: input.teamName,
+        delegateName: input.delegateName,
+        delegatePhone: input.delegatePhone,
+        delegateEmail: input.delegateEmail,
+        registrationCode: input.registrationCode,
+        playerCount: input.players.length
+      });
+    } catch (noticeError) {
+      // El aviso a organizadores no debe bloquear la inscripcion.
+      console.error("Organizer registration notice failed", {
+        teamId: createdTeamId,
+        error: noticeError instanceof Error ? noticeError.message : String(noticeError)
+      });
+    }
+
     return {
       ok: true,
       teamId: createdTeamId,
@@ -691,4 +710,17 @@ function playerRosterError(error: { code?: string; message?: string }) {
   }
 
   return new PublicRouteError("No se pudo guardar la plantilla de jugadores.", 500);
+}
+
+// Destinatarios: ORGANIZER_NOTIFY_EMAILS (separados por coma) o los correos admin activos.
+async function organizerNotificationEmails(supabase: ReturnType<typeof createSupabaseAdminClient>) {
+  const fromEnv = (process.env.ORGANIZER_NOTIFY_EMAILS ?? "")
+    .split(",")
+    .map((email) => email.trim().toLowerCase())
+    .filter(Boolean);
+  if (fromEnv.length > 0) return fromEnv;
+
+  const { data } = await supabase.from("admin_emails").select("email").eq("active", true);
+  const emails = ((data ?? []) as Array<{ email: string }>).map((row) => row.email.trim().toLowerCase());
+  return emails.length > 0 ? emails : ["renzomamanigalindo@gmail.com"];
 }
