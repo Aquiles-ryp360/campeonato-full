@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { ChevronRight, Info } from "lucide-react";
+import { ChevronRight, ClipboardCheck, Info, KeyRound, MessageCircle } from "lucide-react";
 import Link from "next/link";
 import type { TournamentEvent } from "@/lib/types";
 import { registrationAvailability } from "@/lib/domain/registration-rules";
@@ -9,6 +9,12 @@ import { championshipSlug } from "@/lib/domain/tournament-format";
 import { Card, SectionHeader } from "@/components/ui";
 import { SportIcon } from "./AccessCodeGate";
 import { OrganizerContacts } from "./OrganizerContacts";
+
+const registrationSteps = [
+  { icon: MessageCircle, title: "Escribe a un organizador", text: "Pide información y realiza el pago." },
+  { icon: KeyRound, title: "Recibe tu código", text: "Se entrega tras verificar el pago." },
+  { icon: ClipboardCheck, title: "Completa la inscripción", text: "Valida el código y registra tu equipo." }
+];
 
 const sportCtaLabels: Partial<Record<TournamentEvent["sport"], string>> = {
   futsal: "Inscribirse en Futsal",
@@ -30,12 +36,33 @@ export function RegistrationCallout({ events }: { events: TournamentEvent[] }) {
   );
 
   return (
-    <Card className="p-5">
+    <section id="inscripciones" className="scroll-mt-24">
+    <Card className="p-5 sm:p-6">
       <SectionHeader
         eyebrow="Inscripciones e informes"
         title="Inscribe a tu equipo"
         description="Elige tu disciplina, solicita tu código de acceso por WhatsApp y completa el formulario después de pagar."
       />
+
+      <ol className="mt-5 grid gap-2 sm:grid-cols-3">
+        {registrationSteps.map((step, index) => (
+          <li
+            key={step.title}
+            className="flex items-start gap-3 rounded-md border border-brand-towerMid/25 bg-brand-wash p-3"
+          >
+            <span className="relative grid h-9 w-9 shrink-0 place-items-center rounded-full bg-white text-brand-electric shadow-insetLine">
+              <step.icon className="h-4 w-4" />
+              <span className="absolute -right-1 -top-1 grid h-4 w-4 place-items-center rounded-full bg-brand-yellow text-[10px] font-black text-brand-navy">
+                {index + 1}
+              </span>
+            </span>
+            <span className="min-w-0">
+              <span className="block text-sm font-black text-ink">{step.title}</span>
+              <span className="block text-xs leading-5 text-brand-muted">{step.text}</span>
+            </span>
+          </li>
+        ))}
+      </ol>
 
       {openBySport.length > 0 ? (
         <div className="mt-5 grid gap-3 sm:grid-cols-2">
@@ -92,5 +119,6 @@ export function RegistrationCallout({ events }: { events: TournamentEvent[] }) {
         </p>
       </div>
     </Card>
+    </section>
   );
 }

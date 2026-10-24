@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Check, MapPin, Trophy, X } from "lucide-react";
+import { Check, Trophy, X } from "lucide-react";
 import type { CompetitionData } from "@/lib/data-mappers";
 import { isActiveRegistrationTeamStatus } from "@/lib/domain/registration-rules";
 import { buildVisibleFixtureMatches } from "@/lib/domain/fixture-preview";
@@ -16,15 +16,14 @@ import {
   summarizePenaltyShootout
 } from "@/lib/live-match";
 import type { Match, MatchLiveEvent, Team, TournamentEvent } from "@/lib/types";
-import { Badge, Button, Card, SectionHeader } from "@/components/ui";
+import { Badge, Card, SectionHeader } from "@/components/ui";
 import { TeamCard } from "@/features/teams/components/TeamCard";
 import { TeamDetailsModal } from "./TeamDetailsModal";
 import { ChampionshipHero } from "./ChampionshipHero";
 import { ChampionshipSummaryCards } from "./ChampionshipSummaryCards";
 import { FormatRenderer } from "./FormatRenderer";
+import { LockedVenueCard } from "./LockedVenueCard";
 import { RegistrationCallout } from "@/features/registration/components/RegistrationCallout";
-
-const championshipLocationUrl = "https://maps.app.goo.gl/6UXhMSPc8SGkTxoT8";
 
 export function PublicHome({
   data,
@@ -98,19 +97,7 @@ export function PublicHome({
 
       <RegistrationCallout events={context.events} />
 
-      <Card className="p-5">
-        <SectionHeader
-          eyebrow="Sede"
-          title="Ubicacion"
-          description="Sede marcada en Google Maps: -15.826160, -70.014487."
-          action={
-            <Button href={championshipLocationUrl}>
-              <MapPin className="h-4 w-4" />
-              Ver ubicacion
-            </Button>
-          }
-        />
-      </Card>
+      <LockedVenueCard />
 
       <PublicLiveMatches
         event={context.event}
