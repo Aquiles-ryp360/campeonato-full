@@ -12,7 +12,20 @@ test("protected private routes map to the expected server role", () => {
   assert.equal(requiredRoleForPath("/admin/resultados"), "admin");
   assert.equal(requiredRoleForPath("/delegado/plantel"), "delegate");
   assert.equal(requiredRoleForPath("/arbitro/partidos/match-1/live"), "referee");
-  assert.equal(requiredRoleForPath("/c/default/fixture"), null);
+  assert.equal(requiredRoleForPath("/c/default/fixture"), "member");
+  assert.equal(requiredRoleForPath("/c/futsal-2026/bases"), "member");
+  assert.equal(requiredRoleForPath("/imprimir/futsal-2026"), "member");
+  assert.equal(requiredRoleForPath("/api/matches"), "member");
+  assert.equal(requiredRoleForPath("/c/default/registro"), null);
+  assert.equal(requiredRoleForPath("/"), null);
+});
+
+test("championship info is reserved to delegates, referees and admins", () => {
+  assert.equal(canRoleAccess("delegate", "member"), true);
+  assert.equal(canRoleAccess("referee", "member"), true);
+  assert.equal(canRoleAccess("admin", "member"), true);
+  assert.equal(canRoleAccess("viewer", "member"), false);
+  assert.equal(canRoleAccess(null, "member"), false);
 });
 
 test("admin can access private panels while delegate and referee stay scoped", () => {

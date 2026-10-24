@@ -1,5 +1,6 @@
 export type RouteAuthRole = "admin" | "delegate" | "referee" | "viewer";
-export type ProtectedRouteRole = Exclude<RouteAuthRole, "viewer">;
+// "member": cualquier participante con cuenta (delegado, arbitro o admin).
+export type ProtectedRouteRole = Exclude<RouteAuthRole, "viewer"> | "member";
 
 const protectedRouteRules: Array<{ prefix: string; role: ProtectedRouteRole }> = [
   { prefix: "/admin", role: "admin" },
@@ -7,13 +8,23 @@ const protectedRouteRules: Array<{ prefix: string; role: ProtectedRouteRole }> =
   { prefix: "/arbitro", role: "referee" }
 ];
 
+// Informacion del campeonato reservada a equipos inscritos.
+const memberRoutePatterns = [
+  /^\/c\/[^/]+\/(fixture|bases)(\/|$)/,
+  /^\/imprimir(\/|$)/,
+  /^\/api\/(matches|teams)(\/|$)/
+];
+
 export function requiredRoleForPath(pathname: string): ProtectedRouteRole | null {
-  return protectedRouteRules.find(({ prefix }) => pathname === prefix || pathname.startsWith(`${prefix}/`))?.role ?? null;
+  const rule = protectedRouteRules.find(({ prefix }) => pathname === prefix || pathname.startsWith(`${prefix}/`));
+  if (rule) return rule.role;
+  return memberRoutePatterns.some((pattern) => pattern.test(pathname)) ? "member" : null;
 }
 
 export function canRoleAccess(role: RouteAuthRole | null | undefined, requiredRole: ProtectedRouteRole) {
   if (!role) return false;
   if (role === "admin") return true;
+  if (requiredRole === "member") return role === "delegate" || role === "referee";
   return role === requiredRole;
 }
 

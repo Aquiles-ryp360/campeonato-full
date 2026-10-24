@@ -9,6 +9,9 @@ const config: Config = {
   ],
   theme: {
     extend: {
+      fontFamily: {
+        display: ["var(--font-display)", "Impact", "sans-serif"]
+      },
       colors: {
         ink: "#11142D",
         field: "#2F46FF",

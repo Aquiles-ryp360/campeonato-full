@@ -64,7 +64,7 @@ export function ChampionshipHero({
       <div className="relative mt-7 flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
         <div className="min-w-0">
           <div className="flex flex-col gap-3 lg:flex-row lg:items-center">
-            <h1 className="max-w-4xl text-3xl font-black leading-tight sm:text-5xl">{event.name}</h1>
+            <h1 className="max-w-4xl font-display text-4xl font-extrabold uppercase italic leading-none tracking-tight sm:text-6xl">{event.name}</h1>
             <ChampionshipSwitcher events={events} value={event.id} onChange={onChangeEvent} />
           </div>
           <p className="mt-3 max-w-3xl text-sm leading-6 text-white/70">

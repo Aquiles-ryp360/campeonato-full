@@ -5,6 +5,7 @@ import { buildVisibleFixtureMatches } from "@/lib/domain/fixture-preview";
 import { isActiveRegistrationTeamStatus } from "@/lib/domain/registration-rules";
 import { getChampionshipPublicContext, getFixtureContext } from "@/lib/queries/public";
 import { getPublicCompetitionData } from "@/lib/supabase-data";
+import { requireServerRole } from "@/lib/server-page-access";
 
 export const dynamic = "force-dynamic";
 
@@ -13,7 +14,10 @@ export default async function ChampionshipFixturePage({
 }: {
   params: Promise<{ championshipSlug: string }>;
 }) {
-  const [{ championshipSlug }, data] = await Promise.all([params, getPublicCompetitionData()]);
+  const { championshipSlug } = await params;
+  // Solo equipos inscritos, arbitros y admin.
+  await requireServerRole("member", `/c/${championshipSlug}/fixture`);
+  const data = await getPublicCompetitionData();
   const selected = getChampionshipPublicContext(data, championshipSlug);
   const fixture = selected.event
     ? {

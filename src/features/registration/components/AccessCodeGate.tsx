@@ -100,7 +100,7 @@ export function AccessCodeGate({
                 <SportIcon sport={event.sport} className="h-4 w-4" />
                 {sportLabel(event.sport)}
               </p>
-              <h1 className="mt-1 text-xl font-black leading-tight text-ink sm:text-2xl">
+              <h1 className="mt-1 font-display text-3xl font-extrabold uppercase italic leading-none tracking-tight text-ink sm:text-4xl">
                 Código de acceso para inscripción
               </h1>
               <p className="mt-2 text-sm leading-6 text-brand-muted">

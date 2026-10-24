@@ -48,6 +48,7 @@ export async function middleware(request: NextRequest) {
   } = await supabase.auth.getUser();
 
   if (userError || !user) {
+    if (isApiPath(request)) return apiDenied(401);
     return redirectTo(request, loginPathFor(request.nextUrl.pathname));
   }
 
@@ -64,6 +65,7 @@ export async function middleware(request: NextRequest) {
   const role = normalizeRouteRole(profile?.role);
 
   if (!canRoleAccess(role, requiredRole)) {
+    if (isApiPath(request)) return apiDenied(403);
     return redirectTo(request, roleHomePath(role));
   }
 
@@ -71,8 +73,28 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/admin/:path*", "/delegado/:path*", "/arbitro/:path*"]
+  matcher: [
+    "/admin/:path*",
+    "/delegado/:path*",
+    "/arbitro/:path*",
+    "/c/:slug/fixture/:path*",
+    "/c/:slug/bases/:path*",
+    "/imprimir/:path*",
+    "/api/matches/:path*",
+    "/api/teams/:path*"
+  ]
 };
+
+function isApiPath(request: NextRequest) {
+  return request.nextUrl.pathname.startsWith("/api/");
+}
+
+function apiDenied(status: 401 | 403) {
+  return NextResponse.json(
+    { ok: false, error: "Disponible solo para equipos inscritos." },
+    { status }
+  );
+}
 
 function hasSupabaseAuthEnv() {
   return Boolean(process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY);

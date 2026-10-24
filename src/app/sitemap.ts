@@ -4,7 +4,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
   const baseUrl = siteUrl();
   const lastModified = new Date();
 
-  return ["/", "/login", "/c/default/fixture", "/c/default/bases", "/c/default/registro"].map((path) => ({
+  return ["/", "/login", "/c/default/registro"].map((path) => ({
     url: `${baseUrl}${path}`,
     lastModified,
     changeFrequency: path === "/" ? "daily" : "weekly",

@@ -33,8 +33,6 @@ type ShellNavItem = ShellNavLink;
 
 const publicNav: ShellNavItem[] = [
   { href: "/", label: "Inicio", icon: Trophy },
-  { href: "/c/default/fixture", label: "Fixture del día", shortLabel: "Fixture", icon: Calendar },
-  { href: "/c/default/bases", label: "Bases", icon: BookOpen },
   { href: "/c/default/registro", label: "Inscribir equipo", shortLabel: "Inscribir", icon: UserPlus }
 ];
 
@@ -50,6 +48,7 @@ const adminNav: ShellNavItem[] = [
 
 const delegateNav: ShellNavItem[] = [
   { href: "/delegado", label: "Resumen", icon: LayoutDashboard },
+  { href: "/delegado/campeonato", label: "Campeonato", icon: Trophy },
   { href: "/delegado/inscripcion", label: "Mi inscripción", shortLabel: "Inscripción", icon: ShieldCheck },
   { href: "/delegado/plantel", label: "Plantel", icon: UsersRound },
   { href: "/delegado/partidos", label: "Mis partidos", shortLabel: "Partidos", icon: Calendar },
@@ -263,7 +262,9 @@ export function RefereeShell({ children }: { children: ReactNode }) {
 export const AppShell = PublicShell;
 
 function isActivePath(pathname: string, href: string) {
-  if (href === "/") return pathname === "/";
+  if (href === "/" || href === "/admin" || href === "/delegado" || href === "/arbitro") {
+    return pathname === href;
+  }
   if (pathname === href || pathname.startsWith(`${href}/`)) return true;
 
   if (href.includes("/fixture")) return pathname.includes("/fixture");

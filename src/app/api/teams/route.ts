@@ -1,10 +1,23 @@
 import { NextResponse } from "next/server";
 import { matchesChampionshipSlug } from "@/lib/domain/tournament-format";
 import { getPublicCompetitionData } from "@/lib/supabase-data";
+import { requireMemberUser, ServerAccessError } from "@/lib/server-access";
 
 export const dynamic = "force-dynamic";
 
 export async function GET(request: Request) {
+  if (hasSupabaseServerEnv()) {
+    try {
+      await requireMemberUser();
+    } catch (error) {
+      const status = error instanceof ServerAccessError ? error.status : 401;
+      return NextResponse.json(
+        { ok: false, error: "Disponible solo para equipos inscritos." },
+        { status }
+      );
+    }
+  }
+
   const { searchParams } = new URL(request.url);
   const data = await getPublicCompetitionData();
   const eventIds = matchingEventIds(searchParams, data.events);
@@ -45,4 +58,8 @@ function matchingEventIds(searchParams: URLSearchParams, events: Awaited<ReturnT
   });
 
   return new Set(filtered.map((event) => event.id));
+}
+
+function hasSupabaseServerEnv() {
+  return Boolean(process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.SUPABASE_SERVICE_ROLE_KEY);
 }

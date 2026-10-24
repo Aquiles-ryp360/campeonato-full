@@ -6,6 +6,7 @@ import Link from "next/link";
 import type { TournamentEvent } from "@/lib/types";
 import { registrationAvailability } from "@/lib/domain/registration-rules";
 import { championshipSlug } from "@/lib/domain/tournament-format";
+import { formatMoney } from "@/lib/utils";
 import { Card, SectionHeader } from "@/components/ui";
 import { SportIcon } from "./AccessCodeGate";
 import { OrganizerContacts } from "./OrganizerContacts";
@@ -15,6 +16,12 @@ const registrationSteps = [
   { icon: KeyRound, title: "Recibe tu código", text: "Se entrega tras verificar el pago." },
   { icon: ClipboardCheck, title: "Completa la inscripción", text: "Valida el código y registra tu equipo." }
 ];
+
+const closingDateFormatter = new Intl.DateTimeFormat("es-PE", {
+  day: "numeric",
+  month: "short",
+  timeZone: "America/Lima"
+});
 
 const sportCtaLabels: Partial<Record<TournamentEvent["sport"], string>> = {
   futsal: "Inscribirse en Futsal",
@@ -78,6 +85,10 @@ export function RegistrationCallout({ events }: { events: TournamentEvent[] }) {
               <span className="min-w-0 flex-1">
                 <span className="block text-base font-black">{sportCtaLabels[event.sport]}</span>
                 <span className="block truncate text-xs text-white/70">{event.name}</span>
+                <span className="mt-1 block text-xs font-bold text-brand-yellow">
+                  {event.registrationFee > 0 ? `${formatMoney(event.registrationFee)} · ` : ""}
+                  Cierre {closingDateFormatter.format(new Date(event.registrationOpenUntil))}
+                </span>
               </span>
               <ChevronRight className="h-5 w-5 shrink-0 transition group-hover:translate-x-0.5" />
             </Link>

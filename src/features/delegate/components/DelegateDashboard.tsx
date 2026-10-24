@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Edit, FileText, ListChecks } from "lucide-react";
+import { Edit, FileText, ListChecks, Trophy } from "lucide-react";
 import { toast } from "sonner";
 import type { CompetitionData } from "@/lib/data-mappers";
 import type { ChampionshipVenue } from "@/lib/server/championship-venue";
@@ -104,7 +104,7 @@ export function DelegateDashboard({
             </span>
             <div className="min-w-0">
               <p className="text-xs font-black uppercase text-brand-yellow">Panel del delegado</p>
-              <h1 className="mt-1 text-2xl font-black leading-tight sm:text-3xl">{context.team.name}</h1>
+              <h1 className="mt-1 font-display text-3xl font-extrabold uppercase italic leading-none tracking-tight sm:text-4xl">{context.team.name}</h1>
               <p className="mt-1 text-sm font-semibold text-white/70">{context.event.name}</p>
             </div>
           </div>
@@ -142,6 +142,10 @@ export function DelegateDashboard({
           <Card className="p-5">
             <SectionHeader title="Acciones rápidas" />
             <div className="mt-4 flex flex-wrap gap-2">
+              <Button href="/delegado/campeonato">
+                <Trophy className="h-4 w-4" />
+                Ver campeonato
+              </Button>
               <Button href="/delegado/inscripcion" variant="secondary">
                 <Edit className="h-4 w-4" />
                 Editar inscripción

@@ -22,8 +22,6 @@ import { TeamDetailsModal } from "./TeamDetailsModal";
 import { ChampionshipHero } from "./ChampionshipHero";
 import { ChampionshipSummaryCards } from "./ChampionshipSummaryCards";
 import { FormatRenderer } from "./FormatRenderer";
-import { LockedVenueCard } from "./LockedVenueCard";
-import { RegistrationCallout } from "@/features/registration/components/RegistrationCallout";
 
 export function PublicHome({
   data,
@@ -94,10 +92,6 @@ export function PublicHome({
           setSelectedTeamId(null);
         }}
       />
-
-      <RegistrationCallout events={context.events} />
-
-      <LockedVenueCard />
 
       <PublicLiveMatches
         event={context.event}

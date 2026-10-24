@@ -58,6 +58,12 @@ a {
   color: var(--brand-navy);
 }
 
+@media (prefers-reduced-motion: reduce) {
+  .animate-rise {
+    animation: none;
+  }
+}
+
 @media print {
   @page {
     margin: 12mm;
@@ -75,7 +81,22 @@ a {
   }
 }
 
+@keyframes rise-in {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
 @layer utilities {
+  .animate-rise {
+    animation: rise-in 500ms cubic-bezier(0.16, 1, 0.3, 1) both;
+  }
+
   .bg-technical-blue {
     background:
       linear-gradient(135deg, rgba(23, 27, 79, 0.98) 0%, rgba(37, 42, 115, 0.96) 52%, rgba(68, 74, 148, 0.94) 100%),

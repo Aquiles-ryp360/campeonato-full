@@ -190,3 +190,20 @@ async function linkRefereeUser(
     throw new ServerAccessError(error.message, 500);
   }
 }
+
+// Sesion de delegado, arbitro o admin (informacion reservada a inscritos).
+export async function requireMemberUser(admin: AdminClient = createSupabaseAdminClient()) {
+  const user = await getRouteUser();
+  const { data } = await admin
+    .from("profiles")
+    .select("role")
+    .eq("id", user.id)
+    .maybeSingle<{ role: string }>();
+  const role = data?.role;
+
+  if (role !== "delegate" && role !== "referee" && role !== "admin" && !(await isAdminUser(admin, user))) {
+    throw new ServerAccessError("Disponible solo para equipos inscritos.", 403);
+  }
+
+  return user;
+}
