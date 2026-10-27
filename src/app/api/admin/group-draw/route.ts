@@ -29,7 +29,7 @@ const drawSchema = z.object({
   eventId: z.string().uuid("Selecciona un campeonato."),
   groupCount: z.coerce.number().int().min(2).max(8).optional(),
   // "approved": solo aprobados; "active": tambien inscritos y observados.
-  teamScope: z.enum(["approved", "active"]).default("approved")
+  teamScope: z.enum(["approved", "active"]).default("active")
 });
 
 export async function POST(request: Request) {

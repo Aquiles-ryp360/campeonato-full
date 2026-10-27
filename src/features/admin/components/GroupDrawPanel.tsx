@@ -19,7 +19,7 @@ export function GroupDrawPanel({ data }: { data: CompetitionData }) {
   const router = useRouter();
   const groupEvents = data.events.filter((event) => event.format === "groups_then_knockout");
   const [eventId, setEventId] = useState(groupEvents[0]?.id ?? "");
-  const [teamScope, setTeamScope] = useState<"approved" | "active">("approved");
+  const [teamScope, setTeamScope] = useState<"approved" | "active">("active");
   const [groupCountInput, setGroupCountInput] = useState<number | null>(null);
   const [confirming, setConfirming] = useState(false);
   const [drawing, setDrawing] = useState(false);
@@ -89,8 +89,8 @@ export function GroupDrawPanel({ data }: { data: CompetitionData }) {
         </Field>
         <Field label="Equipos que entran">
           <select className={inputClass} value={teamScope} onChange={(e) => setTeamScope(e.target.value as "approved" | "active")}>
+            <option value="active">Todos los inscritos (aprobados, inscritos y observados)</option>
             <option value="approved">Solo aprobados</option>
-            <option value="active">Aprobados, inscritos y observados</option>
           </select>
         </Field>
         <Field label="Numero de grupos">

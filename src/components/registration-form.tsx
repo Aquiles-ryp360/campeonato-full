@@ -1050,7 +1050,7 @@ async function generateRegistrationReceiptPdf(receipt: RegistrationReceipt) {
   doc.setFontSize(8);
   doc.setTextColor(95, 100, 117);
   doc.text(
-    "Esta constancia resume la inscripcion registrada por el delegado. La validacion final queda a cargo de administracion.",
+    "Inscripcion validada con el codigo unico de pago. La organizacion puede observarla si detecta incumplimientos de las bases.",
     margin,
     285,
     { maxWidth: contentWidth }

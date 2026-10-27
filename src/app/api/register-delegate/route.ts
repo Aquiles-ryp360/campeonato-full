@@ -270,6 +270,9 @@ async function registerDelegateTeam(
   const uploadedFilesByPlayer: Array<UploadedEnrollmentFile | null> = [];
 
   try {
+    // El codigo unico se entrega despues de pagar: inscribirse con el ya valida
+    // el pago, y las reglas del plantel se comprobaron arriba. Queda aprobado.
+    const registeredAt = new Date().toISOString();
     const { data: team, error: teamError } = await supabase
       .from("teams")
       .insert({
@@ -279,7 +282,9 @@ async function registerDelegateTeam(
         delegate_phone: input.delegatePhone,
         delegate_email: input.delegateEmail,
         registration_code_id: registrationCode.id,
-        status: "registered"
+        status: "approved",
+        payment_validated_at: registeredAt,
+        approved_at: registeredAt
       })
       .select("id")
       .single();

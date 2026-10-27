@@ -161,7 +161,7 @@ export function AdminTeamRegistrationForm({ events }: { events: TournamentEvent[
               checked={form.paymentReceived}
               onChange={(e) => setForm({ ...form, paymentReceived: e.target.checked })}
             />
-            Pago de inscripcion recibido
+            Pago de inscripcion recibido (el equipo queda aprobado)
           </label>
 
           <div className="space-y-3">

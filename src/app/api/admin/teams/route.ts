@@ -90,10 +90,13 @@ export async function POST(request: Request) {
         delegate_name: input.delegateName,
         delegate_phone: input.delegatePhone,
         delegate_email: input.delegateEmail || null,
-        status: "registered",
+        // Con el pago recibido queda aprobado, igual que la inscripcion con codigo.
+        status: input.paymentReceived ? "approved" : "registered",
         admin_observation: "Inscrito por el administrador (ficha en fisico).",
         payment_validated_at: input.paymentReceived ? now : null,
-        payment_validated_by: input.paymentReceived ? user.id : null
+        payment_validated_by: input.paymentReceived ? user.id : null,
+        approved_at: input.paymentReceived ? now : null,
+        approved_by: input.paymentReceived ? user.id : null
       })
       .select("id")
       .single();
