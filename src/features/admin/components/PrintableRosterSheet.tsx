@@ -7,16 +7,20 @@ import { formatShortDate } from "@/lib/utils";
 export function PrintableRosterSheet({
   event,
   team,
-  players
+  players,
+  showPrintButton = true,
+  className = ""
 }: {
   event: TournamentEvent;
   team?: Team;
   players: Player[];
+  showPrintButton?: boolean;
+  className?: string;
 }) {
   const rows = Math.max(event.maxPlayers, players.length);
 
   return (
-    <main className="fixture-print mx-auto max-w-4xl px-6 py-8 text-ink">
+    <main className={`fixture-print mx-auto max-w-4xl px-6 py-8 text-ink ${className}`}>
       <header className="mb-6 flex items-start justify-between gap-4 border-b-2 border-ink/70 pb-4">
         <div>
           <p className="text-xs font-black uppercase tracking-wide text-brand-electric">
@@ -28,9 +32,11 @@ export function PrintableRosterSheet({
             {event.eventDate ? ` · ${formatShortDate(event.eventDate)}` : ""}
           </p>
         </div>
-        <div className="print:hidden">
-          <PrintButton />
-        </div>
+        {showPrintButton ? (
+          <div className="print:hidden">
+            <PrintButton />
+          </div>
+        ) : null}
       </header>
 
       <section className="mb-6 grid grid-cols-2 gap-x-6 gap-y-4 text-sm">
