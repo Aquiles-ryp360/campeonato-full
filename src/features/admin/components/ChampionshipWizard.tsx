@@ -101,8 +101,8 @@ export function ChampionshipWizard({
   const [hydratedDraft, setHydratedDraft] = useState(false);
   const [saving, setSaving] = useState(false);
   const [uploadingAsset, setUploadingAsset] = useState<AssetField | null>(null);
-  const shouldStoreDraftLocally = !initialEvent;
-  const draftKey = "championship-wizard:new";
+  // Unsaved edits are backed up per championship so a reload never loses them.
+  const draftKey = `championship-wizard:${initialEvent?.id ?? "new"}`;
   const isKnockout = draft.format === "single_elimination";
   const usesTablePoints = draft.format !== "single_elimination";
   const courts = useMemo(() => buildCourts(draft.courtCount), [draft.courtCount]);
@@ -120,40 +120,29 @@ export function ChampionshipWizard({
   );
 
   useEffect(() => {
-    if (!shouldStoreDraftLocally) {
-      // Do not re-seed the draft from initialEvent here: every router.refresh() hands a new
-      // object and would wipe unsaved edits (e.g. the format). The page keys us by id instead.
-      if (initialEvent?.id) {
-        window.localStorage.removeItem(`championship-wizard:${initialEvent.id}`);
-      }
-
-      setHydratedDraft(true);
-      return;
-    }
-
+    // Runs once per championship (the page keys us by id). Never re-seed from a refreshed
+    // initialEvent here: that is what used to wipe unsaved edits such as the format.
     const rawDraft = window.localStorage.getItem(draftKey);
     if (rawDraft) {
       try {
-        setDraft(normalizeDraft({ ...draftFromEvent(initialEvent), ...JSON.parse(rawDraft) }));
+        const stored = JSON.parse(rawDraft) as Partial<WizardDraft>;
+        setDraft((current) => normalizeDraft({ ...current, ...stored, id: current.id }));
       } catch {
         window.localStorage.removeItem(draftKey);
       }
     }
 
     setHydratedDraft(true);
-  }, [draftKey, initialEvent, shouldStoreDraftLocally]);
+  }, [draftKey]);
 
   useEffect(() => {
-    if (!hydratedDraft || !shouldStoreDraftLocally) return;
-    window.localStorage.setItem(draftKey, JSON.stringify(draft));
-  }, [draft, draftKey, hydratedDraft, shouldStoreDraftLocally]);
-
-  useEffect(() => {
-    if (!isDirty) return;
-    const warn = (event: BeforeUnloadEvent) => event.preventDefault();
-    window.addEventListener("beforeunload", warn);
-    return () => window.removeEventListener("beforeunload", warn);
-  }, [isDirty]);
+    if (!hydratedDraft) return;
+    if (isDirty) {
+      window.localStorage.setItem(draftKey, JSON.stringify(draft));
+    } else {
+      window.localStorage.removeItem(draftKey);
+    }
+  }, [draft, draftKey, hydratedDraft, isDirty]);
 
   function updateDraft(next: Partial<WizardDraft>) {
     setDraft((current) => normalizeDraft({ ...current, ...next }));
@@ -216,9 +205,7 @@ export function ChampionshipWizard({
         throw new Error(payload.error ?? "No se pudo guardar el campeonato.");
       }
 
-      if (shouldStoreDraftLocally) {
-        window.localStorage.removeItem(draftKey);
-      }
+      window.localStorage.removeItem(draftKey);
       setSavedDraft(draft);
       toast.success(draft.status === "draft" ? "Borrador guardado." : "Campeonato guardado.");
       return payload.id;
@@ -602,8 +589,15 @@ export function ChampionshipWizard({
           beforeRegenerate={initialEvent ? persistDraft : undefined}
         /> : null}
 
-      <div className="flex items-center justify-end gap-3">
-        {isDirty ? <Badge tone="amber">Cambios sin guardar</Badge> : null}
+      <div className="sticky bottom-20 z-20 flex flex-wrap items-center justify-end gap-3 rounded-lg border border-brand-towerMid/25 bg-white/95 p-3 shadow-lift backdrop-blur md:bottom-4">
+        {isDirty ? (
+          <>
+            <Badge tone="amber">Cambios sin guardar</Badge>
+            <Button variant="secondary" onClick={() => setDraft(savedDraft)} disabled={saving}>
+              Descartar
+            </Button>
+          </>
+        ) : null}
         <Button onClick={saveDraft} disabled={saving}>
           <Save className="h-4 w-4" />
           {saving ? "Guardando..." : `Guardar ${draft.status === "draft" ? "borrador" : draft.name}`}
