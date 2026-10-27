@@ -1,0 +1,125 @@
+\documentclass[11pt,a4paper]{article}
+
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+\renewcommand{\familydefault}{\sfdefault}
+\usepackage[spanish]{babel}
+\usepackage[margin=1.3cm,top=1.1cm,bottom=1.1cm]{geometry}
+\usepackage{xcolor}
+\usepackage{graphicx}
+\usepackage[hidelinks]{hyperref}
+\usepackage[most]{tcolorbox}
+\usepackage{enumitem}
+\usepackage{tikz}
+\usepackage{qrcode}
+
+% Mismos colores que las bases oficiales
+\definecolor{imegreen}{RGB}{0,102,255}
+\definecolor{imegreenDark}{RGB}{0,76,153}
+\definecolor{imegreenSoft}{RGB}{230,240,255}
+\definecolor{imedark}{RGB}{75,85,99}
+\definecolor{imegray}{RGB}{107,114,128}
+\definecolor{imelight}{RGB}{245,247,250}
+\definecolor{imegold}{RGB}{255,204,0}
+
+\newcommand{\sitio}{https://campeonato-full.vercel.app}
+\newcommand{\whatsapp}{923 037 653}
+
+\pagestyle{empty}
+\setlist[itemize]{leftmargin=1.1em,itemsep=0.15em,topsep=0.2em,label={\color{imegreen}\textbullet}}
+
+\newtcolorbox{tarjeta}[2][]{enhanced, colback=white, colframe=#2, boxrule=0.9pt, arc=3mm,
+	left=3mm, right=3mm, top=2mm, bottom=2mm, fonttitle=\bfseries\large,
+	coltitle=white, colbacktitle=#2, title={#1}}
+
+\begin{document}
+
+\begin{tikzpicture}[remember picture,overlay]
+	\fill[imelight] (current page.north west) rectangle (current page.south east);
+	\fill[imegreenDark] (current page.north west) rectangle ([yshift=-4.6cm]current page.north east);
+	\fill[imegold] ([yshift=-4.6cm]current page.north west) rectangle ([yshift=-4.85cm]current page.north east);
+	\node[anchor=north east] at ([xshift=-1.2cm,yshift=-0.55cm]current page.north east)
+		{\includegraphics[height=3.3cm]{assets/logo-carrera.png}};
+	\node[anchor=north west, align=left, text width=13.5cm] at ([xshift=1.3cm,yshift=-0.7cm]current page.north west) {%
+		{\color{imegold}\bfseries\large CONVOCATORIA}\\[0.15cm]
+		{\color{white}\bfseries\fontsize{28}{32}\selectfont Gran Campeonato}\\[0.1cm]
+		{\color{white}\bfseries\fontsize{28}{32}\selectfont Intersemestres 2026-II}\\[0.2cm]
+		{\color{white}\large Campeonato Deportivo Electrizante E.P.I.M.E. --- Futsal y Vóley Mixto}};
+\end{tikzpicture}
+
+\vspace*{4.35cm}
+
+\begin{tcolorbox}[enhanced, colback=imegreenSoft, colframe=imegreen, boxrule=0.8pt, arc=3mm,
+	left=4mm, right=4mm, top=2.5mm, bottom=2.5mm]
+	\centering\large
+	\textbf{\color{imegreenDark}Jueves 29 de octubre de 2026} \;·\; desde las \textbf{7:00 a.\,m.} \;·\; \textbf{Complejo Deportivo Pereyra}\\[0.15cm]
+	\normalsize Sorteo de grupos: \textbf{miércoles 28 de octubre, 10:00 a.\,m.} \;·\; Todo se juega en \textbf{un solo día}
+\end{tcolorbox}
+
+\vspace{0.25cm}
+\noindent
+\begin{minipage}[t]{0.485\textwidth}
+	\begin{tarjeta}[Futsal]{imegreen}
+		{\Large\bfseries\color{imegreenDark} S/ 50.00} {\color{imegray} por equipo}
+		\begin{itemize}
+			\item Cupo: \textbf{18 equipos}, 2 canchas.
+			\item Hasta \textbf{10 jugadores} inscritos; 5 en cancha (mínimo 4).
+			\item \textbf{Fase de grupos + eliminación directa}.
+			\item Dos tiempos de \textbf{10 minutos}, sin descanso.
+			\item Tolerancia: \textbf{5 minutos}; luego W.O. (3--0).
+		\end{itemize}
+	\end{tarjeta}
+\end{minipage}
+\hfill
+\begin{minipage}[t]{0.485\textwidth}
+	\begin{tarjeta}[Vóley Mixto]{imegreenDark}
+		{\Large\bfseries\color{imegreenDark} S/ 40.00} {\color{imegray} por equipo}
+		\begin{itemize}
+			\item Cupo: \textbf{12 equipos}, 1 losa.
+			\item Hasta \textbf{10 jugadores}; en cancha 4 varones y 2 damas.
+			\item \textbf{Fase de grupos + eliminación directa}.
+			\item Sets a \textbf{20 puntos}; final al mejor de 3 (20, 20 y 10).
+			\item Tolerancia: \textbf{5 minutos}.
+		\end{itemize}
+	\end{tarjeta}
+\end{minipage}
+
+\vspace{0.25cm}
+\begin{tcolorbox}[enhanced, colback=white, colframe=imegold, boxrule=0.9pt, arc=3mm,
+	left=4mm, right=4mm, top=2mm, bottom=2mm]
+	\begin{itemize}
+		\item Pueden participar estudiantes de la E.P.I.M.E. matriculados en 2026-II y \textbf{egresados} de la escuela.
+		\item Máximo \textbf{3 equipos por semestre} en cada disciplina.
+		\item Requisito: \textbf{ficha de matrícula 2026-II} (física o PDF).
+		\item Los grupos se arman \textbf{según la cantidad de equipos inscritos} y el sorteo.
+	\end{itemize}
+\end{tcolorbox}
+
+\vspace{0.25cm}
+\begin{tcolorbox}[enhanced, colback=white, colframe=imegreenDark, boxrule=0.9pt, arc=3mm,
+	left=4mm, right=4mm, top=2.5mm, bottom=2.5mm, fonttitle=\bfseries\large,
+	coltitle=white, colbacktitle=imegreenDark, title={¿Cómo inscribirse?}]
+	\begin{minipage}[c]{0.70\linewidth}
+		\begin{enumerate}[leftmargin=1.6em,itemsep=0.35em,label={\color{white}\bfseries\colorbox{imegreen}{\,\arabic*\,}}]
+			\item Paga por \textbf{Yape} la inscripción de tu disciplina.
+			\item Envía la captura al WhatsApp \textbf{\whatsapp} y recibe tu \textbf{código único} de inscripción.
+			\item Entra a \href{\sitio}{\textbf{campeonato-full.vercel.app}} e inicia sesión con tu \textbf{Gmail} (botón \emph{Entrar con Google}).
+			\item Registra tu equipo, ingresa el código y añade a tus jugadores (DNI, código universitario y ciclo).
+		\end{enumerate}
+	\end{minipage}\hfill
+	\begin{minipage}[c]{0.26\linewidth}
+		\centering
+		\qrcode[height=3.1cm]{\sitio}\\[0.1cm]
+		{\footnotesize\color{imegray} Escanea para inscribirte}
+	\end{minipage}
+\end{tcolorbox}
+
+\vfill
+\begin{center}
+	{\Large\bfseries\color{imegreenDark} ¡Cupos limitados! Inscribe a tu equipo antes del sorteo.}\\[0.2cm]
+	{\color{imedark} Organiza: 9.° semestre de Ingeniería Mecánica Eléctrica --- Comisión Organizadora}\\
+	{\small\color{imegray} Informes: WhatsApp \whatsapp \;·\; \href{\sitio}{campeonato-full.vercel.app}}
+\end{center}
+
+\end{document}
