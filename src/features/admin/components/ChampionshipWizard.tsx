@@ -4,7 +4,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Save, Upload } from "lucide-react";
+import { Check, ChevronLeft, ChevronRight, Save, Upload } from "lucide-react";
 import { toast } from "sonner";
 import type {
   EventStatus,
@@ -230,22 +230,52 @@ export function ChampionshipWizard({
   return (
     <div className="space-y-6 pb-20 md:pb-0">
       <SectionHeader
-        eyebrow="Wizard"
-        title={initialEvent ? "Editar campeonato" : "Crear campeonato"}
-        description="Configura un campeonato multi-deporte paso a paso sin saturar una sola pantalla."
+        eyebrow={initialEvent ? "Editar campeonato" : "Nuevo campeonato"}
+        title={draft.name.trim() || "Crear campeonato"}
+        description="Configura el campeonato paso a paso y pulsa Guardar para aplicar los cambios."
+        action={
+          <div className="self-start sm:self-auto">
+            <Badge tone={draft.status === "draft" ? "amber" : "green"}>{statusLabel(draft.status)}</Badge>
+          </div>
+        }
       />
       <Card className="p-3">
-        <div className="flex gap-2 overflow-x-auto">
+        <div className="flex items-center justify-between gap-3 px-1 pb-2">
+          <p className="text-xs font-black uppercase text-brand-muted">
+            Paso {step + 1} de {steps.length}
+          </p>
+          <p className="text-xs font-bold text-brand-navy">{steps[step]}</p>
+        </div>
+        <div className="mb-3 h-1.5 overflow-hidden rounded-full bg-brand-wash">
+          <div
+            className="h-full rounded-full bg-brand-electric transition-all"
+            style={{ width: `${((step + 1) / steps.length) * 100}%` }}
+          />
+        </div>
+        <div className="flex gap-2 overflow-x-auto pb-1">
           {steps.map((label, index) => (
             <button
               key={label}
               type="button"
               onClick={() => setStep(index)}
-              className={`whitespace-nowrap rounded-md px-3 py-2 text-sm font-bold transition ${
+              ref={step === index ? (node) => node?.scrollIntoView({ block: "nearest", inline: "center" }) : undefined}
+              aria-current={step === index ? "step" : undefined}
+              className={`flex shrink-0 items-center gap-2 whitespace-nowrap rounded-md px-3 py-2 text-sm font-bold transition ${
                 step === index ? "bg-brand-navy text-white" : "bg-white text-brand-muted hover:bg-brand-electric/10 hover:text-brand-electric"
               }`}
             >
-              {index + 1}. {label}
+              <span
+                className={`grid h-5 w-5 place-items-center rounded-full text-[11px] font-black ${
+                  step === index
+                    ? "bg-white text-brand-navy"
+                    : index < step
+                      ? "bg-brand-electric text-white"
+                      : "bg-brand-wash text-brand-muted"
+                }`}
+              >
+                {index < step ? <Check className="h-3 w-3" /> : index + 1}
+              </span>
+              {label}
             </button>
           ))}
         </div>
@@ -253,7 +283,7 @@ export function ChampionshipWizard({
 
       {step === 0 ? (
         <Card className="p-5">
-          <SectionHeader title="Datos generales" action={<Badge tone={draft.status === "draft" ? "amber" : "green"}>{statusLabel(draft.status)}</Badge>} />
+          <SectionHeader title="Datos generales" />
           <div className="mt-5 grid gap-4 md:grid-cols-2">
             <Field label="Nombre">
               <input className={inputClass} value={draft.name} onChange={(event) => updateDraft({ name: event.target.value })} />
@@ -439,6 +469,8 @@ export function ChampionshipWizard({
             </Field>
             <Field label="Jugadores por equipo">
               <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1">
+                  <p className="text-xs font-bold text-brand-muted">Minimo</p>
                 <NumberControl
                   value={draft.minPlayers}
                   min={1}
@@ -446,6 +478,9 @@ export function ChampionshipWizard({
                   ariaLabel="Minimo jugadores"
                   onChange={(value) => updateDraft({ minPlayers: value })}
                 />
+                </div>
+                <div className="space-y-1">
+                  <p className="text-xs font-bold text-brand-muted">Maximo</p>
                 <NumberControl
                   value={draft.maxPlayers}
                   min={draft.minPlayers}
@@ -453,6 +488,7 @@ export function ChampionshipWizard({
                   ariaLabel="Maximo jugadores"
                   onChange={(value) => updateDraft({ maxPlayers: value })}
                 />
+                </div>
               </div>
             </Field>
           </div>
@@ -489,7 +525,7 @@ export function ChampionshipWizard({
         <Card className="p-5">
           <SectionHeader title="Reglas deportivas" description={isKnockout ? "Eliminacion directa no usa puntos por empate." : "Estos puntos alimentan tabla y posiciones."} />
           <div className="mt-5 grid gap-4 md:grid-cols-4">
-            <Field label="Duracion partido">
+            <Field label="Duracion del partido (min)">
               <NumberControl
                 value={draft.matchDuration}
                 min={5}
@@ -497,7 +533,7 @@ export function ChampionshipWizard({
                 onChange={(value) => updateDraft({ matchDuration: value })}
               />
             </Field>
-            <Field label="Medio tiempo minuto">
+            <Field label="Medio tiempo en el minuto">
               <NumberControl
                 value={draft.halfTimeMinute}
                 min={1}
@@ -505,7 +541,7 @@ export function ChampionshipWizard({
                 onChange={(value) => updateDraft({ halfTimeMinute: value })}
               />
             </Field>
-            <Field label="Descanso medio tiempo">
+            <Field label="Descanso de medio tiempo (min)">
               <NumberControl
                 value={draft.halfTimeBreakMinutes}
                 min={0}
@@ -513,7 +549,7 @@ export function ChampionshipWizard({
                 onChange={(value) => updateDraft({ halfTimeBreakMinutes: value })}
               />
             </Field>
-            <Field label="Tiempo adicional max.">
+            <Field label="Tiempo adicional max. (min)">
               <NumberControl
                 value={draft.additionalTimeAllowedMinutes}
                 min={0}
@@ -521,7 +557,7 @@ export function ChampionshipWizard({
                 onChange={(value) => updateDraft({ additionalTimeAllowedMinutes: value })}
               />
             </Field>
-            <Field label="W.O. minutos">
+            <Field label="Tolerancia W.O. (min)">
               <NumberControl
                 value={draft.walkoverMinutes}
                 min={0}
@@ -583,25 +619,40 @@ export function ChampionshipWizard({
         />
       ) : null}
       {step === 4 ? <BasesUploadForm /> : null}
-      {step === 5 ? <FixtureGenerationPanel
+      {step === 5 ? (
+        <FixtureGenerationPanel
           data={data}
           activeEvent={fixturePreviewEvent}
           beforeRegenerate={initialEvent ? persistDraft : undefined}
-        /> : null}
+        />
+      ) : null}
 
-      <div className="sticky bottom-20 z-20 flex flex-wrap items-center justify-end gap-3 rounded-lg border border-brand-towerMid/25 bg-white/95 p-3 shadow-lift backdrop-blur md:bottom-4">
-        {isDirty ? (
-          <>
-            <Badge tone="amber">Cambios sin guardar</Badge>
+      <div className="sticky bottom-20 z-20 flex flex-wrap items-center gap-2 rounded-lg border border-brand-towerMid/25 bg-white/95 p-3 shadow-lift backdrop-blur md:bottom-4">
+        <div className="flex gap-2">
+          <Button variant="ghost" onClick={() => setStep((current) => current - 1)} disabled={step === 0} aria-label="Paso anterior">
+            <ChevronLeft className="h-4 w-4" />
+            <span className="hidden sm:inline">Anterior</span>
+          </Button>
+          <Button variant="ghost" onClick={() => setStep((current) => current + 1)} disabled={step === steps.length - 1} aria-label="Paso siguiente">
+            <span className="hidden sm:inline">Siguiente</span>
+            <ChevronRight className="h-4 w-4" />
+          </Button>
+        </div>
+        <div className="ml-auto flex flex-wrap items-center justify-end gap-2">
+          <span className={`flex items-center gap-1.5 text-xs font-bold ${isDirty ? "text-amber-700" : "text-emerald-700"}`}>
+            <span className={`h-2 w-2 rounded-full ${isDirty ? "bg-amber-500" : "bg-emerald-500"}`} />
+            {isDirty ? "Cambios sin guardar" : "Todo guardado"}
+          </span>
+          {isDirty ? (
             <Button variant="secondary" onClick={() => setDraft(savedDraft)} disabled={saving}>
               Descartar
             </Button>
-          </>
-        ) : null}
-        <Button onClick={saveDraft} disabled={saving}>
-          <Save className="h-4 w-4" />
-          {saving ? "Guardando..." : `Guardar ${draft.status === "draft" ? "borrador" : draft.name}`}
-        </Button>
+          ) : null}
+          <Button onClick={saveDraft} disabled={saving || (!isDirty && Boolean(draft.id))}>
+            <Save className="h-4 w-4" />
+            {saving ? "Guardando..." : draft.status === "draft" ? "Guardar borrador" : "Guardar cambios"}
+          </Button>
+        </div>
       </div>
     </div>
   );

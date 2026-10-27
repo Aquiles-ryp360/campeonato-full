@@ -1,5 +1,5 @@
 import { ChampionshipWizard } from "@/features/admin/components/ChampionshipWizard";
-import { Card, SectionHeader } from "@/components/ui";
+import { Button, Card, SectionHeader } from "@/components/ui";
 import { getPublicCompetitionData } from "@/lib/supabase-data";
 
 export const dynamic = "force-dynamic";
@@ -15,15 +15,17 @@ export default async function EditChampionshipPage({
   ]);
   const event = data.events.find((item) => item.id === id);
 
-  return (
-    <div className="space-y-6">
+  if (!event) {
+    return (
       <Card className="p-5">
         <SectionHeader
-          title={event?.name ?? "Campeonato"}
-          description="Edita la configuracion y pulsa Guardar para aplicarla."
+          title="Campeonato no encontrado"
+          description="Puede que haya sido borrado. Vuelve a la lista de campeonatos."
+          action={<Button href="/admin/campeonatos" variant="secondary">Ver campeonatos</Button>}
         />
       </Card>
-      <ChampionshipWizard key={id} data={data} initialEvent={event} />
-    </div>
-  );
+    );
+  }
+
+  return <ChampionshipWizard key={id} data={data} initialEvent={event} />;
 }

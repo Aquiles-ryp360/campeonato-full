@@ -68,7 +68,7 @@ export function ScheduleConfigForm({
         </Field>
         <Info label="Duracion partido" value={`${matchDuration} min`} />
         <Info label="Medio tiempo" value={`Minuto ${halfTimeMinute}`} />
-        <Field label="Pausa entre partidos">
+        <Field label="Pausa entre partidos (min)">
           <NumberControl
             value={transitionMinutes}
             min={0}
@@ -76,7 +76,7 @@ export function ScheduleConfigForm({
             onChange={onTransitionMinutesChange}
           />
         </Field>
-        <Field label="Tolerancia de inicio">
+        <Field label="Tolerancia de inicio (min)">
           <NumberControl
             value={matchStartToleranceMinutes}
             min={0}
