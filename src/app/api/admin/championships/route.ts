@@ -78,6 +78,11 @@ export async function POST(request: Request) {
       upsertFormat(admin, input.format),
       input.id ? getExistingEvent(admin, input.id) : Promise.resolve(null)
     ]);
+    if (previousEvent && previousEvent.format_id !== formatId) {
+      const blocked = await formatChangeBlockReason(admin, id, previousEvent.fixture_status);
+      if (blocked) return NextResponse.json({ error: blocked }, { status: 409 });
+    }
+
     const normalized = normalizeCompetitionInput(input);
     const slug = `${slugify(input.name)}-${id.slice(0, 8)}`;
     const eventDateIso = dateOnlyToIso(input.eventDate);
@@ -144,6 +149,15 @@ export async function POST(request: Request) {
         penalties_enabled: normalized.penaltiesEnabled,
         fixture_compact_preview: input.fixtureCompactPreview,
         public_live_scores: input.publicLiveScores,
+        organizer_name: emptyToNull(input.organizerName),
+        career_name: emptyToNull(input.careerName),
+        career_logo_url: emptyToNull(input.careerLogoUrl),
+        payment_qr_yape_url: emptyToNull(input.paymentQrYapeUrl),
+        payment_qr_plin_url: emptyToNull(input.paymentQrPlinUrl),
+        payment_contact_phone: emptyToNull(input.paymentContactPhone),
+        payment_contact_whatsapp_url: emptyToNull(input.paymentContactWhatsappUrl),
+        theme_primary_color: input.themePrimaryColor,
+        theme_secondary_color: input.themeSecondaryColor,
         schedule_config: scheduleConfig,
         created_by: previousEvent?.created_by ?? user.id,
         updated_at: new Date().toISOString()
@@ -166,6 +180,8 @@ export async function POST(request: Request) {
         pointsDraw: normalized.pointsDraw,
         pointsLoss: normalized.pointsLoss,
         maxPlayers: Math.max(input.minPlayers, input.maxPlayers),
+        organizer: input.organizerName.trim() || "Comision deportiva universitaria",
+        walkoverMinutes: input.walkoverMinutes,
         published: eventStatus !== "draft"
       }),
       upsertVenues(admin, input.courts, sportId)
@@ -311,16 +327,32 @@ async function upsertFormat(admin: AdminClient, format: TournamentFormat) {
 async function getExistingEvent(admin: AdminClient, id: string) {
   const { data, error } = await admin
     .from("events")
-    .select("name, schedule_config, fixture_status, created_by")
+    .select("name, format_id, schedule_config, fixture_status, created_by")
     .eq("id", id)
     .maybeSingle<{
       name: string;
+      format_id: string | null;
       schedule_config: Record<string, unknown> | null;
       fixture_status: string | null;
       created_by: string | null;
     }>();
   if (error) throw new Error(error.message);
   return data;
+}
+
+async function formatChangeBlockReason(admin: AdminClient, eventId: string, fixtureStatus: string | null) {
+  if (fixtureStatus === "locked" || fixtureStatus === "published") {
+    return "No se puede cambiar el formato: el fixture ya esta publicado o bloqueado.";
+  }
+
+  const { count, error } = await admin
+    .from("matches")
+    .select("id", { count: "exact", head: true })
+    .eq("event_id", eventId)
+    .or("status.neq.scheduled,home_score.not.is.null,away_score.not.is.null,winner_team_id.not.is.null");
+
+  if (error) throw new Error(error.message);
+  return count ? "No se puede cambiar el formato: ya hay partidos iniciados o con resultado." : null;
 }
 
 function normalizeCompetitionInput(input: z.infer<typeof payloadSchema>) {
@@ -382,6 +414,8 @@ async function upsertBases(
     pointsDraw,
     pointsLoss,
     maxPlayers,
+    organizer,
+    walkoverMinutes,
     published
   }: {
     previousName?: string;
@@ -393,13 +427,15 @@ async function upsertBases(
     pointsDraw: number;
     pointsLoss: number;
     maxPlayers: number;
+    organizer: string;
+    walkoverMinutes: number;
     published: boolean;
   }
 ) {
   const baseRow = {
     championship_name: championshipName,
     year: new Date(eventDateIso).getFullYear(),
-    organizer: "Comision deportiva universitaria",
+    organizer,
     start_date: eventDateIso,
     end_date: eventDateIso,
     description,
@@ -408,7 +444,7 @@ async function upsertBases(
     points_draw: pointsDraw,
     points_loss: pointsLoss,
     tiebreaker_rules: pointsDraw === 0 ? "Empate en llave se define por penales o decision oficial." : "Puntos, diferencia de goles, goles a favor y partido directo.",
-    walkover_rules: "Tolerancia de 10 minutos. Ausencia del equipo implica W.O.",
+    walkover_rules: `Tolerancia de ${walkoverMinutes} minutos. Ausencia del equipo implica W.O.`,
     max_players_per_team: maxPlayers,
     sanctions: "Tarjeta roja directa suspende al jugador para el siguiente partido.",
     published,
@@ -464,6 +500,10 @@ function dateOnlyToIso(value: string) {
 function localDateTimeToIso(value: string) {
   if (/Z$|[+-]\d{2}:\d{2}$/.test(value)) return new Date(value).toISOString();
   return new Date(`${value}:00-05:00`).toISOString();
+}
+
+function emptyToNull(value: string) {
+  return value.trim() || null;
 }
 
 function emptyToUndefined(value: string) {

@@ -1,5 +1,5 @@
 import { ChampionshipWizard } from "@/features/admin/components/ChampionshipWizard";
-import { Badge, Card, SectionHeader } from "@/components/ui";
+import { Card, SectionHeader } from "@/components/ui";
 import { getPublicCompetitionData } from "@/lib/supabase-data";
 
 export const dynamic = "force-dynamic";
@@ -20,8 +20,7 @@ export default async function EditChampionshipPage({
       <Card className="p-5">
         <SectionHeader
           title={event?.name ?? "Campeonato"}
-          description="Edicion preparada sobre el wizard. Persistencia completa depende de tablas Supabase."
-          action={<Badge tone="blue">Compatibilidad</Badge>}
+          description="Edita la configuracion y pulsa Guardar para aplicarla."
         />
       </Card>
       <ChampionshipWizard key={id} data={data} initialEvent={event} />

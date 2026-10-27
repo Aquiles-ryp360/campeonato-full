@@ -119,6 +119,13 @@ export function FixtureGenerationPanel({
     ? buildConfigurationWarnings(selectedEvent, activeTeamCount)
     : [];
   const warnings = [...configurationWarnings, ...(bracket?.warnings ?? [])];
+  const regenerateBlockedReason = !selectedEvent
+    ? null
+    : selectedEvent.id === "draft-preview"
+      ? "Guarda el campeonato antes de generar el fixture."
+      : selectedEvent.format !== "single_elimination"
+        ? "Regenerar aplica a eliminacion directa; para grupos usa el sorteo de grupos."
+        : null;
 
   async function handleRegenerateFixture() {
     if (!selectedEvent) return;
@@ -280,6 +287,7 @@ export function FixtureGenerationPanel({
             disabled={
               !selectedEvent ||
               regeneratingFixture ||
+              Boolean(regenerateBlockedReason) ||
               !canRegenerateFixtureManually(selectedEvent.fixtureStatus ?? "draft_auto")
             }
             onClick={() => void handleRegenerateFixture()}
@@ -287,6 +295,9 @@ export function FixtureGenerationPanel({
             <Wand2 className="h-4 w-4" />
             {regeneratingFixture ? "Regenerando..." : "Regenerar preliminar"}
           </Button>
+          {regenerateBlockedReason ? (
+            <p className="w-full text-xs font-semibold text-brand-muted">{regenerateBlockedReason}</p>
+          ) : null}
           <Button variant="secondary" disabled={!selectedEvent || selectedEvent.fixtureStatus !== "draft_auto"}>
             <Snowflake className="h-4 w-4" />
             Congelar revision
