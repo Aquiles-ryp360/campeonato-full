@@ -2,7 +2,8 @@ import type { SportKey, TournamentBases, TournamentEvent } from "./types";
 
 const officialBasesPdfBySport: Partial<Record<SportKey, string>> = {
   futbol: "/bases/bases-futbol-11-2026.pdf",
-  voley: "/bases/bases-voley-mixto-2026.pdf"
+  futsal: "/bases/bases-intersemestres-2026-II.pdf",
+  voley: "/bases/bases-intersemestres-2026-II.pdf"
 };
 
 export function getOfficialBasesPdfHref(
@@ -20,7 +21,7 @@ export function getOfficialBasesPdfHref(
 }
 
 export function getOfficialBasesDownloadName(event: Pick<TournamentEvent, "sport">) {
-  if (event.sport === "voley") return "bases-voley-mixto-2026.pdf";
+  if (event.sport === "voley" || event.sport === "futsal") return "bases-intersemestres-2026-II.pdf";
   if (event.sport === "futbol") return "bases-futbol-11-2026.pdf";
   return "bases-campeonato-2026.pdf";
 }
