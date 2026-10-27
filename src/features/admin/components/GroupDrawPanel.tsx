@@ -130,6 +130,10 @@ export function GroupDrawPanel({ data }: { data: CompetitionData }) {
           <Printer className="h-4 w-4" />
           Imprimir fichas de todos los equipos
         </Button>
+        <Button variant="secondary" href={`/imprimir/actas?evento=${eventId}`}>
+          <Printer className="h-4 w-4" />
+          Imprimir actas de partido
+        </Button>
       </div>
 
       {result ? (

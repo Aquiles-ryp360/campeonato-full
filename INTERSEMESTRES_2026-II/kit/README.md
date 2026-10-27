@@ -11,3 +11,14 @@ python3 INTERSEMESTRES_2026-II/kit/kit_pdf.py . INTERSEMESTRES_2026-II/kit/plan.
 ```
 
 Requiere `reportlab`. Se ejecuta desde la raiz del repo (usa `assets/fonts` y el logo de `public/epime-09`).
+
+## Actas de partido
+
+`actas-partido-intersemestres-2026-II.pdf`: una acta por partido (2 por hoja) con
+equipo vs equipo, marcador (goles/penales o sets), ganador y firmas de capitanes y arbitro.
+
+```bash
+python3 INTERSEMESTRES_2026-II/kit/actas_pdf.py . INTERSEMESTRES_2026-II/kit/plan.json INTERSEMESTRES_2026-II/actas-partido-intersemestres-2026-II.pdf
+```
+
+Desde el sistema, despues del sorteo: Admin > Fixture > "Imprimir actas de partido" (con nombres).
