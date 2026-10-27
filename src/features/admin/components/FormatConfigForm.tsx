@@ -1,6 +1,20 @@
 import type { SeedingMode, TournamentFormat } from "@/lib/types";
 import { Field, SectionHeader, inputClass } from "@/components/ui";
 import { NumberControl } from "./NumberControl";
+import { HoldHint } from "./HoldHint";
+import {
+  ByesIllustration,
+  GroupCountIllustration,
+  SeedingIllustration,
+  ThirdPlaceIllustration
+} from "./FormatIllustrations";
+
+const seedingHelp: Record<SeedingMode, string> = {
+  registration_order: "El primero en inscribirse es la semilla 1, el segundo la 2, etc. Las mejores semillas se cruzan con las ultimas.",
+  random: "El sistema sortea el orden de los equipos al azar. Es lo mas usado en campeonatos internos.",
+  manual: "El administrador define a mano el orden de los equipos en la llave.",
+  ranking: "Se ordena por un ranking previo (por ejemplo, resultados del campeonato anterior)."
+};
 
 export function FormatConfigForm({
   format,
@@ -33,7 +47,21 @@ export function FormatConfigForm({
       <div className="mt-5 grid gap-4 md:grid-cols-3">
         {format !== "league" ? (
           <>
-            <Field label="Criterio de sembrado">
+            <Field
+              label={
+                <HoldHint
+                  title="Criterio de sembrado"
+                  description={
+                    <>
+                      Define como se ordenan los equipos para armar los cruces. {seedingHelp[seedingMode]}
+                    </>
+                  }
+                  illustration={<SeedingIllustration mode={seedingMode} />}
+                >
+                  Criterio de sembrado
+                </HoldHint>
+              }
+            >
               <select
                 className={inputClass}
                 value={seedingMode}
@@ -45,7 +73,17 @@ export function FormatConfigForm({
                 <option value="ranking">Ranking previo</option>
               </select>
             </Field>
-            <Field label="Tercer lugar">
+            <Field
+              label={
+                <HoldHint
+                  title="Tercer lugar"
+                  description="Si esta activado, los dos perdedores de semifinales juegan un partido extra para definir el 3er puesto. Suma 1 partido al fixture."
+                  illustration={<ThirdPlaceIllustration />}
+                >
+                  Tercer lugar
+                </HoldHint>
+              }
+            >
               <select
                 className={inputClass}
                 value={thirdPlace ? "yes" : "no"}
@@ -55,7 +93,17 @@ export function FormatConfigForm({
                 <option value="no">Desactivado</option>
               </select>
             </Field>
-            <Field label="Permitir byes">
+            <Field
+              label={
+                <HoldHint
+                  title="Permitir byes"
+                  description="Un bye es pasar a la siguiente ronda sin jugar. Si los equipos no son 4, 8 o 16, los mejor sembrados pasan directo y el resto juega una ronda preliminar. Si lo desactivas, la llave exige 4, 8, 16 o 32 equipos exactos."
+                  illustration={<ByesIllustration />}
+                >
+                  Permitir byes
+                </HoldHint>
+              }
+            >
               <select
                 className={inputClass}
                 value={allowByes ? "yes" : "no"}
@@ -76,7 +124,17 @@ export function FormatConfigForm({
 
         {format === "groups_then_knockout" ? (
           <>
-            <Field label="Numero de grupos">
+            <Field
+              label={
+                <HoldHint
+                  title="Numero de grupos"
+                  description={`Los ${maxTeams} equipos se reparten en ${groupCount} grupos lo mas parejos posible; dentro de cada grupo juegan todos contra todos. En amarillo, los 2 que clasifican de cada grupo.`}
+                  illustration={<GroupCountIllustration teams={maxTeams} groups={groupCount} />}
+                >
+                  Numero de grupos
+                </HoldHint>
+              }
+            >
               <NumberControl
                 value={groupCount}
                 min={2}

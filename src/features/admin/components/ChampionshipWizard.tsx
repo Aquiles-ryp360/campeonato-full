@@ -20,6 +20,8 @@ import {
 } from "@/lib/payment-contact";
 import { Badge, Button, Card, Field, SectionHeader, inputClass } from "@/components/ui";
 import { FormatConfigForm } from "./FormatConfigForm";
+import { FormatPreview } from "./FormatIllustrations";
+import { FormatPicker } from "./FormatPicker";
 import { ScheduleConfigForm } from "./ScheduleConfigForm";
 import { BasesUploadForm } from "./BasesUploadForm";
 import { FixtureGenerationPanel } from "./FixtureGenerationPanel";
@@ -413,14 +415,10 @@ export function ChampionshipWizard({
       {step === 1 ? (
         <Card className="p-5">
           <SectionHeader title="Formato" description="Elige una sola estructura competitiva; las opciones siguientes cambian con esa eleccion." />
-          <div className="mt-5 grid gap-4 md:grid-cols-3">
-            <Field label="Formato">
-              <select className={inputClass} value={draft.format} onChange={(event) => updateDraft(formatDefaults(event.target.value as TournamentFormat))}>
-                <option value="league">Liga por puntos</option>
-                <option value="single_elimination">Eliminacion directa</option>
-                <option value="groups_then_knockout">Grupos + eliminacion</option>
-              </select>
-            </Field>
+          <div className="mt-5">
+            <FormatPicker value={draft.format} onChange={(format) => updateDraft(formatDefaults(format))} />
+          </div>
+          <div className="mt-5 grid gap-4 md:grid-cols-2">
             <Field label="Maximo equipos">
               <NumberControl
                 value={draft.maxTeams}
@@ -460,6 +458,18 @@ export function ChampionshipWizard({
               groupCount={draft.groupCount}
               onGroupCountChange={(value) => updateDraft({ groupCount: value })}
               maxTeams={draft.maxTeams}
+            />
+          </div>
+          <div className="mt-5 rounded-md border border-brand-electric/25 bg-white p-4">
+            <p className="text-sm font-black text-brand-navy">Asi quedaria tu campeonato</p>
+            <p className="mb-3 text-xs font-semibold text-brand-muted">
+              Vista referencial con {draft.maxTeams} equipos · aprox. {estimatedMatches} partidos
+            </p>
+            <FormatPreview
+              format={draft.format}
+              maxTeams={draft.maxTeams}
+              groupCount={draft.groupCount}
+              thirdPlace={draft.thirdPlace}
             />
           </div>
         </Card>
