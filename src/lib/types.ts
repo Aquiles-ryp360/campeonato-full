@@ -192,6 +192,8 @@ export interface TournamentEvent {
     transitionMinutes: number;
     courts: string[];
     courtCount?: number;
+    groupCount?: number;
+    walkoverMinutes?: number;
     minimumRestMinutes: number;
     allowCompactPreview: boolean;
     estimatedEndTime?: string;

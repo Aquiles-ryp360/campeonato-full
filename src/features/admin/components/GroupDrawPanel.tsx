@@ -30,7 +30,7 @@ export function GroupDrawPanel({ data }: { data: CompetitionData }) {
   const event = groupEvents.find((item) => item.id === eventId);
   const scopeStatuses = teamScope === "approved" ? ["approved"] : ["registered", "observed", "approved"];
   const teamCount = data.teams.filter((team) => team.eventId === eventId && scopeStatuses.includes(team.status)).length;
-  const groupCount = groupCountInput ?? defaultGroupCount(teamCount);
+  const groupCount = groupCountInput ?? event?.scheduleConfig?.groupCount ?? defaultGroupCount(teamCount);
   const hasGroups = data.groups.some((group) => group.eventId === eventId);
   const locked = event?.fixtureStatus === "published" || event?.fixtureStatus === "locked";
   const canDraw = teamCount >= groupCount * 2 && supportsGroupKnockout(groupCount) && !locked;

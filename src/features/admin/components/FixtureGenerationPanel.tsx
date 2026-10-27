@@ -26,10 +26,13 @@ import { FixtureManualEditor } from "./FixtureManualEditor";
 
 export function FixtureGenerationPanel({
   data,
-  activeEvent
+  activeEvent,
+  beforeRegenerate
 }: {
   data: CompetitionData;
   activeEvent?: TournamentEvent | null;
+  /** Persists pending edits first; returns the saved event id, or null to abort. */
+  beforeRegenerate?: () => Promise<string | null>;
 }) {
   const router = useRouter();
   const pathname = usePathname();
@@ -122,10 +125,13 @@ export function FixtureGenerationPanel({
 
     setRegeneratingFixture(true);
     try {
+      const eventId = beforeRegenerate ? await beforeRegenerate() : selectedEvent.id;
+      if (!eventId) return;
+
       const response = await fetch("/api/admin/fixture-regenerate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ eventId: selectedEvent.id })
+        body: JSON.stringify({ eventId })
       });
       const payload = (await response.json().catch(() => null)) as
         | {

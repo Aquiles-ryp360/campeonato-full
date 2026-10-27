@@ -29,6 +29,7 @@ const payloadSchema = z.object({
   matchStartToleranceMinutes: z.coerce.number().int().min(0).max(120),
   allowManualFinish: z.boolean(),
   walkoverMinutes: z.coerce.number().int().min(0).max(60),
+  groupCount: z.coerce.number().int().min(2).max(8).optional().default(2),
   pointsWin: z.coerce.number().int(),
   pointsDraw: z.coerce.number().int(),
   pointsLoss: z.coerce.number().int(),
@@ -75,7 +76,7 @@ export async function POST(request: Request) {
     const [sportId, formatId, previousEvent] = await Promise.all([
       upsertSport(admin, input.sport, input.matchDuration),
       upsertFormat(admin, input.format),
-      input.id ? getEventName(admin, input.id) : Promise.resolve(null)
+      input.id ? getExistingEvent(admin, input.id) : Promise.resolve(null)
     ]);
     const normalized = normalizeCompetitionInput(input);
     const slug = `${slugify(input.name)}-${id.slice(0, 8)}`;
@@ -84,7 +85,9 @@ export async function POST(request: Request) {
     // New championships should accept registrations immediately. Existing championships
     // continue to honor the status explicitly selected by the administrator.
     const eventStatus = input.id ? input.status : "registration";
+    // Merge over the stored config so the fixture seed/fingerprint survive an edit.
     const scheduleConfig = {
+      ...previousEvent?.schedule_config,
       startTime: input.startTime,
       matchDurationMinutes: input.matchDuration,
       halfTimeMinute: input.halfTimeMinute,
@@ -95,6 +98,8 @@ export async function POST(request: Request) {
       transitionMinutes: input.transitionMinutes,
       courts: input.courts,
       courtCount: input.courtCount,
+      groupCount: input.groupCount,
+      walkoverMinutes: input.walkoverMinutes,
       minimumRestMinutes: input.matchDuration + input.transitionMinutes,
       allowCompactPreview: input.fixtureCompactPreview,
       estimatedEndTime: input.estimatedEndTime,
@@ -132,7 +137,7 @@ export async function POST(request: Request) {
         prevent_cross_sport_conflicts: true,
         minimum_rest_minutes: input.matchDuration + input.transitionMinutes,
         event_date: eventDateIso,
-        fixture_status: "draft_auto",
+        fixture_status: previousEvent?.fixture_status ?? "draft_auto",
         seeding_mode: normalized.seedingMode,
         third_place: normalized.thirdPlace,
         allow_byes: normalized.allowByes,
@@ -140,7 +145,7 @@ export async function POST(request: Request) {
         fixture_compact_preview: input.fixtureCompactPreview,
         public_live_scores: input.publicLiveScores,
         schedule_config: scheduleConfig,
-        created_by: user.id,
+        created_by: previousEvent?.created_by ?? user.id,
         updated_at: new Date().toISOString()
       },
       { onConflict: "id" }
@@ -303,8 +308,17 @@ async function upsertFormat(admin: AdminClient, format: TournamentFormat) {
   return data.id;
 }
 
-async function getEventName(admin: AdminClient, id: string) {
-  const { data, error } = await admin.from("events").select("name").eq("id", id).maybeSingle<{ name: string }>();
+async function getExistingEvent(admin: AdminClient, id: string) {
+  const { data, error } = await admin
+    .from("events")
+    .select("name, schedule_config, fixture_status, created_by")
+    .eq("id", id)
+    .maybeSingle<{
+      name: string;
+      schedule_config: Record<string, unknown> | null;
+      fixture_status: string | null;
+      created_by: string | null;
+    }>();
   if (error) throw new Error(error.message);
   return data;
 }

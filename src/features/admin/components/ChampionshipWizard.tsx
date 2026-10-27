@@ -96,6 +96,8 @@ export function ChampionshipWizard({
   const router = useRouter();
   const [step, setStep] = useState(0);
   const [draft, setDraft] = useState<WizardDraft>(() => draftFromEvent(initialEvent));
+  const [savedDraft, setSavedDraft] = useState<WizardDraft>(draft);
+  const isDirty = JSON.stringify(draft) !== JSON.stringify(savedDraft);
   const [hydratedDraft, setHydratedDraft] = useState(false);
   const [saving, setSaving] = useState(false);
   const [uploadingAsset, setUploadingAsset] = useState<AssetField | null>(null);
@@ -119,11 +121,12 @@ export function ChampionshipWizard({
 
   useEffect(() => {
     if (!shouldStoreDraftLocally) {
+      // Do not re-seed the draft from initialEvent here: every router.refresh() hands a new
+      // object and would wipe unsaved edits (e.g. the format). The page keys us by id instead.
       if (initialEvent?.id) {
         window.localStorage.removeItem(`championship-wizard:${initialEvent.id}`);
       }
 
-      setDraft(draftFromEvent(initialEvent));
       setHydratedDraft(true);
       return;
     }
@@ -144,6 +147,13 @@ export function ChampionshipWizard({
     if (!hydratedDraft || !shouldStoreDraftLocally) return;
     window.localStorage.setItem(draftKey, JSON.stringify(draft));
   }, [draft, draftKey, hydratedDraft, shouldStoreDraftLocally]);
+
+  useEffect(() => {
+    if (!isDirty) return;
+    const warn = (event: BeforeUnloadEvent) => event.preventDefault();
+    window.addEventListener("beforeunload", warn);
+    return () => window.removeEventListener("beforeunload", warn);
+  }, [isDirty]);
 
   function updateDraft(next: Partial<WizardDraft>) {
     setDraft((current) => normalizeDraft({ ...current, ...next }));
@@ -179,11 +189,13 @@ export function ChampionshipWizard({
     }
   }
 
-  async function saveDraft() {
+  async function persistDraft(): Promise<string | null> {
     if (!hasSupabaseEnv()) {
       toast.info("Modo mock: el borrador queda guardado en este navegador.");
-      return;
+      return null;
     }
+
+    if (!isDirty && draft.id) return draft.id;
 
     setSaving(true);
 
@@ -207,13 +219,24 @@ export function ChampionshipWizard({
       if (shouldStoreDraftLocally) {
         window.localStorage.removeItem(draftKey);
       }
+      setSavedDraft(draft);
       toast.success(draft.status === "draft" ? "Borrador guardado." : "Campeonato guardado.");
-      router.refresh();
-      router.push(`/admin/campeonatos/${payload.id}`);
+      return payload.id;
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "No se pudo guardar el campeonato.");
+      return null;
     } finally {
       setSaving(false);
+    }
+  }
+
+  async function saveDraft() {
+    const id = await persistDraft();
+    if (!id) return;
+    if (id === initialEvent?.id) {
+      router.refresh();
+    } else {
+      router.push(`/admin/campeonatos/${id}`);
     }
   }
 
@@ -573,9 +596,14 @@ export function ChampionshipWizard({
         />
       ) : null}
       {step === 4 ? <BasesUploadForm /> : null}
-      {step === 5 ? <FixtureGenerationPanel data={data} activeEvent={fixturePreviewEvent} /> : null}
+      {step === 5 ? <FixtureGenerationPanel
+          data={data}
+          activeEvent={fixturePreviewEvent}
+          beforeRegenerate={initialEvent ? persistDraft : undefined}
+        /> : null}
 
-      <div className="flex justify-end">
+      <div className="flex items-center justify-end gap-3">
+        {isDirty ? <Badge tone="amber">Cambios sin guardar</Badge> : null}
         <Button onClick={saveDraft} disabled={saving}>
           <Save className="h-4 w-4" />
           {saving ? "Guardando..." : `Guardar ${draft.status === "draft" ? "borrador" : draft.name}`}
@@ -611,14 +639,14 @@ function draftFromEvent(event?: TournamentEvent | null): WizardDraft {
     thirdPlace: event?.thirdPlace ?? true,
     allowByes: event?.allowByes ?? true,
     penaltiesEnabled: event?.penaltiesEnabled ?? true,
-    groupCount: 2,
+    groupCount: schedule?.groupCount ?? 2,
     matchDuration: schedule?.matchDurationMinutes ?? defaultDuration(event?.sport ?? "futsal"),
     halfTimeMinute: schedule?.halfTimeMinute ?? defaultHalfTimeMinute(schedule?.matchDurationMinutes ?? defaultDuration(event?.sport ?? "futsal")),
     halfTimeBreakMinutes: schedule?.halfTimeBreakMinutes ?? 10,
     additionalTimeAllowedMinutes: schedule?.additionalTimeAllowedMinutes ?? 0,
     matchStartToleranceMinutes: schedule?.matchStartToleranceMinutes ?? 15,
     allowManualFinish: schedule?.allowManualFinish ?? true,
-    walkoverMinutes: 10,
+    walkoverMinutes: schedule?.walkoverMinutes ?? 10,
     pointsWin: event?.pointsWin ?? 3,
     pointsDraw: event?.pointsDraw ?? 1,
     pointsLoss: event?.pointsLoss ?? 0,
@@ -686,6 +714,7 @@ function eventFromDraft(
     championDecidedAt: event?.championDecidedAt,
     fixtureCompactPreview: draft.fixtureCompactPreview,
     scheduleConfig: {
+      ...event?.scheduleConfig,
       startTime: draft.startTime,
       matchDurationMinutes: draft.matchDuration,
       halfTimeMinute: draft.halfTimeMinute,
@@ -696,6 +725,8 @@ function eventFromDraft(
       transitionMinutes: draft.transitionMinutes,
       courts: buildCourts(draft.courtCount),
       courtCount: draft.courtCount,
+      groupCount: draft.groupCount,
+      walkoverMinutes: draft.walkoverMinutes,
       minimumRestMinutes: draft.matchDuration + draft.transitionMinutes,
       allowCompactPreview: draft.fixtureCompactPreview,
       estimatedEndTime,

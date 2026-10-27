@@ -24,7 +24,7 @@ export default async function EditChampionshipPage({
           action={<Badge tone="blue">Compatibilidad</Badge>}
         />
       </Card>
-      <ChampionshipWizard data={data} initialEvent={event} />
+      <ChampionshipWizard key={id} data={data} initialEvent={event} />
     </div>
   );
 }
