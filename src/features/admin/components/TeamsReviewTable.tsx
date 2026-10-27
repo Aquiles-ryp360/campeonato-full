@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { AlertTriangle, CheckCircle2, Mail, XCircle } from "lucide-react";
+import { AlertTriangle, CheckCircle2, Mail, Printer, XCircle } from "lucide-react";
 import { toast } from "sonner";
 import type { CompetitionData } from "@/lib/data-mappers";
 import type { Team } from "@/lib/types";
@@ -235,9 +235,15 @@ export function TeamsReviewTable({ data }: { data: CompetitionData }) {
                           <XCircle className="h-4 w-4" />
                           Rechazar
                         </Button>
-                        <Button href={`mailto:${team.delegateEmail}`} variant="ghost">
-                          <Mail className="h-4 w-4" />
-                          Escribir
+                        {team.delegateEmail ? (
+                          <Button href={`mailto:${team.delegateEmail}`} variant="ghost">
+                            <Mail className="h-4 w-4" />
+                            Escribir
+                          </Button>
+                        ) : null}
+                        <Button href={`/imprimir/ficha?equipo=${team.id}`} variant="ghost">
+                          <Printer className="h-4 w-4" />
+                          Ficha
                         </Button>
                       </div>
                     </div>
