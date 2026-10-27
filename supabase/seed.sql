@@ -164,7 +164,7 @@ begin
       2,
       0,
       0,
-      'Fase de grupos y eliminacion. Sets a 15, 15 y desempate a 10. Inscripcion oficial del campeonato de Ingenieria Mecanica Electrica.',
+      'Fase de grupos y eliminacion. Sets a 20, 20 y desempate a 10. Inscripcion oficial del campeonato de Ingenieria Mecanica Electrica.',
       true,
       45,
       '2026-07-09 08:00:00-05',
