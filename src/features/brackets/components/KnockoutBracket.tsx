@@ -5,9 +5,10 @@ import { generateKnockoutBracket } from "@/lib/domain/bracket-generator";
 import { fixtureStatusForVisibleMatches, isExhibitionMatch } from "@/lib/domain/fixture-preview";
 import type { FixtureStatus, Match, SeedingMode, Team } from "@/lib/types";
 import { Badge } from "@/components/ui";
-import { cn, formatDateTime } from "@/lib/utils";
+import { cn } from "@/lib/utils";
 import { liveStatusLabel, shouldAdvanceOfficialWinner, visiblePenaltyScores } from "@/lib/live-match";
 import { ThirdPlaceMatch } from "./ThirdPlaceMatch";
+import { matchScheduleLabel } from "@/lib/match-time";
 
 export function KnockoutBracket({
   eventId,
@@ -132,7 +133,7 @@ export function KnockoutBracket({
                   ) : null}
                   <p className="mt-3 truncate text-[11px] text-brand-muted">
                     {slot.match?.scheduledAt
-                      ? `${formatDateTime(slot.match.scheduledAt)} · ${slot.match.court}`
+                      ? `${matchScheduleLabel(slot.match)} · ${slot.match.court}`
                       : "Horario por definir"}
                   </p>
                 </div>
@@ -204,7 +205,7 @@ function ExhibitionFloatingMatch({
         onOpenTeam={onOpenTeam}
       />
       <p className="mt-2 truncate text-[11px] font-bold text-brand-navy/75">
-        {match.scheduledAt ? `${formatDateTime(match.scheduledAt)} · ${match.court}` : "Horario por definir"}
+        {match.scheduledAt ? `${matchScheduleLabel(match)} · ${match.court}` : "Horario por definir"}
       </p>
     </div>
   );

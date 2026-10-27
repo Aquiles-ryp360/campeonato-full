@@ -841,7 +841,7 @@ function validateStartWindow(match: MatchRow, event: EventRow) {
   }
 
   if (now.getTime() < start) {
-    throw new Error(`Este partido aun no puede iniciarse. Esta programado para las ${formatLimaTime(scheduled)}.`);
+    throw new Error("Este partido aun no puede iniciarse. Espera la indicacion de la mesa de control.");
   }
 
   if (now.getTime() > end) {
@@ -1102,11 +1102,3 @@ function limaDateKey(date: Date) {
   return `${get("year")}-${get("month")}-${get("day")}`;
 }
 
-function formatLimaTime(date: Date) {
-  return new Intl.DateTimeFormat("es-PE", {
-    timeZone: "America/Lima",
-    hour: "2-digit",
-    minute: "2-digit",
-    hour12: false
-  }).format(date);
-}

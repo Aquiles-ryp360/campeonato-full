@@ -3,8 +3,9 @@
 import { X } from "lucide-react";
 import type { Match, Team } from "@/lib/types";
 import { Badge } from "@/components/ui";
-import { formatDateTime, getMatchSideLabel } from "@/lib/utils";
+import { getMatchSideLabel } from "@/lib/utils";
 import { formatMatchScore, liveStatusLabel, visiblePenaltyScores } from "@/lib/live-match";
+import { matchScheduleLabel } from "@/lib/match-time";
 
 export function MatchDetailsModal({
   match,
@@ -44,7 +45,7 @@ export function MatchDetailsModal({
         </div>
         <div className="mt-5 grid gap-3 text-sm font-semibold text-brand-muted sm:grid-cols-2">
           <p>
-            <span className="font-bold text-ink">Hora:</span> {formatDateTime(match.scheduledAt)}
+            <span className="font-bold text-ink">Programación:</span> {matchScheduleLabel(match)}
           </p>
           <p>
             <span className="font-bold text-ink">Cancha:</span> {match.court}

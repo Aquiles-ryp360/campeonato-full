@@ -22,14 +22,15 @@ export function DelegateAlerts({
 }) {
   const rosterState = rosterLimitState({ event, playerCount: players.length });
   const adminObservation = team.adminObservation?.trim();
-  const conflicts = detectScheduleConflicts({
-    matches,
-    teams: allTeams,
-    players: allPlayers,
-    events: allEvents
-  }).filter((conflict) =>
-    matches.some((match) => match.id === conflict.matchId)
-  );
+  // Sin horas reales (solo el admin las ve) no se evaluan choques de horario.
+  const conflicts = matches.some((match) => match.timeHidden)
+    ? []
+    : detectScheduleConflicts({
+        matches,
+        teams: allTeams,
+        players: allPlayers,
+        events: allEvents
+      }).filter((conflict) => matches.some((match) => match.id === conflict.matchId));
   const alerts = [
     rosterState === "below_minimum"
       ? `Faltan jugadores: minimo requerido ${event.minPlayers}.`

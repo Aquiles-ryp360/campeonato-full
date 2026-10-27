@@ -175,10 +175,11 @@ export async function sendFixtureEmail({
   const orderedMatches = [...matches].sort((a, b) => a.scheduledAt.localeCompare(b.scheduledAt));
   const greetingName = recipientName?.trim() || "equipo";
   const subject = `Fixture - ${eventName}`;
-  const rowsText = orderedMatches.map((match) =>
+  // El correo llega a delegados: sin hora de cada partido, solo el orden de juego.
+  const rowsText = orderedMatches.map((match, index) =>
     [
+      `N.° ${index + 1}`,
       match.label ?? "Partido",
-      formatLimaDateTime(match.scheduledAt),
       match.court,
       `${matchSideName(match, teams, "home")} vs ${matchSideName(match, teams, "away")}`
     ].join(" | ")
@@ -192,12 +193,12 @@ export async function sendFixtureEmail({
     "",
     `Ver fixture: ${fixtureUrl}`,
     "",
-    "Revisa horarios y cruces antes de cada partido."
+    "Revisa los cruces y el orden de juego antes de cada partido."
   ].join("\n");
-  const htmlRows = orderedMatches.map((match) => `
+  const htmlRows = orderedMatches.map((match, index) => `
     <tr>
-      <td style="padding: 8px; border: 1px solid #dde4e0; font-weight: 700;">${escapeHtml(match.label ?? "Partido")}</td>
-      <td style="padding: 8px; border: 1px solid #dde4e0;">${escapeHtml(formatLimaDateTime(match.scheduledAt))}</td>
+      <td style="padding: 8px; border: 1px solid #dde4e0; font-weight: 700;">${index + 1}</td>
+      <td style="padding: 8px; border: 1px solid #dde4e0;">${escapeHtml(match.label ?? "Partido")}</td>
       <td style="padding: 8px; border: 1px solid #dde4e0;">${escapeHtml(match.court)}</td>
       <td style="padding: 8px; border: 1px solid #dde4e0;">${escapeHtml(matchSideName(match, teams, "home"))}</td>
       <td style="padding: 8px; border: 1px solid #dde4e0;">${escapeHtml(matchSideName(match, teams, "away"))}</td>
@@ -211,8 +212,8 @@ export async function sendFixtureEmail({
       <table style="border-collapse: collapse; margin: 18px 0; width: 100%; max-width: 760px; font-size: 14px;">
         <thead>
           <tr style="background: #17211f; color: #ffffff;">
+            <th style="padding: 8px; border: 1px solid #17211f; text-align: left;">N.°</th>
             <th style="padding: 8px; border: 1px solid #17211f; text-align: left;">Partido</th>
-            <th style="padding: 8px; border: 1px solid #17211f; text-align: left;">Hora</th>
             <th style="padding: 8px; border: 1px solid #17211f; text-align: left;">Cancha</th>
             <th style="padding: 8px; border: 1px solid #17211f; text-align: left;">Local</th>
             <th style="padding: 8px; border: 1px solid #17211f; text-align: left;">Visita</th>
@@ -226,7 +227,7 @@ export async function sendFixtureEmail({
         </a>
       </p>
       <p style="font-size: 13px; color: #5f6c67;">
-        Revisa horarios y cruces antes de cada partido.
+        Revisa los cruces y el orden de juego antes de cada partido.
       </p>
     </div>
   `;
@@ -270,15 +271,6 @@ function matchSideName(match: Match, teams: Team[], side: "home" | "away") {
   const placeholder = side === "home" ? match.homePlaceholder : match.awayPlaceholder;
   if (!teamId) return placeholder ?? "Equipo por confirmar";
   return teams.find((team) => team.id === teamId)?.name ?? placeholder ?? "Equipo por confirmar";
-}
-
-function formatLimaDateTime(value: string) {
-  return new Intl.DateTimeFormat("es-PE", {
-    dateStyle: "medium",
-    timeStyle: "short",
-    hour12: false,
-    timeZone: "America/Lima"
-  }).format(new Date(value));
 }
 
 function escapeHtml(value: string) {

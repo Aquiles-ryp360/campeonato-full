@@ -7,7 +7,7 @@ import type { CompetitionData } from "@/lib/data-mappers";
 import { isActiveRegistrationTeamStatus } from "@/lib/domain/registration-rules";
 import { buildVisibleFixtureMatches } from "@/lib/domain/fixture-preview";
 import { getChampionshipPublicContext } from "@/lib/queries/public";
-import { formatDateTime, getMatchSideLabel, sportLabel } from "@/lib/utils";
+import { getMatchSideLabel, sportLabel } from "@/lib/utils";
 import {
   formatMatchScore,
   liveStatusDescription,
@@ -22,6 +22,7 @@ import { TeamDetailsModal } from "./TeamDetailsModal";
 import { ChampionshipHero } from "./ChampionshipHero";
 import { ChampionshipSummaryCards } from "./ChampionshipSummaryCards";
 import { FormatRenderer } from "./FormatRenderer";
+import { matchScheduleLabel } from "@/lib/match-time";
 
 export function PublicHome({
   data,
@@ -362,7 +363,7 @@ function LiveMatchHeader({ event, match }: { event: TournamentEvent; match: Matc
       </div>
       <div className="text-right text-xs font-bold text-white/65">
         <p>{match.court}</p>
-        <p>{formatDateTime(match.scheduledAt)}</p>
+        <p>{matchScheduleLabel(match)}</p>
         <p>{liveStatusDescription(match)}</p>
       </div>
     </div>

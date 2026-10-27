@@ -1,7 +1,8 @@
 import { CalendarDays, CreditCard, ShieldCheck, UsersRound } from "lucide-react";
 import type { Match, Player, Team, TournamentEvent } from "@/lib/types";
 import { Metric } from "@/components/ui";
-import { formatDateTime, teamStatusLabel } from "@/lib/utils";
+import { teamStatusLabel } from "@/lib/utils";
+import { matchScheduleLabel } from "@/lib/match-time";
 
 export function DelegateSummaryCards({
   event,
@@ -25,7 +26,7 @@ export function DelegateSummaryCards({
       <Metric label="Jugadores" value={`${players.length}/${event.maxPlayers}`} icon={UsersRound} tone="blue" />
       <Metric
         label="Próximo partido"
-        value={nextMatch ? formatDateTime(nextMatch.scheduledAt) : "Sin programar"}
+        value={nextMatch ? matchScheduleLabel(nextMatch) : "Sin programar"}
         icon={CalendarDays}
         tone="green"
       />

@@ -3,9 +3,10 @@
 import { X } from "lucide-react";
 import type { Match, Player, Team, TournamentEvent } from "@/lib/types";
 import { Badge, Button } from "@/components/ui";
-import { formatDateTime, getMatchSideLabel, teamStatusLabel } from "@/lib/utils";
+import { getMatchSideLabel, teamStatusLabel } from "@/lib/utils";
 import { DelegateInfo } from "@/features/teams/components/DelegateInfo";
 import { TeamRoster } from "@/features/teams/components/TeamRoster";
+import { matchScheduleLabel } from "@/lib/match-time";
 
 export function TeamDetailsModal({
   team,
@@ -67,7 +68,7 @@ export function TeamDetailsModal({
                     {getMatchSideLabel(nextMatch, teams, "home")} vs{" "}
                     {getMatchSideLabel(nextMatch, teams, "away")}
                   </p>
-                  <p>{formatDateTime(nextMatch.scheduledAt)}</p>
+                  <p>{matchScheduleLabel(nextMatch)}</p>
                   <p>{nextMatch.court}</p>
                 </div>
               ) : (

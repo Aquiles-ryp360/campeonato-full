@@ -179,6 +179,8 @@ export interface TournamentEvent {
   championMatchId?: string;
   championDecidedAt?: string;
   fixtureCompactPreview?: boolean;
+  // Solo en memoria: true cuando quien mira no es admin y no debe ver horas de partidos.
+  hideMatchTimes?: boolean;
   scheduleConfig?: {
     startTime: string;
     matchDurationMinutes: number;
@@ -305,6 +307,9 @@ export interface Match {
   eventId: string;
   round: number;
   stage: MatchStage;
+  // Solo en memoria: hora real oculta; scheduledAt solo conserva el dia y el orden.
+  timeHidden?: boolean;
+  scheduleOrder?: number;
   groupId?: string;
   bracketPosition?: number;
   nextMatchId?: string;

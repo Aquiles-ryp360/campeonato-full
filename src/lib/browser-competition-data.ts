@@ -32,6 +32,7 @@ import {
 } from "./data-mappers";
 import { mockCompetitionData } from "./mock-data";
 import { createSupabaseBrowserClient, hasSupabaseEnv } from "./supabase";
+import { hideEventMatchTimes, hideMatchTimes } from "./match-time";
 
 const legacyEventColumns = `
   id,
@@ -258,10 +259,11 @@ export async function fetchBrowserCompetitionData({
   if (basesResponse.error) throw new Error("No se pudieron cargar las bases del torneo.");
 
   return applyCatalogLabels({
-    events: ((eventsResponse.data ?? []) as EventRow[]).map(mapEvent),
+    // Solo lo usa el panel del delegado: la hora de los partidos es solo para el admin.
+    events: hideEventMatchTimes(((eventsResponse.data ?? []) as EventRow[]).map(mapEvent)),
     teams: ((safeTeamsResponse.data ?? []) as unknown as TeamRow[]).map(mapTeam),
     players: ((safePlayersResponse.data ?? []) as PlayerRow[]).map(mapPlayer),
-    matches: ((matchesResponse.data ?? []) as MatchRow[]).map(mapMatch),
+    matches: hideMatchTimes(((matchesResponse.data ?? []) as MatchRow[]).map(mapMatch)),
     registrationCodes: ((codesResponse.data ?? []) as RegistrationCodeRow[]).map(mapRegistrationCode),
     sports: ((sportsResponse.data ?? []) as SportRow[]).map(mapSport),
     competitionFormats: ((formatsResponse.data ?? []) as CompetitionFormatRow[]).map(mapCompetitionFormat),
@@ -300,10 +302,10 @@ async function fetchLegacyBrowserCompetitionData(
   if (codesResponse.error) throw new Error("No se pudieron cargar los codigos.");
 
   return {
-    events: ((eventsResponse.data ?? []) as EventRow[]).map(mapEvent),
+    events: hideEventMatchTimes(((eventsResponse.data ?? []) as EventRow[]).map(mapEvent)),
     teams: ((teamsResponse.data ?? []) as unknown as TeamRow[]).map(mapTeam),
     players: ((playersResponse.data ?? []) as PlayerRow[]).map(mapPlayer),
-    matches: ((matchesResponse.data ?? []) as MatchRow[]).map(mapMatch),
+    matches: hideMatchTimes(((matchesResponse.data ?? []) as MatchRow[]).map(mapMatch)),
     registrationCodes: ((codesResponse.data ?? []) as RegistrationCodeRow[]).map(
       mapRegistrationCode
     ),

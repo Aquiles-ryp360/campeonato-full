@@ -32,6 +32,7 @@ import type {
   Team,
   TournamentEvent
 } from "../types";
+import { hideMatchTimes } from "../match-time";
 
 export type RefereeMatchItem = {
   match: Match;
@@ -171,7 +172,8 @@ export async function getRefereeLiveMatchData(matchId: string): Promise<RefereeL
   return {
     userEmail: access.user.email ?? "",
     isAdmin: access.isAdmin,
-    match,
+    // La hora del partido solo la ve el admin.
+    match: access.isAdmin ? match : hideMatchTimes([match])[0],
     event: mapEvent(eventResponse.data),
     homeTeam: teams.find((team) => team.id === match.homeTeamId),
     awayTeam: teams.find((team) => team.id === match.awayTeamId),

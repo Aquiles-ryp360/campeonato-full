@@ -2,7 +2,8 @@ import { CalendarClock, MapPin, PlayCircle, Trophy } from "lucide-react";
 import { Badge, Button, Card, SectionHeader } from "@/components/ui";
 import type { RefereeDashboardData } from "@/lib/queries/referee";
 import type { Team } from "@/lib/types";
-import { formatDateTime, formatLabel, getMatchSideLabel } from "@/lib/utils";
+import { formatLabel, getMatchSideLabel } from "@/lib/utils";
+import { matchScheduleLabel } from "@/lib/match-time";
 
 export function RefereeMatchList({ data }: { data: RefereeDashboardData }) {
   return (
@@ -48,7 +49,7 @@ export function RefereeMatchList({ data }: { data: RefereeDashboardData }) {
                       </span>
                       <span className="inline-flex items-center gap-2">
                         <CalendarClock className="h-4 w-4" />
-                        {formatDateTime(match.scheduledAt)}
+                        {matchScheduleLabel(match)}
                       </span>
                     </div>
                   </div>

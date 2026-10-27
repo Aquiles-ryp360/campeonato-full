@@ -2,6 +2,7 @@ import type { FixtureStatus, Match, Team, TournamentEvent, Venue } from "../type
 import { generateKnockoutBracket, type GeneratedBracket } from "./bracket-generator";
 import { isActiveRegistrationTeamStatus } from "./registration-rules";
 import { generateOneDaySchedule, type GeneratedSchedule } from "./schedule-generator";
+import { hideMatchTimes } from "../match-time";
 
 type PreviewInput = {
   event: TournamentEvent;
@@ -135,7 +136,8 @@ export function buildVisibleFixtureMatches({
   for (const event of events) {
     const preview = buildEventFixturePreview({ event, teams, matches, venues });
     if (preview) {
-      generatedByEvent.set(event.id, preview.matches);
+      // La vista previa calcula horas a partir de la config; se ocultan igual que las guardadas.
+      generatedByEvent.set(event.id, event.hideMatchTimes ? hideMatchTimes(preview.matches) : preview.matches);
     }
   }
 

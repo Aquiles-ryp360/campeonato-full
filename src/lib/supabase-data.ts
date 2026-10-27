@@ -35,6 +35,7 @@ import { mockCompetitionData } from "./mock-data";
 import { createSupabaseAdminClient } from "./supabase-admin";
 import { isActiveRegistrationTeamStatus } from "./domain/registration-rules";
 import { createSupabaseRouteClient } from "./supabase-server";
+import { hideEventMatchTimes, hideMatchTimes } from "./match-time";
 
 const legacyEventColumns = `
   id,
@@ -371,6 +372,7 @@ function createServerDataClient(): SupabaseClient | null {
 
 // Replica en el servidor lo que antes filtraba RLS: equipos activos para todos,
 // y DNI/ficha solo para el admin o el delegado del propio equipo.
+// La hora de los partidos solo la ve el admin.
 function applyViewerVisibility(
   data: CompetitionData,
   ownTeamIds: "all" | Set<string>,
@@ -385,6 +387,8 @@ function applyViewerVisibility(
 
   return {
     ...data,
+    events: hideEventMatchTimes(data.events),
+    matches: hideMatchTimes(data.matches),
     teams,
     players: data.players
       .filter((player) => visibleTeamIds.has(player.teamId))

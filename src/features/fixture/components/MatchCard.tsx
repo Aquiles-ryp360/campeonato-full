@@ -4,9 +4,10 @@ import { Clock, MapPin } from "lucide-react";
 import type { Match, Team, TournamentEvent } from "@/lib/types";
 import type { ScheduleConflict } from "@/lib/domain/conflict-detector";
 import { Badge } from "@/components/ui";
-import { fixtureStatusLabel, formatDateTime, getMatchSideLabel } from "@/lib/utils";
+import { fixtureStatusLabel, getMatchSideLabel } from "@/lib/utils";
 import { formatMatchScore, liveStatusLabel } from "@/lib/live-match";
 import { ConflictBadge } from "./ConflictBadge";
+import { matchScheduleLabel } from "@/lib/match-time";
 
 export function MatchCard({
   match,
@@ -66,7 +67,7 @@ export function MatchCard({
       <div className="grid gap-2 rounded-md bg-brand-wash p-3 text-xs font-bold text-brand-muted sm:grid-cols-2">
         <span className="flex items-center gap-1.5">
           <Clock className="h-3.5 w-3.5" />
-          {formatDateTime(match.scheduledAt)}
+          {matchScheduleLabel(match)}
         </span>
         <span className="flex items-center gap-1.5 sm:justify-end">
           <MapPin className="h-3.5 w-3.5" />

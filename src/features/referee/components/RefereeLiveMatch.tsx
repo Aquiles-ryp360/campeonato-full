@@ -25,7 +25,8 @@ import {
 } from "@/lib/live-match";
 import type { RefereeLiveMatchData } from "@/lib/queries/referee";
 import type { MatchLiveEventType, Player, Team } from "@/lib/types";
-import { formatDateTime, getMatchSideLabel } from "@/lib/utils";
+import { getMatchSideLabel } from "@/lib/utils";
+import { matchScheduleLabel } from "@/lib/match-time";
 
 type PendingPlayerPick = {
   team: Team;
@@ -133,7 +134,7 @@ export function RefereeLiveMatch({ data }: { data: RefereeLiveMatchData }) {
           <Badge tone={statusBadgeTone(status)}>{statusLabel(status)}</Badge>
           <span className="inline-flex items-center gap-2 text-sm font-bold text-brand-muted">
             <Clock className="h-4 w-4" />
-            {formatDateTime(match.scheduledAt)}
+            {matchScheduleLabel(match)}
           </span>
         </div>
 
@@ -310,7 +311,7 @@ function PreMatchPanel({ data }: { data: RefereeLiveMatchData }) {
         <Info label="Campeonato" value={data.event.name} />
         <Info label="Categoria" value={data.event.category} />
         <Info label="Cancha" value={data.match.court} />
-        <Info label="Horario" value={formatDateTime(data.match.scheduledAt)} />
+        <Info label="Horario" value={matchScheduleLabel(data.match)} />
       </div>
       <div className="mt-4">
         <p className="text-sm font-bold text-ink">Jugadores habilitados</p>

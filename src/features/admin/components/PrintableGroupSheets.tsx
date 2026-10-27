@@ -25,6 +25,12 @@ export function PrintableGroupSheets({
   const knockout = matches
     .filter((match) => match.stage !== "group_stage")
     .sort((a, b) => a.scheduledAt.localeCompare(b.scheduledAt) || a.round - b.round);
+  // La hoja impresa no muestra horas: solo el orden de juego del dia.
+  const order = new Map(
+    [...matches]
+      .sort((a, b) => a.scheduledAt.localeCompare(b.scheduledAt) || a.round - b.round)
+      .map((match, index) => [match.id, index + 1])
+  );
 
   return (
     <main className="fixture-print mx-auto max-w-4xl px-6 py-8 text-ink">
@@ -91,7 +97,7 @@ export function PrintableGroupSheets({
               <table className="mt-3 w-full border-collapse text-sm">
                 <thead>
                   <tr className="text-left text-xs font-black uppercase text-brand-muted">
-                    <th className="w-14 py-1">Hora</th>
+                    <th className="w-10 py-1">N.°</th>
                     <th className="w-24 py-1">Cancha</th>
                     <th className="py-1 text-right">Local</th>
                     <th className="w-28 py-1 text-center">Resultado</th>
@@ -102,7 +108,7 @@ export function PrintableGroupSheets({
                 <tbody>
                   {groupMatches.map((match) => (
                     <tr key={match.id} className="h-9 border-b border-ink/20">
-                      <td className="font-bold">{timeLabel(match.scheduledAt)}</td>
+                      <td className="font-bold">{order.get(match.id)}</td>
                       <td className="text-brand-muted">{match.court}</td>
                       <td className="pr-2 text-right font-semibold">{getMatchSideLabel(match, teams, "home")}</td>
                       <td className="text-center">
@@ -130,7 +136,7 @@ export function PrintableGroupSheets({
             <thead>
               <tr className="text-left text-xs font-black uppercase text-brand-muted">
                 <th className="w-12 py-1">Cod.</th>
-                <th className="w-14 py-1">Hora</th>
+                <th className="w-10 py-1">N.°</th>
                 <th className="py-1">Local (escribir equipo)</th>
                 <th className="w-28 py-1 text-center">Resultado</th>
                 <th className="py-1">Visitante (escribir equipo)</th>
@@ -140,7 +146,7 @@ export function PrintableGroupSheets({
               {knockout.map((match) => (
                 <tr key={match.id} className="h-12 border-b border-ink/20 align-bottom">
                   <td className="pb-1 font-black">{match.label}</td>
-                  <td className="pb-1 font-bold">{timeLabel(match.scheduledAt)}</td>
+                  <td className="pb-1 font-bold">{order.get(match.id)}</td>
                   <td className="pb-1 pr-2">
                     <span className="text-[11px] font-bold text-brand-muted">{match.homePlaceholder}</span>
                     <span className="mt-1 block border-b border-ink/50" />
@@ -171,14 +177,4 @@ function ScoreBoxes({ small = false }: { small?: boolean }) {
       <span className={`inline-block rounded-sm border border-ink/60 ${box}`} />
     </span>
   );
-}
-
-function timeLabel(value: string) {
-  if (!value) return "--:--";
-  return new Intl.DateTimeFormat("es-PE", {
-    hour: "2-digit",
-    minute: "2-digit",
-    hour12: false,
-    timeZone: "America/Lima"
-  }).format(new Date(value));
 }

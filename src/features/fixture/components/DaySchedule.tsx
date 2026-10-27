@@ -45,9 +45,11 @@ export function DaySchedule({
       .sort((a, b) => a.scheduledAt.localeCompare(b.scheduledAt));
   }, [court, eventId, matches, status, teamId]);
 
+  const timesHidden = matches.some((match) => match.timeHidden);
+  // Sin horas reales no se pueden evaluar choques de horario.
   const conflicts = useMemo(
-    () => detectScheduleConflicts({ matches, teams, players, events }),
-    [events, matches, players, teams]
+    () => (timesHidden ? [] : detectScheduleConflicts({ matches, teams, players, events })),
+    [events, matches, players, teams, timesHidden]
   );
   const courts = Array.from(new Set(matches.map((match) => match.court))).sort();
   const activeEvent = eventId === "all" ? null : events.find((event) => event.id === eventId) ?? null;
@@ -124,7 +126,7 @@ export function DaySchedule({
                   }`}
                 >
                   <Filter className="h-3.5 w-3.5" />
-                  {mode === "hour" ? "Hora" : "Cancha"}
+                  {mode === "hour" ? (timesHidden ? "Orden" : "Hora") : "Cancha"}
                 </button>
               ))}
             </div>
@@ -135,15 +137,15 @@ export function DaySchedule({
       {filteredMatches.length > 0 ? (
         view === "hour" ? (
           <div className="space-y-5">
-            {Array.from(new Set(filteredMatches.map((match) => timeKey(match.scheduledAt)))).map((time) => (
+            {Array.from(new Set(filteredMatches.map(timeKey))).map((time) => (
               <section key={time} className="grid gap-3 rounded-lg border border-brand-towerMid/25 bg-white p-4 shadow-insetLine lg:grid-cols-[90px_1fr]">
                 <div>
                   <p className="text-2xl font-black text-ink">{time}</p>
-                  <p className="text-xs font-black uppercase text-brand-electric">Hora</p>
+                  <p className="text-xs font-black uppercase text-brand-electric">{timesHidden ? "Partido" : "Hora"}</p>
                 </div>
                 <div className="grid gap-3 lg:grid-cols-2">
                   {filteredMatches
-                    .filter((match) => timeKey(match.scheduledAt) === time)
+                    .filter((match) => timeKey(match) === time)
                     .map((match) => (
                       <MatchCard
                         key={match.id}
@@ -194,13 +196,15 @@ export function DaySchedule({
   );
 }
 
-function timeKey(value: string) {
+// Sin hora visible se agrupa por el orden del partido (N.° 1, N.° 2...).
+function timeKey(match: Match) {
+  if (match.timeHidden) return `N.° ${match.scheduleOrder ?? "-"}`;
   return new Intl.DateTimeFormat("es-PE", {
     hour: "2-digit",
     minute: "2-digit",
     hour12: false,
     timeZone: "America/Lima"
-  }).format(new Date(value));
+  }).format(new Date(match.scheduledAt));
 }
 
 function getEmptyMessage(event: TournamentEvent | null, teamCount: number) {
