@@ -746,11 +746,12 @@ function formatKeyFromId(value?: string | null): TournamentFormat {
 
 function normalizeFormatKey(value?: string | null): TournamentFormat {
   const normalized = normalizeText(value);
-  if (normalized.includes("single") || normalized.includes("knockout")) {
-    return "single_elimination";
-  }
+  // Groups first: "groups_then_knockout" also contains "knockout".
   if (normalized.includes("group") || normalized.includes("grupo")) {
     return "groups_then_knockout";
+  }
+  if (normalized.includes("single") || normalized.includes("knockout")) {
+    return "single_elimination";
   }
   return "league";
 }

@@ -118,3 +118,9 @@ test("includes the team name in the whatsapp message when provided", () => {
     "Hola, buenas tardes. Quiero inscribir a mi equipo «Los Inges» en el campeonato de vóley. Deseo realizar el pago y solicitar mi código de acceso. ¿Podrían brindarme información?"
   );
 });
+
+test("format keys map to their own format (groups_then_knockout is not knockout)", () => {
+  for (const key of ["groups_then_knockout", "single_elimination", "league"] as const) {
+    assert.equal(mapEvent({ ...baseEventRow, format: { key } } as EventRow).format, key);
+  }
+});
