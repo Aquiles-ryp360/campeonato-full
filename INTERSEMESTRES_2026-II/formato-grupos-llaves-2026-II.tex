@@ -1,0 +1,204 @@
+\documentclass[10pt,a4paper,landscape]{article}
+
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+\renewcommand{\familydefault}{\sfdefault}
+\usepackage[spanish]{babel}
+\usepackage[margin=1.1cm,top=0.9cm,bottom=0.8cm]{geometry}
+\usepackage[table]{xcolor}
+\usepackage{graphicx}
+\usepackage[most]{tcolorbox}
+\usepackage{tikz}
+
+% Mismos colores que las bases oficiales
+\definecolor{imegreen}{RGB}{0,102,255}
+\definecolor{imegreenDark}{RGB}{0,76,153}
+\definecolor{imegreenSoft}{RGB}{230,240,255}
+\definecolor{imedark}{RGB}{75,85,99}
+\definecolor{imegray}{RGB}{107,114,128}
+\definecolor{imelight}{RGB}{245,247,250}
+\definecolor{imegold}{RGB}{255,204,0}
+
+\pagestyle{empty}
+\setlength{\parindent}{0pt}
+
+% Cabecera de cada pagina: #1 disciplina, #2 resumen
+\newcommand{\cabecera}[2]{%
+	\begin{tikzpicture}[remember picture,overlay]
+		\fill[imelight] (current page.north west) rectangle (current page.south east);
+		\fill[imegreenDark] (current page.north west) rectangle ([yshift=-2.35cm]current page.north east);
+		\fill[imegold] ([yshift=-2.35cm]current page.north west) rectangle ([yshift=-2.52cm]current page.north east);
+		\node[anchor=north east] at ([xshift=-1cm,yshift=-0.3cm]current page.north east)
+			{\includegraphics[height=1.75cm]{assets/logo-carrera.png}};
+		\node[anchor=north west, align=left] at ([xshift=1.1cm,yshift=-0.35cm]current page.north west) {%
+			{\color{imegold}\bfseries FORMATO REFERENCIAL DE GRUPOS Y LLAVES --- INTERSEMESTRES 2026-II}\\[0.1cm]
+			{\color{white}\bfseries\fontsize{24}{28}\selectfont #1}\\[0.12cm]
+			{\color{white} #2}};
+	\end{tikzpicture}%
+	\vspace*{2.05cm}%
+}
+
+\newcommand{\fila}[2]{{\color{imegray}\footnotesize #1#2} & \color{imegray!50}\rule[-1pt]{0.66\linewidth}{0.4pt} & \color{imegray!50}\rule[-1pt]{0.7cm}{0.4pt}\\}
+
+% Tabla de grupo: #1 letra, #2 numero de equipos
+\newcommand{\grupo}[2]{%
+	\begin{tcolorbox}[enhanced, width=\linewidth, colback=white, colframe=imegreenDark, boxrule=0.8pt, arc=2mm,
+		left=1.5mm, right=1.5mm, top=1mm, bottom=1mm, fonttitle=\bfseries, coltitle=white,
+		colbacktitle=imegreenDark, title={Grupo #1}, halign title=center, equal height group=grupos\thepage,
+		valign lower=bottom, segmentation hidden]
+		\renewcommand{\arraystretch}{1.55}
+		\begin{tabular}{@{}l@{\hspace{1.5mm}}l@{\hspace{1mm}}c@{}}
+			& {\footnotesize\color{imegray} Equipo} & {\footnotesize\color{imegray} Pts}\\[-3pt]
+			\fila{#1}{1}\fila{#1}{2}\fila{#1}{3}\ifnum#2=4 \fila{#1}{4}\fi
+		\end{tabular}
+		\tcblower
+		{\scriptsize\color{imegray} \ifnum#2=4 6 partidos (3 fechas)\else 3 partidos (3 fechas)\fi\ · pasan 1.° y 2.°}
+	\end{tcolorbox}%
+}
+
+% Partido de llave: #1 nombre del nodo, #2 x, #3 y, #4 etiqueta, #5 local, #6 visita
+\newcommand{\partido}[6]{%
+	\node[font=\scriptsize\bfseries, text=imegreen, anchor=south west] at (#2-1.75,#3+0.52) {#4};
+	\node[draw=imegreenDark, fill=white, rounded corners=1.5pt, minimum width=3.5cm, minimum height=0.5cm,
+		font=\footnotesize, anchor=west] (#1h) at (#2-1.75,#3+0.26) {#5};
+	\node[draw=imegreenDark, fill=white, rounded corners=1.5pt, minimum width=3.5cm, minimum height=0.5cm,
+		font=\footnotesize, anchor=west] (#1a) at (#2-1.75,#3-0.26) {#6};
+	\coordinate (#1) at (#2+1.75,#3);
+}
+% Une la salida de un partido con el casillero destino
+\newcommand{\pasa}[2]{\draw[imegreen, line width=0.9pt] (#1) -- ++(0.35,0) |- (#2.west);}
+
+\begin{document}
+
+% =====================================================================
+% FUTSAL
+% =====================================================================
+\cabecera{Futsal}{18 equipos \,·\, 5 grupos (A, B y C de 4; D y E de 3) \,·\, clasifican 10 \,·\, 34 partidos en un solo día}
+
+\noindent
+\begin{minipage}[t]{0.193\linewidth}\vspace{0pt}\grupo{A}{4}\end{minipage}\hfill
+\begin{minipage}[t]{0.193\linewidth}\vspace{0pt}\grupo{B}{4}\end{minipage}\hfill
+\begin{minipage}[t]{0.193\linewidth}\vspace{0pt}\grupo{C}{4}\end{minipage}\hfill
+\begin{minipage}[t]{0.193\linewidth}\vspace{0pt}\grupo{D}{3}\end{minipage}\hfill
+\begin{minipage}[t]{0.193\linewidth}\vspace{0pt}\grupo{E}{3}\end{minipage}
+
+\vspace{0.15cm}
+\begin{center}
+\begin{tikzpicture}[x=1cm,y=0.92cm]
+	% Titulos de ronda
+	\foreach \x/\t in {0/Preliminar, 4.6/Cuartos de final, 9.2/Semifinales, 13.8/Final}
+		\node[font=\bfseries\small, text=imegreenDark] at (\x,9.0) {\t};
+
+	\partido{P1}{0}{2.6}{P1}{2.° Grupo B}{2.° Grupo C}
+	\partido{P2}{0}{0.1}{P2}{2.° Grupo D}{2.° Grupo E}
+
+	\partido{C1}{4.6}{7.6}{C1}{1.° Grupo B}{2.° Grupo A}
+	\partido{C2}{4.6}{5.1}{C2}{1.° Grupo C}{1.° Grupo D}
+	\partido{C3}{4.6}{2.6}{C3}{1.° Grupo A}{Ganador P1}
+	\partido{C4}{4.6}{0.1}{C4}{1.° Grupo E}{Ganador P2}
+
+	\partido{S1}{9.2}{6.35}{S1}{Ganador C1}{Ganador C2}
+	\partido{S2}{9.2}{1.35}{S2}{Ganador C3}{Ganador C4}
+
+	\partido{F}{13.8}{3.85}{FINAL}{Ganador S1}{Ganador S2}
+	\partido{T}{13.8}{0.6}{3.\textsuperscript{er} LUGAR}{Perdedor S1}{Perdedor S2}
+
+	\pasa{P1}{C3a} \pasa{P2}{C4a}
+	\pasa{C1}{S1h} \pasa{C2}{S1a} \pasa{C3}{S2h} \pasa{C4}{S2a}
+	\pasa{S1}{Fh} \pasa{S2}{Fa}
+
+	\node[draw=imegold, fill=imegold, rounded corners=2pt, font=\bfseries, text=imegreenDark, anchor=west] at (16.0,3.85) {Campeón};
+	\draw[imegold, line width=1.2pt] (F) -- (16.0,3.85);
+
+	\node[anchor=north west, text width=7.4cm, font=\scriptsize, text=imedark, align=left] at (-1.75,-0.95) {%
+		\textbf{Grupos:} todos contra todos. Empates en grupos y cuartos se definen con 3 penales por equipo; en la final, 5 penales.};
+	\node[anchor=north west, text width=8.2cm, font=\scriptsize, text=imedark, align=left] at (7.45,-0.95) {%
+		\textbf{Partidos:} 24 de grupos + 2 preliminares + 4 cuartos + 2 semis + 3.\textsuperscript{er} lugar + final = \textbf{34}.};
+\end{tikzpicture}
+\end{center}
+
+\vfill
+{\scriptsize\color{imegray} Referencial con el cupo completo. La conformación de los grupos se define en el sorteo y se ajusta a la cantidad de equipos inscritos (ver última página).}
+
+\newpage
+% =====================================================================
+% VOLEY
+% =====================================================================
+\cabecera{Vóley Mixto}{12 equipos \,·\, 4 grupos de 3 \,·\, clasifican 8 a cuartos \,·\, 19 partidos en un solo día}
+
+\noindent
+\begin{minipage}[t]{0.24\linewidth}\vspace{0pt}\grupo{A}{3}\end{minipage}\hfill
+\begin{minipage}[t]{0.24\linewidth}\vspace{0pt}\grupo{B}{3}\end{minipage}\hfill
+\begin{minipage}[t]{0.24\linewidth}\vspace{0pt}\grupo{C}{3}\end{minipage}\hfill
+\begin{minipage}[t]{0.24\linewidth}\vspace{0pt}\grupo{D}{3}\end{minipage}
+
+\vspace{0.3cm}
+\begin{center}
+\begin{tikzpicture}[x=1cm,y=0.95cm]
+	\foreach \x/\t in {0/Cuartos de final, 5.2/Semifinales, 10.4/Final}
+		\node[font=\bfseries\small, text=imegreenDark] at (\x,8.6) {\t};
+
+	\partido{C1}{0}{7.2}{C1}{1.° Grupo A}{2.° Grupo B}
+	\partido{C2}{0}{4.9}{C2}{1.° Grupo B}{2.° Grupo A}
+	\partido{C3}{0}{2.6}{C3}{1.° Grupo C}{2.° Grupo D}
+	\partido{C4}{0}{0.3}{C4}{1.° Grupo D}{2.° Grupo C}
+
+	\partido{S1}{5.2}{6.05}{S1}{Ganador C1}{Ganador C2}
+	\partido{S2}{5.2}{1.45}{S2}{Ganador C3}{Ganador C4}
+
+	\partido{F}{10.4}{3.75}{FINAL · mejor de 3 sets}{Ganador S1}{Ganador S2}
+
+	\pasa{C1}{S1h} \pasa{C2}{S1a} \pasa{C3}{S2h} \pasa{C4}{S2a}
+	\pasa{S1}{Fh} \pasa{S2}{Fa}
+
+	\node[draw=imegold, fill=imegold, rounded corners=2pt, font=\bfseries, text=imegreenDark, anchor=west] at (12.6,3.75) {Campeón};
+	\draw[imegold, line width=1.2pt] (F) -- (12.6,3.75);
+
+	\node[anchor=north west, text width=9cm, font=\scriptsize, text=imedark, align=left] at (14.6,8.3) {};
+\end{tikzpicture}
+\end{center}
+
+\vspace{0.1cm}
+\begin{tcolorbox}[enhanced, colback=white, colframe=imegold, boxrule=0.8pt, arc=2mm, left=3mm, right=3mm, top=1.5mm, bottom=1.5mm]
+	\small
+	\textbf{Grupos:} todos contra todos; victoria 2 puntos, derrota 0. Desempate: diferencia de puntos, puntos a favor, menos puntos en contra y sorteo.\\
+	\textbf{Sets:} grupos, cuartos y semifinales a \textbf{1 set de 20} (diferencia de 2, tope 22). Final al \textbf{mejor de 3}: 20, 20 y 10 puntos.\\
+	\textbf{Partidos:} 12 de grupos + 4 cuartos + 2 semis + final = \textbf{19}.
+\end{tcolorbox}
+
+\vfill
+{\scriptsize\color{imegray} Referencial con el cupo completo. La conformación de los grupos se define en el sorteo y se ajusta a la cantidad de equipos inscritos (ver última página).}
+
+\newpage
+% =====================================================================
+% ADAPTACION SEGUN INSCRITOS
+% =====================================================================
+\cabecera{Si se inscriben menos equipos}{El número de grupos y la llave se ajustan automáticamente a los equipos inscritos}
+
+\vspace{0.4cm}
+\begin{center}
+\renewcommand{\arraystretch}{1.9}
+\large\begin{tabular}{c c l c}
+	\rowcolor{imegreenDark}
+	\color{white}Equipos inscritos & \color{white}\bfseries Grupos & \color{white}\bfseries Llave final (pasan 1.° y 2.° de cada grupo) & \color{white}\bfseries Clasifican\\
+	Menos de 4 & --- & No alcanza para grupos: se juega todos contra todos o eliminación directa. & ---\\
+	\rowcolor{white}
+	4 a 9 & 2 & Semifinales cruzadas (1.° A vs 2.° B y 1.° B vs 2.° A) y final. & 4\\
+	10 a 16 & 4 & Cuartos (1.°A--2.°B, 1.°B--2.°A, 1.°C--2.°D, 1.°D--2.°C), semifinales y final. & 8\\
+	\rowcolor{white}
+	17 o más & 5 & Preliminar (2.°B--2.°C y 2.°D--2.°E), cuartos, semifinales y final. & 10\\
+\end{tabular}
+\end{center}
+
+\vspace{0.6cm}
+\begin{tcolorbox}[enhanced, colback=imegreenSoft, colframe=imegreen, boxrule=0.8pt, arc=2mm, left=4mm, right=4mm, top=2mm, bottom=2mm]
+	\begin{itemize}\setlength{\itemsep}{2pt}
+		\item Los equipos se reparten \textbf{lo más parejo posible}; los grupos con un equipo más van primero (por ejemplo, 14 equipos en 4 grupos: 4, 4, 3 y 3).
+		\item El \textbf{sorteo} del miércoles 28 de octubre define en qué grupo queda cada equipo.
+		\item El partido por el \textbf{3.\textsuperscript{er} lugar} se juega solo si la disciplina lo contempla (Futsal sí; Vóley no).
+		\item El fixture con horarios y canchas se publica en \textbf{campeonato-full.vercel.app} después del sorteo.
+	\end{itemize}
+\end{tcolorbox}
+
+\end{document}
