@@ -193,6 +193,7 @@ function matchToRow(
     stage: match.stage,
     bracket_position: match.bracketPosition ?? null,
     next_match_id: match.nextMatchId ?? null,
+    is_home_next: match.isHomeNext ?? null,
     label: match.label ?? null,
     home_team_id: match.homeTeamId || null,
     away_team_id: match.awayTeamId || null,

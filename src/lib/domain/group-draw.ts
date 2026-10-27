@@ -137,7 +137,9 @@ export function buildGroupKnockoutMatches({
         label: `P${index + 1}`,
         homePlaceholder: slot.home,
         awayPlaceholder: slot.away,
-        nextMatchId: id(`C${index + 3}`)
+        // El ganador de P1/P2 entra como visitante en C3/C4.
+        nextMatchId: id(`C${index + 3}`),
+        isHomeNext: false
       });
     });
     round += 1;
@@ -170,7 +172,8 @@ export function buildGroupKnockoutMatches({
         awaySourceMatchId: fromPreliminary,
         sourceMatchIds: fromPreliminary ? [fromPreliminary] : [],
         dependsOnMatchIds: fromPreliminary ? [fromPreliminary] : [],
-        nextMatchId: id(index < 2 ? "S1" : "S2")
+        nextMatchId: id(index < 2 ? "S1" : "S2"),
+        isHomeNext: index % 2 === 0
       });
     });
     round += 1;
@@ -191,7 +194,8 @@ export function buildGroupKnockoutMatches({
       awaySourceMatchId: sources[1],
       sourceMatchIds: sources,
       dependsOnMatchIds: sources,
-      nextMatchId: id("F")
+      nextMatchId: id("F"),
+      isHomeNext: index === 0
     });
   });
   round += 1;

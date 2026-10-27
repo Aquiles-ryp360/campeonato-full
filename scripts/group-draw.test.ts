@@ -43,6 +43,15 @@ test("five groups build preliminary, quarters, semis, third place and final", ()
   const c3 = matches.find((match) => match.label === "C3");
   assert.equal(c3?.homePlaceholder, "1ro Grupo A");
   assert.equal(c3?.awaySourceMatchId, "ev-p1");
+  // Cada ganador sabe a que partido y lado avanza.
+  const next = (label: string) => matches.find((match) => match.label === label);
+  assert.equal(next("P1")?.nextMatchId, "ev-c3");
+  assert.equal(next("P1")?.isHomeNext, false);
+  assert.equal(next("C1")?.isHomeNext, true);
+  assert.equal(next("C2")?.isHomeNext, false);
+  assert.equal(next("S1")?.isHomeNext, true);
+  assert.equal(next("S2")?.isHomeNext, false);
+  assert.ok(matches.filter((match) => match.label !== "F" && match.label !== "3L").every((match) => match.nextMatchId));
 });
 
 test("four groups build quarters to final without third place", () => {
