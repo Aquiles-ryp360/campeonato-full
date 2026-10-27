@@ -30,7 +30,8 @@ export function GroupDrawPanel({ data }: { data: CompetitionData }) {
   const event = groupEvents.find((item) => item.id === eventId);
   const scopeStatuses = teamScope === "approved" ? ["approved"] : ["registered", "observed", "approved"];
   const teamCount = data.teams.filter((team) => team.eventId === eventId && scopeStatuses.includes(team.status)).length;
-  const groupCount = groupCountInput ?? event?.scheduleConfig?.groupCount ?? defaultGroupCount(teamCount);
+  const recommendedGroupCount = defaultGroupCount(teamCount);
+  const groupCount = groupCountInput ?? recommendedGroupCount;
   const hasGroups = data.groups.some((group) => group.eventId === eventId);
   const locked = event?.fixtureStatus === "published" || event?.fixtureStatus === "locked";
   const canDraw = teamCount >= groupCount * 2 && supportsGroupKnockout(groupCount) && !locked;
@@ -97,7 +98,7 @@ export function GroupDrawPanel({ data }: { data: CompetitionData }) {
           <select className={inputClass} value={groupCount} onChange={(e) => setGroupCountInput(Number(e.target.value))}>
             {[2, 4, 5].map((count) => (
               <option key={count} value={count}>
-                {count} grupos
+                {count} grupos{count === recommendedGroupCount ? " (recomendado)" : ""}
               </option>
             ))}
           </select>

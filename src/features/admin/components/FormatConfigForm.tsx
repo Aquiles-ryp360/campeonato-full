@@ -1,6 +1,5 @@
 import type { SeedingMode, TournamentFormat } from "@/lib/types";
 import { Field, SectionHeader, inputClass } from "@/components/ui";
-import { NumberControl } from "./NumberControl";
 import { HoldHint } from "./HoldHint";
 import {
   ByesIllustration,
@@ -25,8 +24,8 @@ export function FormatConfigForm({
   allowByes,
   onAllowByesChange,
   groupCount,
-  onGroupCountChange,
-  maxTeams
+  teamCount,
+  teamsAreRegistered
 }: {
   format: TournamentFormat;
   seedingMode: SeedingMode;
@@ -36,10 +35,10 @@ export function FormatConfigForm({
   allowByes: boolean;
   onAllowByesChange: (value: boolean) => void;
   groupCount: number;
-  onGroupCountChange: (value: number) => void;
-  maxTeams: number;
+  teamCount: number;
+  teamsAreRegistered: boolean;
 }) {
-  const teamsPerGroup = Math.max(1, Math.ceil(maxTeams / Math.max(1, groupCount)));
+  const teamsPerGroup = Math.max(1, Math.ceil(teamCount / Math.max(1, groupCount)));
 
   return (
     <section className="rounded-md border border-brand-towerMid/25 bg-brand-wash/50 p-5">
@@ -128,19 +127,16 @@ export function FormatConfigForm({
               label={
                 <HoldHint
                   title="Numero de grupos"
-                  description={`Los ${maxTeams} equipos se reparten en ${groupCount} grupos lo mas parejos posible; dentro de cada grupo juegan todos contra todos. En amarillo, los 2 que clasifican de cada grupo.`}
-                  illustration={<GroupCountIllustration teams={maxTeams} groups={groupCount} />}
+                  description={`Se calcula solo segun los equipos ${teamsAreRegistered ? "inscritos" : "del cupo maximo (aun no hay inscritos)"}: hasta 9 equipos son 2 grupos, de 10 a 16 son 4 y desde 17 son 5. Dentro de cada grupo juegan todos contra todos. En amarillo, los 2 que clasifican de cada grupo.`}
+                  illustration={<GroupCountIllustration teams={teamCount} groups={groupCount} />}
                 >
                   Numero de grupos
                 </HoldHint>
               }
             >
-              <NumberControl
-                value={groupCount}
-                min={2}
-                max={8}
-                onChange={onGroupCountChange}
-              />
+              <p className="flex min-h-10 items-center rounded-md border border-brand-towerMid/25 bg-white px-3 text-sm font-bold text-ink">
+                {groupCount} grupos · automatico
+              </p>
             </Field>
             <Info label="Equipos aprox. por grupo" value={`${teamsPerGroup}`} />
           </>

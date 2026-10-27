@@ -27,6 +27,8 @@ import { BasesUploadForm } from "./BasesUploadForm";
 import { FixtureGenerationPanel } from "./FixtureGenerationPanel";
 import { NumberControl } from "./NumberControl";
 import type { CompetitionData } from "@/lib/data-mappers";
+import { isActiveRegistrationTeamStatus } from "@/lib/domain/registration-rules";
+import { defaultGroupCount } from "@/lib/domain/group-draw";
 
 const steps = [
   "Datos generales",
@@ -106,9 +108,20 @@ export function ChampionshipWizard({
   const isKnockout = draft.format === "single_elimination";
   const usesTablePoints = draft.format !== "single_elimination";
   const courts = useMemo(() => buildCourts(draft.courtCount), [draft.courtCount]);
+  const registeredTeams = useMemo(
+    () =>
+      initialEvent
+        ? data.teams.filter((team) => team.eventId === initialEvent.id && isActiveRegistrationTeamStatus(team.status)).length
+        : 0,
+    [data.teams, initialEvent]
+  );
+  // The bracket adapts to who actually registered; before that, plan with the max quota.
+  const teamsAreRegistered = registeredTeams >= 2;
+  const planningTeams = teamsAreRegistered ? registeredTeams : draft.maxTeams;
+  const groupCount = Math.max(2, defaultGroupCount(planningTeams));
   const estimatedMatches = useMemo(
-    () => estimateMatchCount(draft.format, draft.maxTeams, draft.thirdPlace, draft.groupCount),
-    [draft.format, draft.groupCount, draft.maxTeams, draft.thirdPlace]
+    () => estimateMatchCount(draft.format, planningTeams, draft.thirdPlace, groupCount),
+    [draft.format, groupCount, planningTeams, draft.thirdPlace]
   );
   const estimatedEndTime = useMemo(
     () => estimateEndTime(draft.startTime, estimatedMatches, draft.courtCount, draft.matchDuration, draft.transitionMinutes),
@@ -195,6 +208,7 @@ export function ChampionshipWizard({
         body: JSON.stringify({
           ...draft,
           courts,
+          groupCount,
           transitionMinutes: draft.transitionMinutes,
           estimatedEndTime
         })
@@ -501,20 +515,23 @@ export function ChampionshipWizard({
               onThirdPlaceChange={(value) => updateDraft({ thirdPlace: value })}
               allowByes={draft.allowByes}
               onAllowByesChange={(value) => updateDraft({ allowByes: value })}
-              groupCount={draft.groupCount}
-              onGroupCountChange={(value) => updateDraft({ groupCount: value })}
-              maxTeams={draft.maxTeams}
+              groupCount={groupCount}
+              teamCount={planningTeams}
+              teamsAreRegistered={teamsAreRegistered}
             />
           </div>
           <div className="mt-5 rounded-md border border-brand-electric/25 bg-white p-4">
             <p className="text-sm font-black text-brand-navy">Asi quedaria tu campeonato</p>
             <p className="mb-3 text-xs font-semibold text-brand-muted">
-              Vista referencial con {draft.maxTeams} equipos · aprox. {estimatedMatches} partidos
+              {teamsAreRegistered
+                ? `Con los ${registeredTeams} equipos inscritos`
+                : `Aun sin inscritos: referencia con el cupo maximo de ${draft.maxTeams}`}{" "}
+              · aprox. {estimatedMatches} partidos · se ajusta solo al cerrar inscripciones
             </p>
             <FormatPreview
               format={draft.format}
-              maxTeams={draft.maxTeams}
-              groupCount={draft.groupCount}
+              maxTeams={planningTeams}
+              groupCount={groupCount}
               thirdPlace={draft.thirdPlace}
             />
           </div>

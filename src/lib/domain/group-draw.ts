@@ -10,10 +10,13 @@ export type DrawnGroup = {
 const letters = "ABCDEFGH";
 
 // 12 equipos -> 4 grupos de 3; 18 -> 5 grupos (4-4-4-3-3).
+// Grupos segun inscritos, solo entre las llaves soportadas (2, 4 o 5 grupos).
+// ponytail: con 21+ equipos quedan 5 grupos grandes; para mas grupos hay que agregar sus cruces en quarterFinalSlots.
 export function defaultGroupCount(teamCount: number) {
   if (teamCount < 4) return 1;
-  if (teamCount <= 12) return Math.max(2, Math.ceil(teamCount / 3));
-  return Math.min(8, Math.ceil(teamCount / 4));
+  if (teamCount <= 9) return 2;
+  if (teamCount <= 16) return 4;
+  return 5;
 }
 
 // Reparte lo mas parejo posible; los grupos grandes van primero.

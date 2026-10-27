@@ -60,3 +60,8 @@ test("four groups build quarters to final without third place", () => {
   assert.equal(matches[0].homePlaceholder, "1ro Grupo A");
   assert.equal(matches[0].awayPlaceholder, "2do Grupo B");
 });
+
+test("group count adapts to registered teams using supported brackets", () => {
+  const cases: Array<[number, number]> = [[3, 1], [4, 2], [9, 2], [10, 4], [16, 4], [17, 5], [24, 5]];
+  for (const [teams, groups] of cases) assert.equal(defaultGroupCount(teams), groups, `${teams} equipos`);
+});
