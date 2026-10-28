@@ -1,8 +1,8 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { AlertTriangle, Dices, Expand, Printer, RotateCcw, Save, Shuffle, Tag } from "lucide-react";
+import { AlertTriangle, Dices, Printer, Save, Tag, X } from "lucide-react";
 import { toast } from "sonner";
 import type { CompetitionData } from "@/lib/data-mappers";
 import {
@@ -90,13 +90,20 @@ function EventDraw({ data, eventId }: { data: CompetitionData; eventId: string }
   const [boardSizes, setBoardSizes] = useState<number[]>(existingGroups.map((group) => group.length));
   const pending = board ? drawTeams.map((team) => team.id).filter((id) => !board.flat().includes(id)) : [];
 
-  const [spinName, setSpinName] = useState<string>();
   const [landed, setLanded] = useState<{ teamId: string; group: number }>();
   const [spinning, setSpinning] = useState(false);
+  const [rotation, setRotation] = useState(0);
+  const [wheelOpen, setWheelOpen] = useState(false);
   const [selected, setSelected] = useState<string>();
   const [confirming, setConfirming] = useState(false);
   const [saving, setSaving] = useState(false);
-  const stageRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!wheelOpen) return;
+    const onKey = (e: KeyboardEvent) => e.key === "Escape" && !spinning && setWheelOpen(false);
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [wheelOpen, spinning]);
 
   const locked = event?.fixtureStatus === "published" || event?.fixtureStatus === "locked";
   const conflicts = board ? groupConflicts(board, tags) : [];
@@ -110,6 +117,8 @@ function EventDraw({ data, eventId }: { data: CompetitionData; eventId: string }
     setBoardSizes(sizes);
     setLanded(undefined);
     setSelected(undefined);
+    setRotation(0);
+    setWheelOpen(true);
   }
 
   function place(teamId: string, current: string[][]) {
@@ -118,36 +127,24 @@ function EventDraw({ data, eventId }: { data: CompetitionData; eventId: string }
     return { next, group };
   }
 
+  // Gira la ruleta hasta dejar al ganador bajo la flecha; al detenerse el equipo va solo a su grupo.
   function spin() {
     if (!board || pending.length === 0 || spinning) return;
+    const winnerIndex = Math.floor(Math.random() * pending.length);
+    const winner = pending[winnerIndex];
+    const slice = 360 / pending.length;
+    const target = -((winnerIndex + 0.5) * slice) + (Math.random() - 0.5) * slice * 0.6;
+    const delta = (((target - rotation) % 360) + 360) % 360;
     setSpinning(true);
     setLanded(undefined);
-    const winner = pending[Math.floor(Math.random() * pending.length)];
-    const steps = 22;
-    let step = 0;
-    const tick = () => {
-      step += 1;
-      if (step < steps) {
-        setSpinName(teamName.get(pending[Math.floor(Math.random() * pending.length)]));
-        setTimeout(tick, 45 + step * step * 0.9); // se frena como una ruleta
-        return;
-      }
+    setRotation(rotation + 360 * 6 + delta);
+    setTimeout(() => {
       // El tablero no cambia mientras gira (botones bloqueados), asi que board sigue vigente.
-      const { next, group } = place(winner, board!);
-      setSpinName(teamName.get(winner));
+      const { next, group } = place(winner, board);
       setBoard(next);
       setLanded({ teamId: winner, group });
       setSpinning(false);
-    };
-    tick();
-  }
-
-  function drawRest() {
-    if (!board) return;
-    let next = board;
-    for (const id of [...pending].sort(() => Math.random() - 0.5)) next = place(id, next).next;
-    setBoard(next);
-    setLanded(undefined);
+    }, SPIN_MS + 150);
   }
 
   // Click en un equipo y luego en otro de otro grupo: se intercambian (los tamanos no cambian).
@@ -296,8 +293,8 @@ function EventDraw({ data, eventId }: { data: CompetitionData; eventId: string }
 
       <div className="flex flex-wrap gap-2">
         <Button disabled={!canStart || spinning} onClick={startBoard}>
-          <RotateCcw className="h-4 w-4" />
-          {board ? "Reiniciar sorteo" : "Iniciar sorteo en vivo"}
+          <Dices className="h-4 w-4" />
+          Nuevo sorteo con ruleta
         </Button>
         <Button variant="secondary" href={`/imprimir/grupos?evento=${eventId}`}>
           <Printer className="h-4 w-4" />
@@ -314,41 +311,15 @@ function EventDraw({ data, eventId }: { data: CompetitionData; eventId: string }
       </div>
 
       {board ? (
-        <div ref={stageRef} className="space-y-4 overflow-auto rounded-lg bg-white p-4 ring-1 ring-brand-towerMid/25">
+        <div className="space-y-4 rounded-lg bg-white p-4 ring-1 ring-brand-towerMid/25">
           <div className="flex flex-wrap items-center justify-between gap-3">
-            <p className="text-lg font-black text-brand-navy">{event?.name}</p>
-            <Button variant="ghost" onClick={() => void stageRef.current?.requestFullscreen?.()}>
-              <Expand className="h-4 w-4" />
-              Proyectar
+            <p className="text-lg font-black text-brand-navy">
+              {event?.name} · {pending.length ? `faltan ${pending.length} equipos` : "sorteo completo"}
+            </p>
+            <Button variant="highlight" onClick={() => setWheelOpen(true)}>
+              <Dices className="h-4 w-4" />
+              Abrir ruleta
             </Button>
-          </div>
-
-          <div className="grid gap-4 md:grid-cols-[1fr_auto] md:items-center">
-            <div
-              aria-live="polite"
-              className={cn(
-                "grid min-h-24 place-items-center rounded-lg border-4 px-4 text-center text-2xl font-black sm:text-4xl",
-                spinning ? "border-brand-yellow bg-brand-yellow/20 text-brand-navy" : "border-brand-electric/30 bg-brand-electric/5 text-brand-navy"
-              )}
-            >
-              {spinName ?? (pending.length ? "Listo para girar" : "Sorteo completo")}
-              {landed && !spinning ? (
-                <span className="mt-1 block text-base font-bold text-brand-electric sm:text-xl">
-                  → Grupo {"ABCDEFGH"[landed.group]}
-                  {tags[landed.teamId] ? ` · semestre ${tags[landed.teamId]}` : ""}
-                </span>
-              ) : null}
-            </div>
-            <div className="flex flex-wrap gap-2 md:flex-col">
-              <Button variant="highlight" className="min-h-14 text-base" disabled={spinning || pending.length === 0} onClick={spin}>
-                <Dices className="h-5 w-5" />
-                Girar ruleta ({pending.length})
-              </Button>
-              <Button variant="secondary" disabled={spinning || pending.length === 0} onClick={drawRest}>
-                <Shuffle className="h-4 w-4" />
-                Sortear el resto
-              </Button>
-            </div>
           </div>
 
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
@@ -410,6 +381,65 @@ function EventDraw({ data, eventId }: { data: CompetitionData; eventId: string }
         </div>
       ) : null}
 
+      {wheelOpen && board ? (
+        <div role="dialog" aria-modal="true" aria-label="Ruleta del sorteo" className="fixed inset-0 z-50 overflow-auto bg-brand-navy p-4 text-white sm:p-6">
+          <div className="mx-auto flex max-w-7xl items-center justify-between gap-3">
+            <p className="text-xl font-black sm:text-2xl">Sorteo · {event?.name}</p>
+            <Button variant="secondary" disabled={spinning} onClick={() => setWheelOpen(false)}>
+              <X className="h-4 w-4" />
+              Cerrar
+            </Button>
+          </div>
+          <div className="mx-auto mt-4 grid max-w-7xl gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] lg:items-center">
+            <div className="flex flex-col items-center gap-4">
+              {pending.length > 0 ? (
+                <Wheel names={pending.map((id) => teamName.get(id) ?? id)} rotation={rotation} />
+              ) : (
+                <p className="py-20 text-3xl font-black">Sorteo completo</p>
+              )}
+              <p aria-live="polite" className="min-h-16 text-center text-2xl font-black sm:text-3xl">
+                {landed && !spinning ? (
+                  <>
+                    {teamName.get(landed.teamId)}{" "}
+                    <span className="text-brand-yellow">→ Grupo {"ABCDEFGH"[landed.group]}</span>
+                  </>
+                ) : spinning ? (
+                  "Girando..."
+                ) : null}
+              </p>
+              <Button variant="highlight" className="min-h-14 px-8 text-lg" disabled={spinning || pending.length === 0} onClick={spin}>
+                <Dices className="h-5 w-5" />
+                Girar ({pending.length})
+              </Button>
+            </div>
+            <div className="grid gap-3 sm:grid-cols-2">
+              {board.map((group, index) => (
+                <div key={index} className="rounded-md bg-white p-3 text-ink">
+                  <p className="text-lg font-black text-brand-navy">Grupo {"ABCDEFGH"[index]}</p>
+                  <ol className="mt-1 space-y-1">
+                    {Array.from({ length: boardSizes[index] }, (_, slot) => {
+                      const id = group[slot];
+                      return (
+                        <li
+                          key={slot}
+                          className={cn(
+                            "rounded px-2 py-1 font-bold",
+                            id ? "bg-brand-electric/10" : "border border-dashed border-brand-towerMid/40 text-brand-muted",
+                            id && landed?.teamId === id && "bg-brand-yellow"
+                          )}
+                        >
+                          {id ? teamName.get(id) : "—"}
+                        </li>
+                      );
+                    })}
+                  </ol>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      ) : null}
+
       <ConfirmDialog
         open={confirming}
         title="Confirmar grupos"
@@ -420,6 +450,61 @@ function EventDraw({ data, eventId }: { data: CompetitionData; eventId: string }
         onConfirm={() => void confirmGroups()}
         onCancel={() => setConfirming(false)}
       />
+    </div>
+  );
+}
+
+const SPIN_MS = 4500;
+const wheelColors = ["#1d4ed8", "#f59e0b", "#0f766e", "#dc2626", "#7c3aed", "#0891b2", "#65a30d", "#db2777"];
+
+// Ruleta SVG: una porcion por equipo pendiente; la flecha de arriba marca al ganador.
+function Wheel({ names, rotation }: { names: string[]; rotation: number }) {
+  const slice = 360 / names.length;
+  const point = (deg: number) => {
+    const rad = (deg * Math.PI) / 180;
+    return `${(Math.sin(rad) * 100).toFixed(3)} ${(-Math.cos(rad) * 100).toFixed(3)}`;
+  };
+  const fontSize = names.length > 12 ? 6 : names.length > 8 ? 7.5 : 9;
+
+  return (
+    <div className="relative w-full max-w-[min(80vw,520px)]">
+      <svg viewBox="-110 -118 220 228" className="w-full" aria-hidden="true">
+        <g
+          style={{
+            transform: `rotate(${rotation}deg)`,
+            transition: `transform ${SPIN_MS}ms cubic-bezier(0.15, 0.85, 0.2, 1)`
+          }}
+        >
+          {names.length === 1 ? (
+            <circle r="100" fill={wheelColors[0]} />
+          ) : (
+            names.map((_, index) => (
+              <path
+                key={index}
+                d={`M0 0 L${point(index * slice)} A100 100 0 ${slice > 180 ? 1 : 0} 1 ${point((index + 1) * slice)} Z`}
+                fill={wheelColors[index % wheelColors.length]}
+                stroke="#fff"
+                strokeWidth="0.8"
+              />
+            ))
+          )}
+          {names.map((name, index) => (
+            <text
+              key={index}
+              transform={`rotate(${(index + 0.5) * slice - 90}) translate(58 0)`}
+              textAnchor="middle"
+              dominantBaseline="middle"
+              fill="#fff"
+              fontSize={fontSize}
+              fontWeight="800"
+            >
+              {name.length > 18 ? `${name.slice(0, 17)}…` : name}
+            </text>
+          ))}
+        </g>
+        <circle r="10" fill="#fff" stroke="#0f172a" strokeWidth="2" />
+        <path d="M-9 -116 L9 -116 L0 -96 Z" fill="#facc15" stroke="#0f172a" strokeWidth="1.5" />
+      </svg>
     </div>
   );
 }
