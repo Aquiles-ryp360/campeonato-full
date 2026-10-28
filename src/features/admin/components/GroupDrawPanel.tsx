@@ -79,15 +79,10 @@ function EventDraw({ data, eventId }: { data: CompetitionData; eventId: string }
   const groupCount = groupCountInput ?? recommendedGroupCount;
   const sizes = drawTeams.length >= groupCount * 2 ? groupSizes(drawTeams.length, groupCount) : [];
 
-  // Grupos ya guardados: se muestran para poder ajustarlos sin volver a girar.
-  const existingGroups = data.groups
-    .filter((group) => group.eventId === eventId)
-    .sort((a, b) => a.name.localeCompare(b.name))
-    .map((group) => data.groupTeams.filter((item) => item.groupId === group.id).map((item) => item.teamId));
-  const existingMatches =
-    existingGroups.flat().length === drawTeams.length && drawTeams.every((team) => existingGroups.flat().includes(team.id));
-  const [board, setBoard] = useState<string[][] | null>(existingMatches ? existingGroups : null);
-  const [boardSizes, setBoardSizes] = useState<number[]>(existingGroups.map((group) => group.length));
+  // El sorteo siempre arranca vacio y se hace en vivo; los grupos guardados solo se reemplazan al confirmar.
+  const hasSavedGroups = data.groups.some((group) => group.eventId === eventId);
+  const [board, setBoard] = useState<string[][] | null>(null);
+  const [boardSizes, setBoardSizes] = useState<number[]>([]);
   const pending = board ? drawTeams.map((team) => team.id).filter((id) => !board.flat().includes(id)) : [];
 
   const [landed, setLanded] = useState<{ teamId: string; group: number }>();
@@ -289,10 +284,14 @@ function EventDraw({ data, eventId }: { data: CompetitionData; eventId: string }
 
       {locked ? (
         <p className="text-sm font-semibold text-red-800">El fixture ya esta publicado o bloqueado; no se puede volver a sortear.</p>
+      ) : hasSavedGroups && !board ? (
+        <p className="text-sm font-semibold text-brand-muted">
+          Este campeonato ya tiene grupos guardados. Haz el sorteo nuevo con la ruleta; los grupos anteriores solo se reemplazan al confirmar.
+        </p>
       ) : null}
 
       <div className="flex flex-wrap gap-2">
-        <Button disabled={!canStart || spinning} onClick={startBoard}>
+        <Button variant="highlight" className="min-h-12 text-base" disabled={!canStart || spinning} onClick={startBoard}>
           <Dices className="h-4 w-4" />
           Nuevo sorteo con ruleta
         </Button>
@@ -445,7 +444,7 @@ function EventDraw({ data, eventId }: { data: CompetitionData; eventId: string }
         title="Confirmar grupos"
         description="Se reemplazan los grupos y partidos de este campeonato (no los equipos ni sus jugadores) y se crea el fixture con horarios y la llave final."
         confirmLabel="Confirmar"
-        destructive={existingGroups.length > 0}
+        destructive={hasSavedGroups}
         busy={saving}
         onConfirm={() => void confirmGroups()}
         onCancel={() => setConfirming(false)}
