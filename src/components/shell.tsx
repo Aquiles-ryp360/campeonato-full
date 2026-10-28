@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import type { ComponentType, ReactNode } from "react";
 import {
+  Dices,
   BarChart3,
   FileText,
   KeyRound,
@@ -43,6 +44,7 @@ const adminNav: ShellNavItem[] = [
   { href: "/admin/equipos", label: "Inscripciones", shortLabel: "Equipos", icon: UsersRound },
   { href: "/admin/codigos", label: "Códigos", icon: KeyRound },
   { href: "/admin/avisos", label: "Avisos", icon: Megaphone },
+  { href: "/admin/sorteo", label: "Sorteo", icon: Dices },
   { href: "/admin/fixture", label: "Fixture", icon: Calendar },
   { href: "/admin/resultados", label: "Resultados", icon: BarChart3 },
   { href: "/admin/configuracion", label: "Configuración", shortLabel: "Ajustes", icon: Settings2 }

@@ -1,4 +1,4 @@
-import { CalendarDays, CheckCircle2, CircleDollarSign, Trophy, UsersRound } from "lucide-react";
+import { CalendarDays, CheckCircle2, CircleDollarSign, Dices, Trophy, UsersRound } from "lucide-react";
 import type { CompetitionData } from "@/lib/data-mappers";
 import { getAdminSummary } from "@/lib/queries/admin";
 import { Button, Card, Metric, SectionHeader } from "@/components/ui";
@@ -22,6 +22,11 @@ export function AdminDashboard({ data }: { data: CompetitionData }) {
           Nuevo campeonato
         </Button>
       </div>
+
+      <Button href="/admin/sorteo" variant="highlight" className="min-h-20 w-full text-xl sm:text-2xl">
+        <Dices className="h-8 w-8" />
+        Sorteo de equipos
+      </Button>
 
       <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <Metric label="Campeonatos activos" value={`${summary.activeEvents.length}`} icon={Trophy} />

@@ -14,7 +14,15 @@ import {
   supportsGroupKnockout,
   type DrawTags
 } from "@/lib/domain/group-draw";
-import { Badge, Button, Card, ConfirmDialog, Field, SectionHeader, inputClass } from "@/components/ui";
+import {
+  Badge,
+  Button,
+  Card,
+  ConfirmDialog,
+  Field,
+  SectionHeader,
+  inputClass
+} from "@/components/ui";
 import { cn } from "@/lib/utils";
 
 const statusLabel: Record<string, string> = {
@@ -33,19 +41,27 @@ export function GroupDrawPanel({ data }: { data: CompetitionData }) {
   return (
     <Card className="p-5">
       <SectionHeader
-        title="Sorteo de grupos en vivo"
-        description="Etiqueta a cada equipo con su semestre para que no caigan juntos, gira la ruleta frente a los delegados y confirma los grupos para crear el fixture."
+        title="Sorteo de equipos"
+        description="Sigue los pasos en orden. Nada se guarda hasta el paso 3."
       />
-      <div className="mt-5 max-w-md">
-        <Field label="Campeonato">
-          <select className={inputClass} value={eventId} onChange={(e) => setEventId(e.target.value)}>
-            {groupEvents.map((item) => (
-              <option key={item.id} value={item.id}>
-                {item.name}
-              </option>
-            ))}
-          </select>
-        </Field>
+      <p className="mt-5 text-sm font-black text-brand-navy">Elige el campeonato</p>
+      <div className="mt-2 grid gap-2 sm:grid-cols-2">
+        {groupEvents.map((item) => (
+          <button
+            key={item.id}
+            type="button"
+            onClick={() => setEventId(item.id)}
+            aria-pressed={item.id === eventId}
+            className={cn(
+              "min-h-14 rounded-lg px-4 py-3 text-left text-base font-black transition",
+              item.id === eventId
+                ? "bg-brand-electric text-white shadow-lift"
+                : "bg-white text-brand-navy ring-1 ring-brand-electric/20 hover:bg-brand-electric/10"
+            )}
+          >
+            {item.name}
+          </button>
+        ))}
       </div>
       {/* key: al cambiar de campeonato se reinicia todo el estado del sorteo. */}
       <EventDraw key={eventId} data={data} eventId={eventId} />
@@ -57,7 +73,8 @@ function EventDraw({ data, eventId }: { data: CompetitionData; eventId: string }
   const router = useRouter();
   const event = data.events.find((item) => item.id === eventId);
   const [teamScope, setTeamScope] = useState<"approved" | "active">("active");
-  const scopeStatuses = teamScope === "approved" ? ["approved"] : ["registered", "observed", "approved"];
+  const scopeStatuses =
+    teamScope === "approved" ? ["approved"] : ["registered", "observed", "approved"];
   const eventTeams = data.teams.filter((team) => team.eventId === eventId);
   const drawTeams = eventTeams.filter((team) => scopeStatuses.includes(team.status));
   const teamName = new Map(eventTeams.map((team) => [team.id, team.name]));
@@ -68,7 +85,11 @@ function EventDraw({ data, eventId }: { data: CompetitionData; eventId: string }
       eventTeams.map((team) => [
         team.id,
         savedTags[team.id] ??
-          suggestTeamTag(data.players.filter((player) => player.teamId === team.id).map((player) => player.semester))
+          suggestTeamTag(
+            data.players
+              .filter((player) => player.teamId === team.id)
+              .map((player) => player.semester)
+          )
       ])
     )
   );
@@ -83,7 +104,9 @@ function EventDraw({ data, eventId }: { data: CompetitionData; eventId: string }
   const hasSavedGroups = data.groups.some((group) => group.eventId === eventId);
   const [board, setBoard] = useState<string[][] | null>(null);
   const [boardSizes, setBoardSizes] = useState<number[]>([]);
-  const pending = board ? drawTeams.map((team) => team.id).filter((id) => !board.flat().includes(id)) : [];
+  const pending = board
+    ? drawTeams.map((team) => team.id).filter((id) => !board.flat().includes(id))
+    : [];
 
   const [landed, setLanded] = useState<{ teamId: string; group: number }>();
   const [spinning, setSpinning] = useState(false);
@@ -106,7 +129,10 @@ function EventDraw({ data, eventId }: { data: CompetitionData; eventId: string }
   const conflictIds = new Set(conflicts.flatMap((conflict) => conflict.teamIds));
   const canStart = sizes.length > 0 && supportsGroupKnockout(groupCount) && !locked;
   const boardComplete =
-    Boolean(board) && pending.length === 0 && board!.flat().length === drawTeams.length && board!.every((group) => group.length >= 2);
+    Boolean(board) &&
+    pending.length === 0 &&
+    board!.flat().length === drawTeams.length &&
+    board!.every((group) => group.length >= 2);
 
   function startBoard() {
     setConfirmed(false);
@@ -151,7 +177,11 @@ function EventDraw({ data, eventId }: { data: CompetitionData; eventId: string }
       setSelected(selected === teamId ? undefined : teamId);
       return;
     }
-    setBoard(board.map((group) => group.map((id) => (id === selected ? teamId : id === teamId ? selected : id))));
+    setBoard(
+      board.map((group) =>
+        group.map((id) => (id === selected ? teamId : id === teamId ? selected : id))
+      )
+    );
     setSelected(undefined);
   }
 
@@ -163,7 +193,10 @@ function EventDraw({ data, eventId }: { data: CompetitionData; eventId: string }
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ eventId, tags })
       });
-      const payload = (await response.json().catch(() => null)) as { ok?: boolean; error?: string } | null;
+      const payload = (await response.json().catch(() => null)) as {
+        ok?: boolean;
+        error?: string;
+      } | null;
       if (!response.ok || payload?.ok === false) {
         toast.error(payload?.error ?? "No se pudieron guardar las etiquetas.");
         return;
@@ -185,7 +218,11 @@ function EventDraw({ data, eventId }: { data: CompetitionData; eventId: string }
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ eventId, teamScope, groups: board })
       });
-      const payload = (await response.json().catch(() => null)) as { ok?: boolean; error?: string; matchCount?: number } | null;
+      const payload = (await response.json().catch(() => null)) as {
+        ok?: boolean;
+        error?: string;
+        matchCount?: number;
+      } | null;
       if (!response.ok || payload?.ok === false) {
         toast.error(payload?.error ?? "No se pudieron guardar los grupos.");
         return;
@@ -204,118 +241,161 @@ function EventDraw({ data, eventId }: { data: CompetitionData; eventId: string }
 
   return (
     <div className="mt-5 space-y-6">
-      <section>
-        <div className="flex flex-wrap items-end justify-between gap-3">
-          <div>
-            <p className="text-sm font-black text-brand-navy">
-              Inscritos: {eventTeams.length} equipos · entran al sorteo {drawTeams.length}
-            </p>
-            <p className="text-xs font-semibold text-brand-muted">
-              La etiqueta se sugiere con el semestre de los jugadores; corrigela si hace falta. Mismo texto = mismo semestre.
+      <details className="rounded-lg ring-1 ring-brand-towerMid/25">
+        <summary className="cursor-pointer p-4">
+          <span className="text-base font-black text-brand-navy">1. Revisa los semestres</span>
+          <span className="ml-2 text-sm font-semibold text-brand-muted">
+            {drawTeams.length} equipos entran al sorteo ·{" "}
+            {Object.values(tags).filter(Boolean).length} con semestre. Abre solo si hay que
+            corregir.
+          </span>
+        </summary>
+        <section className="px-4 pb-4">
+          <div className="flex flex-wrap items-end justify-between gap-3">
+            <div>
+              <p className="text-sm font-black text-brand-navy">
+                Inscritos: {eventTeams.length} equipos · entran al sorteo {drawTeams.length}
+              </p>
+              <p className="text-xs font-semibold text-brand-muted">
+                El semestre se completa solo con lo que pusieron los jugadores. Equipos con el mismo
+                numero no caen en el mismo grupo.
+              </p>
+            </div>
+            <Button variant="secondary" disabled={savingTags} onClick={() => void saveTags()}>
+              <Save className="h-4 w-4" />
+              Guardar etiquetas
+            </Button>
+          </div>
+          <div className="mt-3 overflow-x-auto">
+            <table className="w-full min-w-[480px] text-left text-sm">
+              <thead className="text-xs uppercase text-brand-muted">
+                <tr>
+                  <th className="py-2 pr-3">Equipo</th>
+                  <th className="py-2 pr-3">Delegado</th>
+                  <th className="py-2 pr-3">Estado</th>
+                  <th className="py-2">Semestre (etiqueta)</th>
+                </tr>
+              </thead>
+              <tbody>
+                {eventTeams.map((team) => (
+                  <tr key={team.id} className="border-t border-brand-towerMid/20">
+                    <td className="py-2 pr-3 font-bold text-ink">{team.name}</td>
+                    <td className="py-2 pr-3 text-brand-muted">{team.delegateName}</td>
+                    <td className="py-2 pr-3">
+                      <Badge
+                        tone={
+                          team.status === "approved"
+                            ? "green"
+                            : team.status === "rejected"
+                              ? "red"
+                              : "amber"
+                        }
+                      >
+                        {statusLabel[team.status] ?? team.status}
+                      </Badge>
+                    </td>
+                    <td className="py-2">
+                      <input
+                        aria-label={`Semestre de ${team.name}`}
+                        className={cn(inputClass, "max-w-28")}
+                        value={tags[team.id] ?? ""}
+                        onChange={(e) => setTags({ ...tags, [team.id]: e.target.value.trim() })}
+                      />
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </section>
+      </details>
+
+      <details className="rounded-lg ring-1 ring-brand-towerMid/25">
+        <summary className="cursor-pointer p-4 text-sm font-bold text-brand-muted">
+          Opciones avanzadas:{" "}
+          {sizes.length ? `${groupCount} grupos (${sizes.join("-")})` : "faltan equipos"} · otras
+          impresiones
+        </summary>
+        <section className="grid gap-4 px-4 md:grid-cols-3">
+          <Field label="Equipos que entran">
+            <select
+              className={inputClass}
+              value={teamScope}
+              onChange={(e) => setTeamScope(e.target.value as "approved" | "active")}
+            >
+              <option value="active">Aprobados, inscritos y observados</option>
+              <option value="approved">Solo aprobados</option>
+            </select>
+          </Field>
+          <Field label="Numero de grupos">
+            <select
+              className={inputClass}
+              value={groupCount}
+              onChange={(e) => setGroupCountInput(Number(e.target.value))}
+            >
+              {[2, 4, 5].map((count) => (
+                <option key={count} value={count}>
+                  {count} grupos{count === recommendedGroupCount ? " (recomendado)" : ""}
+                </option>
+              ))}
+            </select>
+          </Field>
+          <div className="space-y-1.5">
+            <span className="text-sm font-bold text-ink">Reparto</span>
+            <p className="min-h-10 rounded-md bg-brand-electric/5 px-3 py-2 text-sm font-semibold text-brand-navy">
+              {drawTeams.length} equipos
+              {sizes.length ? ` · ${sizes.join("-")}` : " · faltan equipos"}
             </p>
           </div>
-          <Button variant="secondary" disabled={savingTags} onClick={() => void saveTags()}>
-            <Save className="h-4 w-4" />
-            Guardar etiquetas
+        </section>
+        <div className="flex flex-wrap gap-2 p-4">
+          <Button variant="secondary" href={`/imprimir/grupos?evento=${eventId}`}>
+            <Printer className="h-4 w-4" />
+            PDF de grupos, tablas y llave
+          </Button>
+          <Button variant="secondary" href={`/imprimir/fichas?evento=${eventId}`}>
+            <Printer className="h-4 w-4" />
+            Imprimir fichas
+          </Button>
+          <Button variant="secondary" href={`/imprimir/actas?evento=${eventId}`}>
+            <Printer className="h-4 w-4" />
+            Imprimir actas
           </Button>
         </div>
-        <div className="mt-3 overflow-x-auto">
-          <table className="w-full min-w-[480px] text-left text-sm">
-            <thead className="text-xs uppercase text-brand-muted">
-              <tr>
-                <th className="py-2 pr-3">Equipo</th>
-                <th className="py-2 pr-3">Delegado</th>
-                <th className="py-2 pr-3">Estado</th>
-                <th className="py-2">Semestre (etiqueta)</th>
-              </tr>
-            </thead>
-            <tbody>
-              {eventTeams.map((team) => (
-                <tr key={team.id} className="border-t border-brand-towerMid/20">
-                  <td className="py-2 pr-3 font-bold text-ink">{team.name}</td>
-                  <td className="py-2 pr-3 text-brand-muted">{team.delegateName}</td>
-                  <td className="py-2 pr-3">
-                    <Badge tone={team.status === "approved" ? "green" : team.status === "rejected" ? "red" : "amber"}>
-                      {statusLabel[team.status] ?? team.status}
-                    </Badge>
-                  </td>
-                  <td className="py-2">
-                    <input
-                      aria-label={`Semestre de ${team.name}`}
-                      className={cn(inputClass, "max-w-28")}
-                      value={tags[team.id] ?? ""}
-                      onChange={(e) => setTags({ ...tags, [team.id]: e.target.value.trim() })}
-                    />
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </section>
-
-      <section className="grid gap-4 md:grid-cols-3">
-        <Field label="Equipos que entran">
-          <select
-            className={inputClass}
-            value={teamScope}
-            onChange={(e) => setTeamScope(e.target.value as "approved" | "active")}
-          >
-            <option value="active">Aprobados, inscritos y observados</option>
-            <option value="approved">Solo aprobados</option>
-          </select>
-        </Field>
-        <Field label="Numero de grupos">
-          <select
-            className={inputClass}
-            value={groupCount}
-            onChange={(e) => setGroupCountInput(Number(e.target.value))}
-          >
-            {[2, 4, 5].map((count) => (
-              <option key={count} value={count}>
-                {count} grupos{count === recommendedGroupCount ? " (recomendado)" : ""}
-              </option>
-            ))}
-          </select>
-        </Field>
-        <div className="space-y-1.5">
-          <span className="text-sm font-bold text-ink">Reparto</span>
-          <p className="min-h-10 rounded-md bg-brand-electric/5 px-3 py-2 text-sm font-semibold text-brand-navy">
-            {drawTeams.length} equipos{sizes.length ? ` · ${sizes.join("-")}` : " · faltan equipos"}
-          </p>
-        </div>
-      </section>
+      </details>
 
       {locked ? (
-        <p className="text-sm font-semibold text-red-800">El fixture ya esta publicado o bloqueado; no se puede volver a sortear.</p>
+        <p className="text-sm font-semibold text-red-800">
+          El fixture ya esta publicado o bloqueado; no se puede volver a sortear.
+        </p>
       ) : hasSavedGroups && !board ? (
         <p className="text-sm font-semibold text-brand-muted">
-          Este campeonato ya tiene grupos guardados. Haz el sorteo nuevo con la ruleta; los grupos anteriores solo se reemplazan al confirmar.
+          Este campeonato ya tiene grupos guardados. Haz el sorteo nuevo con la ruleta; los grupos
+          anteriores solo se reemplazan al confirmar.
         </p>
       ) : null}
 
-      <div className="flex flex-wrap gap-2">
-        <Button variant="highlight" className="min-h-12 text-base" disabled={!canStart || spinning} onClick={startBoard}>
-          <Dices className="h-4 w-4" />
-          Nuevo sorteo con ruleta
-        </Button>
-        <Button variant="secondary" href={`/imprimir/grupos?evento=${eventId}`}>
-          <Printer className="h-4 w-4" />
-          PDF de grupos, tablas y llave
-        </Button>
-        <Button variant="secondary" href={`/imprimir/fichas?evento=${eventId}`}>
-          <Printer className="h-4 w-4" />
-          Imprimir fichas
-        </Button>
-        <Button variant="secondary" href={`/imprimir/actas?evento=${eventId}`}>
-          <Printer className="h-4 w-4" />
-          Imprimir actas
+      <div>
+        <p className="text-base font-black text-brand-navy">
+          2. Gira la ruleta frente a los delegados
+        </p>
+        <Button
+          variant="highlight"
+          className="mt-2 min-h-16 w-full text-lg sm:w-auto sm:px-10"
+          disabled={!canStart || spinning}
+          onClick={startBoard}
+        >
+          <Dices className="h-6 w-6" />
+          {board ? "Empezar de nuevo" : "Empezar sorteo"}
         </Button>
       </div>
 
       {confirmed ? (
         <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg bg-green-600/10 p-4 ring-1 ring-green-600/20">
-          <p className="text-sm font-black text-green-800">Sorteo guardado. Descarga la hoja para jugarlo en fisico.</p>
+          <p className="text-sm font-black text-green-800">
+            4. Sorteo guardado. Descarga la hoja para jugarlo en fisico y revisa los cruces mas
+            abajo.
+          </p>
           <Button variant="highlight" href={`/imprimir/grupos?evento=${eventId}&pdf=1`}>
             <Printer className="h-4 w-4" />
             Descargar PDF (grupos, tablas y llave)
@@ -327,7 +407,8 @@ function EventDraw({ data, eventId }: { data: CompetitionData; eventId: string }
         <div className="space-y-4 rounded-lg bg-white p-4 ring-1 ring-brand-towerMid/25">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <p className="text-lg font-black text-brand-navy">
-              {event?.name} · {pending.length ? `faltan ${pending.length} equipos` : "sorteo completo"}
+              {event?.name} ·{" "}
+              {pending.length ? `faltan ${pending.length} equipos` : "sorteo completo"}
             </p>
             <Button variant="highlight" onClick={() => setWheelOpen(true)}>
               <Dices className="h-4 w-4" />
@@ -339,7 +420,10 @@ function EventDraw({ data, eventId }: { data: CompetitionData; eventId: string }
             {board.map((group, index) => (
               <div key={index} className="rounded-md border border-brand-towerMid/25 p-3">
                 <p className="text-sm font-black text-brand-navy">
-                  Grupo {"ABCDEFGH"[index]} <span className="text-brand-muted">({group.length}/{boardSizes[index]})</span>
+                  Grupo {"ABCDEFGH"[index]}{" "}
+                  <span className="text-brand-muted">
+                    ({group.length}/{boardSizes[index]})
+                  </span>
                 </p>
                 <ol className="mt-2 space-y-1">
                   {group.map((id) => (
@@ -351,7 +435,9 @@ function EventDraw({ data, eventId }: { data: CompetitionData; eventId: string }
                           "flex w-full items-center justify-between gap-2 rounded px-2 py-1 text-left text-sm font-bold transition",
                           landed?.teamId === id && "bg-brand-yellow/40",
                           conflictIds.has(id) && "bg-coral/10 text-red-800",
-                          selected === id ? "ring-2 ring-brand-electric" : "hover:bg-brand-electric/10"
+                          selected === id
+                            ? "ring-2 ring-brand-electric"
+                            : "hover:bg-brand-electric/10"
                         )}
                       >
                         <span>{teamName.get(id) ?? id}</span>
@@ -364,11 +450,17 @@ function EventDraw({ data, eventId }: { data: CompetitionData; eventId: string }
                       </button>
                     </li>
                   ))}
-                  {Array.from({ length: Math.max(0, boardSizes[index] - group.length) }, (_, slot) => (
-                    <li key={`empty-${slot}`} className="rounded border border-dashed border-brand-towerMid/40 px-2 py-1 text-sm text-brand-muted">
-                      —
-                    </li>
-                  ))}
+                  {Array.from(
+                    { length: Math.max(0, boardSizes[index] - group.length) },
+                    (_, slot) => (
+                      <li
+                        key={`empty-${slot}`}
+                        className="rounded border border-dashed border-brand-towerMid/40 px-2 py-1 text-sm text-brand-muted"
+                      >
+                        —
+                      </li>
+                    )
+                  )}
                 </ol>
               </div>
             ))}
@@ -378,24 +470,46 @@ function EventDraw({ data, eventId }: { data: CompetitionData; eventId: string }
             <p className="flex items-start gap-2 text-sm font-semibold text-red-800">
               <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
               {conflicts.length} cruce(s) del mismo semestre:{" "}
-              {conflicts.map((conflict) => `Grupo ${"ABCDEFGH"[conflict.groupIndex]} (sem. ${conflict.tag})`).join(", ")}. Haz clic en
-              un equipo y luego en otro para intercambiarlos.
+              {conflicts
+                .map(
+                  (conflict) => `Grupo ${"ABCDEFGH"[conflict.groupIndex]} (sem. ${conflict.tag})`
+                )
+                .join(", ")}
+              . Haz clic en un equipo y luego en otro para intercambiarlos.
             </p>
           ) : (
             <p className="text-sm font-semibold text-brand-muted">
-              Sin cruces del mismo semestre. Para corregir a mano: clic en un equipo y luego en otro de otro grupo.
+              Sin cruces del mismo semestre. Para corregir a mano: clic en un equipo y luego en otro
+              de otro grupo.
             </p>
           )}
 
-          <Button disabled={!boardComplete || saving || locked} onClick={() => setConfirming(true)}>
-            <Save className="h-4 w-4" />
-            Confirmar grupos y crear fixture
-          </Button>
+          <div>
+            <p className="text-base font-black text-brand-navy">3. Guarda el resultado</p>
+            {!boardComplete ? (
+              <p className="text-xs font-semibold text-brand-muted">
+                Se activa cuando todos los equipos tengan grupo.
+              </p>
+            ) : null}
+            <Button
+              className="mt-2 min-h-14 text-base"
+              disabled={!boardComplete || saving || locked}
+              onClick={() => setConfirming(true)}
+            >
+              <Save className="h-5 w-5" />
+              Confirmar grupos y crear fixture
+            </Button>
+          </div>
         </div>
       ) : null}
 
       {wheelOpen && board ? (
-        <div role="dialog" aria-modal="true" aria-label="Ruleta del sorteo" className="fixed inset-0 z-50 overflow-auto bg-brand-navy p-4 text-white sm:p-6">
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-label="Ruleta del sorteo"
+          className="fixed inset-0 z-50 overflow-auto bg-brand-navy p-4 text-white sm:p-6"
+        >
           <div className="mx-auto flex max-w-7xl items-center justify-between gap-3">
             <p className="text-xl font-black sm:text-2xl">Sorteo · {event?.name}</p>
             <Button variant="secondary" disabled={spinning} onClick={() => setWheelOpen(false)}>
@@ -410,7 +524,10 @@ function EventDraw({ data, eventId }: { data: CompetitionData; eventId: string }
               ) : (
                 <p className="py-20 text-3xl font-black">Sorteo completo</p>
               )}
-              <p aria-live="polite" className="min-h-16 text-center text-2xl font-black sm:text-3xl">
+              <p
+                aria-live="polite"
+                className="min-h-16 text-center text-2xl font-black sm:text-3xl"
+              >
                 {landed && !spinning ? (
                   <>
                     {teamName.get(landed.teamId)}{" "}
@@ -420,7 +537,12 @@ function EventDraw({ data, eventId }: { data: CompetitionData; eventId: string }
                   "Girando..."
                 ) : null}
               </p>
-              <Button variant="highlight" className="min-h-14 px-8 text-lg" disabled={spinning || pending.length === 0} onClick={spin}>
+              <Button
+                variant="highlight"
+                className="min-h-14 px-8 text-lg"
+                disabled={spinning || pending.length === 0}
+                onClick={spin}
+              >
                 <Dices className="h-5 w-5" />
                 Girar ({pending.length})
               </Button>
@@ -437,7 +559,9 @@ function EventDraw({ data, eventId }: { data: CompetitionData; eventId: string }
                           key={slot}
                           className={cn(
                             "rounded px-2 py-1 font-bold",
-                            id ? "bg-brand-electric/10" : "border border-dashed border-brand-towerMid/40 text-brand-muted",
+                            id
+                              ? "bg-brand-electric/10"
+                              : "border border-dashed border-brand-towerMid/40 text-brand-muted",
                             id && landed?.teamId === id && "bg-brand-yellow"
                           )}
                         >
@@ -468,7 +592,16 @@ function EventDraw({ data, eventId }: { data: CompetitionData; eventId: string }
 }
 
 const SPIN_MS = 4500;
-const wheelColors = ["#1d4ed8", "#f59e0b", "#0f766e", "#dc2626", "#7c3aed", "#0891b2", "#65a30d", "#db2777"];
+const wheelColors = [
+  "#1d4ed8",
+  "#f59e0b",
+  "#0f766e",
+  "#dc2626",
+  "#7c3aed",
+  "#0891b2",
+  "#65a30d",
+  "#db2777"
+];
 
 // Ruleta SVG: una porcion por equipo pendiente; la flecha de arriba marca al ganador.
 function Wheel({ names, rotation }: { names: string[]; rotation: number }) {
