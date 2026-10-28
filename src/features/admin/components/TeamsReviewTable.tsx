@@ -1,8 +1,8 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { Fragment, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { AlertTriangle, CheckCircle2, Mail, Printer, XCircle } from "lucide-react";
+import { AlertTriangle, CheckCircle2, Mail, Pencil, Printer, XCircle } from "lucide-react";
 import { toast } from "sonner";
 import type { CompetitionData } from "@/lib/data-mappers";
 import type { Team } from "@/lib/types";
@@ -10,7 +10,7 @@ import {
   teamApprovalIssueMessage,
   validateTeamApproval
 } from "@/lib/domain/registration-rules";
-import { Badge, Button, Card, SectionHeader, inputClass } from "@/components/ui";
+import { Badge, Button, Card, Field, SectionHeader, inputClass } from "@/components/ui";
 import { teamStatusLabel } from "@/lib/utils";
 
 type TeamAction = "validate_payment" | "approve" | "observe" | "reject";
@@ -27,6 +27,7 @@ export function TeamsReviewTable({ data }: { data: CompetitionData }) {
     Object.fromEntries(data.teams.map((team) => [team.id, team.adminObservation ?? ""]))
   );
   const [pendingKey, setPendingKey] = useState<string | null>(null);
+  const [editingId, setEditingId] = useState<string | null>(null);
   const playersByTeam = useMemo(() => {
     const map = new Map<string, typeof data.players>();
     data.players.forEach((player) => {
@@ -113,7 +114,8 @@ export function TeamsReviewTable({ data }: { data: CompetitionData }) {
               const needsAdminObservation = team.status === "observed" || team.status === "rejected";
 
               return (
-                <tr key={team.id} className="align-top transition hover:bg-brand-electric/5">
+                <Fragment key={team.id}>
+                <tr className="align-top transition hover:bg-brand-electric/5">
                   <td className="px-5 py-4">
                     <p className="font-bold text-ink">{team.name}</p>
                     <Badge tone={teamStatusTone(team.status)}>{teamStatusLabel(team.status)}</Badge>
@@ -245,10 +247,32 @@ export function TeamsReviewTable({ data }: { data: CompetitionData }) {
                           <Printer className="h-4 w-4" />
                           Ficha
                         </Button>
+                        <Button
+                          variant="ghost"
+                          onClick={() => setEditingId(editingId === team.id ? null : team.id)}
+                        >
+                          <Pencil className="h-4 w-4" />
+                          {editingId === team.id ? "Cerrar" : "Editar"}
+                        </Button>
                       </div>
                     </div>
                   </td>
                 </tr>
+                {editingId === team.id ? (
+                  <tr className="bg-brand-electric/5">
+                    <td colSpan={7} className="px-5 py-4">
+                      <TeamEditForm
+                        team={team}
+                        onDone={() => {
+                          setEditingId(null);
+                          router.refresh();
+                        }}
+                        onCancel={() => setEditingId(null)}
+                      />
+                    </td>
+                  </tr>
+                ) : null}
+                </Fragment>
               );
             })}
             {data.teams.length === 0 ? (
@@ -262,6 +286,96 @@ export function TeamsReviewTable({ data }: { data: CompetitionData }) {
         </table>
       </div>
     </Card>
+  );
+}
+
+function TeamEditForm({
+  team,
+  onDone,
+  onCancel
+}: {
+  team: Team;
+  onDone: () => void;
+  onCancel: () => void;
+}) {
+  const [form, setForm] = useState({
+    name: team.name,
+    delegateName: team.delegateName,
+    delegatePhone: team.delegatePhone,
+    delegateEmail: team.delegateEmail ?? "",
+    academicCareer: team.academicCareer ?? "",
+    primaryColor: team.primaryColor ?? "",
+    secondaryColor: team.secondaryColor ?? ""
+  });
+  const [saving, setSaving] = useState(false);
+
+  function update(key: keyof typeof form, value: string) {
+    setForm((current) => ({ ...current, [key]: value }));
+  }
+
+  async function save() {
+    setSaving(true);
+    try {
+      const response = await fetch(`/api/admin/teams/${team.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "edit", ...form })
+      });
+      const payload = (await response.json().catch(() => null)) as TeamActionResponse | null;
+
+      if (!response.ok || payload?.ok === false) {
+        toast.error(payload?.error ?? "No se pudo guardar el equipo.");
+        return;
+      }
+
+      toast.success("Datos del equipo actualizados.");
+      onDone();
+    } catch {
+      toast.error("No se pudo guardar el equipo.");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return (
+    <form
+      className="grid gap-3 md:grid-cols-2 xl:grid-cols-4"
+      onSubmit={(submitEvent) => {
+        submitEvent.preventDefault();
+        void save();
+      }}
+    >
+      <Field label="Nombre del equipo">
+        <input className={inputClass} value={form.name} onChange={(e) => update("name", e.target.value)} required />
+      </Field>
+      <Field label="Carrera / escuela">
+        <input className={inputClass} value={form.academicCareer} onChange={(e) => update("academicCareer", e.target.value)} />
+      </Field>
+      <Field label="Delegado">
+        <input className={inputClass} value={form.delegateName} onChange={(e) => update("delegateName", e.target.value)} required />
+      </Field>
+      <Field label="Telefono delegado">
+        <input className={inputClass} value={form.delegatePhone} onChange={(e) => update("delegatePhone", e.target.value)} required />
+      </Field>
+      <Field label="Correo delegado">
+        <input type="email" className={inputClass} value={form.delegateEmail} onChange={(e) => update("delegateEmail", e.target.value)} />
+      </Field>
+      <Field label="Color principal">
+        <input type="color" className={`${inputClass} p-1`} value={form.primaryColor || "#000000"} onChange={(e) => update("primaryColor", e.target.value)} />
+      </Field>
+      <Field label="Color secundario">
+        <input type="color" className={`${inputClass} p-1`} value={form.secondaryColor || "#ffffff"} onChange={(e) => update("secondaryColor", e.target.value)} />
+      </Field>
+      <div className="flex items-end gap-2">
+        <Button type="submit" disabled={saving}>
+          <CheckCircle2 className="h-4 w-4" />
+          {saving ? "Guardando..." : "Guardar cambios"}
+        </Button>
+        <Button variant="ghost" onClick={onCancel} disabled={saving}>
+          Cancelar
+        </Button>
+      </div>
+    </form>
   );
 }
 

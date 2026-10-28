@@ -18,7 +18,17 @@ const actionSchema = z.discriminatedUnion("action", [
   z.object({ action: z.literal("validate_payment") }),
   z.object({ action: z.literal("approve"), observation: z.string().trim().max(1000).optional() }),
   z.object({ action: z.literal("observe"), observation: z.string().trim().min(3).max(1000) }),
-  z.object({ action: z.literal("reject"), observation: z.string().trim().min(3).max(1000) })
+  z.object({ action: z.literal("reject"), observation: z.string().trim().min(3).max(1000) }),
+  z.object({
+    action: z.literal("edit"),
+    name: z.string().trim().min(2, "El nombre del equipo es muy corto.").max(80),
+    delegateName: z.string().trim().min(3, "Nombre del delegado invalido.").max(120),
+    delegatePhone: z.string().trim().min(6, "Telefono invalido.").max(20),
+    delegateEmail: z.string().trim().email("Correo invalido.").max(160).or(z.literal("")),
+    academicCareer: z.string().trim().max(120),
+    primaryColor: z.string().regex(/^#[0-9a-fA-F]{6}$/).or(z.literal("")),
+    secondaryColor: z.string().regex(/^#[0-9a-fA-F]{6}$/).or(z.literal(""))
+  })
 ]);
 
 type EventRow = {
@@ -65,6 +75,28 @@ export async function PATCH(request: Request, context: RouteContext) {
 
     if (!team) {
       return jsonError("Equipo no encontrado.", 404);
+    }
+
+    if (input.action === "edit") {
+      const { error } = await admin
+        .from("teams")
+        .update({
+          name: input.name,
+          delegate_name: input.delegateName,
+          delegate_phone: input.delegatePhone,
+          delegate_email: input.delegateEmail || null,
+          academic_career: input.academicCareer || null,
+          primary_color: input.primaryColor || null,
+          secondary_color: input.secondaryColor || null,
+          updated_at: new Date().toISOString()
+        })
+        .eq("id", teamId);
+
+      if (error?.code === "23505") {
+        return jsonError("Ya existe un equipo con ese nombre en el campeonato.", 409);
+      }
+      if (error) return jsonError("No se pudieron guardar los datos del equipo.", 500);
+      return NextResponse.json({ ok: true });
     }
 
     if (input.action === "validate_payment") {
