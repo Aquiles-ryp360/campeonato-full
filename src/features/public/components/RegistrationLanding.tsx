@@ -1,16 +1,12 @@
-import { CalendarDays, ChevronDown, FileText, LockKeyhole, LogIn, MapPin, Timer, Trophy, UserPlus } from "lucide-react";
+import Link from "next/link";
+import { ChevronDown, ChevronRight, LogIn, Timer } from "lucide-react";
 import type { TournamentEvent } from "@/lib/types";
 import { registrationAvailability } from "@/lib/domain/registration-rules";
 import { Card, SectionHeader } from "@/components/ui";
 import { formatMoney, sportLabel } from "@/lib/utils";
+import { championshipSlug } from "@/lib/domain/tournament-format";
 import { RegistrationCallout } from "@/features/registration/components/RegistrationCallout";
-
-const reservedItems = [
-  { icon: CalendarDays, title: "Fixture y horarios", text: "Rivales, canchas y horas de cada partido." },
-  { icon: FileText, title: "Bases del campeonato", text: "Reglamento oficial y documentos." },
-  { icon: MapPin, title: "Sede y mapa", text: "Ubicación exacta y cómo llegar." },
-  { icon: Trophy, title: "Equipos y llaves", text: "Grupos, posiciones y resultados." }
-];
+import { SportIcon } from "@/features/registration/components/AccessCodeGate";
 
 const sportNames: Record<TournamentEvent["sport"], string> = {
   futsal: "Futsal",
@@ -92,6 +88,10 @@ export function RegistrationLanding({ events }: { events: TournamentEvent[] }) {
   const sports = Array.from(
     new Set((hasOpenRegistration ? openEvents : events).map((event) => sportNames[event.sport]))
   );
+  // Un boton por disciplina abierta (el primer campeonato de cada deporte).
+  const openBySport = openEvents.filter(
+    (event, index) => openEvents.findIndex((other) => other.sport === event.sport) === index
+  );
 
   return (
     <div className="space-y-6 pb-20 md:pb-0">
@@ -104,107 +104,80 @@ export function RegistrationLanding({ events }: { events: TournamentEvent[] }) {
               "repeating-linear-gradient(135deg, transparent 0 18px, rgba(240,232,52,0.45) 18px 20px, transparent 20px 38px)"
           }}
         />
-        <div className="relative grid gap-8 p-6 sm:p-10 lg:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)] lg:items-center lg:gap-12">
-          <div className="animate-rise">
-            <p className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-3 py-1 text-xs font-bold">
-              <span
-                aria-hidden="true"
-                className={`h-2 w-2 rounded-full ${hasOpenRegistration ? "bg-green-400" : "bg-red-400"}`}
-              />
-              {hasOpenRegistration ? "Inscripciones abiertas" : "Inscripciones cerradas"}
-            </p>
-            <h1 className="mt-5 font-display text-6xl font-extrabold uppercase italic leading-[0.9] tracking-tight sm:text-8xl">
-              Inscribe a tu <span className="block text-brand-yellow">equipo</span>
-            </h1>
-            {sports.length > 0 ? (
-              <p className="mt-4 text-lg font-bold text-white/90 sm:text-xl">
-                Disciplinas: {joinWithAnd(sports)}
-              </p>
-            ) : null}
-            <p className="mt-3 max-w-xl text-sm leading-6 text-white/70 sm:text-base">
-              Pide tu código por WhatsApp, paga y registra a tu equipo. El fixture, las bases y la sede se
-              comparten solo con los delegados inscritos.
-            </p>
-            <div className="mt-6 flex flex-col gap-2 sm:flex-row">
-              <a
-                href="#inscripciones"
-                className="inline-flex min-h-12 items-center justify-center gap-2 rounded-md bg-brand-yellow px-5 py-3 text-sm font-black text-brand-navy shadow-lift transition duration-200 hover:-translate-y-0.5 hover:bg-brand-yellowHover active:translate-y-0"
-              >
-                <UserPlus className="h-4 w-4" />
-                Inscribir mi equipo
-              </a>
-              <a
-                href="/login?next=%2Fdelegado"
-                className="inline-flex min-h-12 items-center justify-center gap-2 rounded-md px-5 py-3 text-sm font-bold text-white ring-1 ring-white/25 transition hover:bg-white/10"
-              >
-                <LogIn className="h-4 w-4" />
-                Ya me inscribí · Ingresar
-              </a>
-            </div>
-          </div>
-
+        <div className="relative p-6 sm:p-10">
+          <p className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-3 py-1 text-xs font-bold">
+            <span
+              aria-hidden="true"
+              className={`h-2 w-2 rounded-full ${hasOpenRegistration ? "bg-green-400" : "bg-red-400"}`}
+            />
+            {hasOpenRegistration ? "Inscripciones abiertas" : "Inscripciones cerradas"}
+          </p>
+          <h1 className="mt-4 font-display text-5xl font-extrabold uppercase italic leading-[0.9] tracking-tight sm:text-7xl">
+            {hasOpenRegistration ? (
+              <>
+                Inscribe a tu <span className="text-brand-yellow">equipo</span>
+              </>
+            ) : (
+              <>
+                Campeonato <span className="text-brand-yellow">EPIME</span>
+              </>
+            )}
+          </h1>
+          {sports.length > 0 ? (
+            <p className="mt-3 text-lg font-bold text-white/90">Disciplinas: {joinWithAnd(sports)}</p>
+          ) : null}
           {closing ? (
-            <div
-              className="animate-rise rounded-lg border border-white/15 bg-white/10 p-6 backdrop-blur [animation-delay:120ms]"
-              aria-label="Cierre de inscripciones"
-            >
-              <p className="flex items-center gap-2 text-xs font-black uppercase tracking-wide text-brand-yellow">
-                <Timer className="h-4 w-4" />
-                Cierre de inscripciones
-              </p>
-              <p className="mt-3 font-display text-8xl font-extrabold italic leading-none sm:text-9xl">
-                {closing.days > 0 ? closing.days : "¡Hoy!"}
-              </p>
-              <p className="mt-1 text-lg font-bold">
-                {closing.days === 1 ? "día restante" : closing.days > 1 ? "días restantes" : "Último día para inscribirte"}
-              </p>
-              <p className="mt-4 border-t border-white/15 pt-4 text-sm text-white/70">
-                Cierra el <strong className="text-white">{closing.label}</strong>. Los cupos son limitados.
-              </p>
+            <p className="mt-3 inline-flex items-center gap-2 rounded-md bg-brand-yellow px-3 py-1.5 text-sm font-black text-brand-navy">
+              <Timer className="h-4 w-4" />
+              {closing.days > 1 ? `Faltan ${closing.days} días` : closing.days === 1 ? "Falta 1 día" : "Último día"} · cierra el{" "}
+              {closing.label}
+            </p>
+          ) : null}
+
+          {openBySport.length > 0 ? (
+            <div id="inscribir" className="mt-6 grid max-w-3xl gap-3 sm:grid-cols-2">
+              {openBySport.map((event) => (
+                <Link
+                  key={event.id}
+                  href={`/c/${championshipSlug(event)}/registro`}
+                  className="group flex min-h-16 items-center gap-3 rounded-md bg-brand-yellow p-4 text-brand-navy shadow-lift transition hover:-translate-y-0.5 hover:bg-brand-yellowHover focus:outline-none focus:ring-2 focus:ring-white"
+                >
+                  <span className="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-brand-navy text-brand-yellow">
+                    <SportIcon sport={event.sport} className="h-5 w-5" />
+                  </span>
+                  <span className="min-w-0 flex-1">
+                    <span className="block text-lg font-black">Inscribir en {sportNames[event.sport]}</span>
+                    <span className="block text-xs font-bold">
+                      {event.registrationFee > 0 ? `${formatMoney(event.registrationFee)} · ` : ""}
+                      Necesitas tu código de acceso
+                    </span>
+                  </span>
+                  <ChevronRight className="h-5 w-5 shrink-0 transition group-hover:translate-x-0.5" />
+                </Link>
+              ))}
             </div>
           ) : null}
+
+          <div className="mt-4 flex flex-col gap-2 sm:flex-row sm:items-center">
+            <a
+              href="/login?next=%2Fdelegado"
+              className={`inline-flex min-h-12 items-center justify-center gap-2 rounded-md px-5 py-3 text-sm font-black transition ${
+                hasOpenRegistration
+                  ? "text-white ring-1 ring-white/30 hover:bg-white/10"
+                  : "bg-brand-yellow text-brand-navy shadow-lift hover:bg-brand-yellowHover"
+              }`}
+            >
+              <LogIn className="h-4 w-4" />
+              Ya me inscribí · Ingresar a mi panel
+            </a>
+            <p className="text-xs text-white/70 sm:max-w-sm">
+              En tu panel de delegado: fixture y horarios, bases, sede y mapa, grupos, llaves y resultados. Entra con el Gmail del delegado.
+            </p>
+          </div>
         </div>
       </section>
 
       <RegistrationCallout events={events} />
-
-      <Card className="p-5 sm:p-6">
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-          <div>
-            <p className="inline-flex items-center gap-1.5 text-xs font-black uppercase text-brand-electric">
-              <LockKeyhole className="h-3.5 w-3.5" />
-              Exclusivo para equipos inscritos
-            </p>
-            <h2 className="mt-1 font-display text-3xl font-extrabold uppercase italic leading-none tracking-tight text-ink">Tu panel de delegado</h2>
-            <p className="mt-1 max-w-2xl text-sm leading-6 text-brand-muted">
-              Después de inscribirte, entra con el Gmail del delegado para ver toda la información del
-              campeonato.
-            </p>
-          </div>
-          <a
-            href="/login?next=%2Fdelegado"
-            className="inline-flex min-h-11 shrink-0 items-center justify-center gap-2 rounded-md bg-brand-electric px-4 py-2 text-sm font-bold text-white shadow-lift transition hover:bg-brand-institutional"
-          >
-            <LogIn className="h-4 w-4" />
-            Ingresar a mi panel
-          </a>
-        </div>
-        <ul className="mt-5 grid grid-cols-2 gap-3 lg:grid-cols-4">
-          {reservedItems.map((item) => (
-            <li
-              key={item.title}
-              className="relative rounded-md border border-brand-towerMid/25 bg-brand-wash p-4"
-            >
-              <LockKeyhole className="absolute right-3 top-3 h-3.5 w-3.5 text-brand-muted/60" />
-              <span className="grid h-10 w-10 place-items-center rounded-full bg-white text-brand-navy shadow-insetLine">
-                <item.icon className="h-5 w-5" />
-              </span>
-              <p className="mt-3 text-sm font-black text-ink">{item.title}</p>
-              <p className="mt-1 text-xs leading-5 text-brand-muted">{item.text}</p>
-            </li>
-          ))}
-        </ul>
-      </Card>
 
       <Card className="p-5 sm:p-6">
         <SectionHeader eyebrow="Antes de inscribirte" title="Preguntas frecuentes" />
