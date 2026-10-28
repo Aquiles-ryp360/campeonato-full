@@ -199,6 +199,8 @@ export interface TournamentEvent {
     estimatedEndTime?: string;
     fixtureRandomSeed?: string;
     fixtureTeamFingerprint?: string;
+    // teamId -> semestre, para separar equipos del mismo semestre en el sorteo.
+    drawTags?: Record<string, string>;
     branding?: ChampionshipBranding;
   };
 }

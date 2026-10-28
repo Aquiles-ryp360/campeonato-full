@@ -16,7 +16,8 @@ import {
   buildGroupStageMatches,
   defaultGroupCount,
   drawGroups,
-  supportsGroupKnockout
+  supportsGroupKnockout,
+  toDrawnGroups
 } from "@/lib/domain/group-draw";
 import { generateOneDaySchedule } from "@/lib/domain/schedule-generator";
 import { createSupabaseAdminClient } from "@/lib/supabase-admin";
@@ -29,8 +30,37 @@ const drawSchema = z.object({
   eventId: z.string().uuid("Selecciona un campeonato."),
   groupCount: z.coerce.number().int().min(2).max(8).optional(),
   // "approved": solo aprobados; "active": tambien inscritos y observados.
-  teamScope: z.enum(["approved", "active"]).default("active")
+  teamScope: z.enum(["approved", "active"]).default("active"),
+  // Grupos armados en el sorteo en vivo; sin esto el servidor sortea solo.
+  groups: z.array(z.array(z.string().uuid()).min(2, "Cada grupo necesita al menos 2 equipos.")).optional()
 });
+
+const tagsSchema = z.object({
+  eventId: z.string().uuid("Selecciona un campeonato."),
+  tags: z.record(z.string().uuid(), z.string().trim().max(20))
+});
+
+// Guarda las etiquetas de semestre en schedule_config: no toca la tabla de equipos.
+export async function PUT(request: Request) {
+  try {
+    const input = tagsSchema.parse(await request.json());
+    const admin = createSupabaseAdminClient();
+    await requireAdminUser(admin);
+    const { event } = await loadData(admin, input.eventId);
+    const drawTags = Object.fromEntries(Object.entries(input.tags).filter(([, tag]) => tag));
+    const response = await admin
+      .from("events")
+      .update({ schedule_config: { ...(event.scheduleConfig ?? {}), drawTags }, updated_at: new Date().toISOString() })
+      .eq("id", event.id);
+    if (response.error) throw new ServerAccessError(response.error.message, 500);
+    return NextResponse.json({ ok: true });
+  } catch (error) {
+    if (error instanceof ServerAccessError) return jsonError(error.message, error.status);
+    if (error instanceof z.ZodError) return jsonError(error.errors[0]?.message ?? "Datos invalidos.", 400);
+    console.error("Draw tags error", error);
+    return jsonError("No se pudieron guardar las etiquetas.", 500);
+  }
+}
 
 export async function POST(request: Request) {
   try {
@@ -52,7 +82,15 @@ export async function POST(request: Request) {
 
     const allowed = input.teamScope === "approved" ? ["approved"] : ["registered", "observed", "approved"];
     const drawTeams = teams.filter((team) => allowed.includes(team.status));
-    const groupCount = input.groupCount ?? defaultGroupCount(drawTeams.length);
+    const groupCount = input.groups?.length ?? input.groupCount ?? defaultGroupCount(drawTeams.length);
+
+    if (input.groups) {
+      const placed = input.groups.flat();
+      const expected = new Set(drawTeams.map((team) => team.id));
+      if (placed.length !== expected.size || new Set(placed).size !== placed.length || placed.some((id) => !expected.has(id))) {
+        return jsonError("Los grupos no coinciden con los equipos inscritos. Recarga la pagina y repite el sorteo.", 409);
+      }
+    }
 
     if (drawTeams.length < groupCount * 2) {
       return jsonError(
@@ -64,7 +102,9 @@ export async function POST(request: Request) {
       return jsonError("La llave automatica soporta 2, 4 o 5 grupos.", 409);
     }
 
-    const groups = drawGroups(drawTeams.map((team) => team.id), groupCount);
+    const groups = input.groups
+      ? toDrawnGroups(input.groups)
+      : drawGroups(drawTeams.map((team) => team.id), groupCount, Math.random, event.scheduleConfig?.drawTags);
     const groupMatches = buildGroupStageMatches(event.id, groups);
     const lastGroupRound = Math.max(...groupMatches.map((match) => match.round));
     const knockoutMatches = buildGroupKnockoutMatches({

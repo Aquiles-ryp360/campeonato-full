@@ -26,7 +26,74 @@ export function groupSizes(teamCount: number, groupCount: number) {
   return Array.from({ length: groupCount }, (_, index) => base + (index < extra ? 1 : 0));
 }
 
-export function drawGroups(teamIds: string[], groupCount: number, random: () => number = Math.random): DrawnGroup[] {
+// Etiqueta = semestre del equipo; dos equipos con la misma etiqueta no deberian caer en el mismo grupo.
+export type DrawTags = Record<string, string>;
+
+const ordinalWords: Record<string, number> = {
+  primer: 1, primero: 1, segundo: 2, tercer: 3, tercero: 3, cuarto: 4, quinto: 5, sexto: 6,
+  septimo: 7, setimo: 7, octavo: 8, noveno: 9, decimo: 10, undecimo: 11, onceavo: 11, duodecimo: 12
+};
+const romanNumerals = ["i", "ii", "iii", "iv", "v", "vi", "vii", "viii", "ix", "x", "xi", "xii"];
+
+// "2", "segundo semestre-A", "1MER SEMESTRE", "Décimo", "XI" -> "2", "2", "1", "10", "11".
+export function semesterTag(text: string) {
+  const clean = text.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().trim();
+  const digits = clean.match(/\d+/);
+  if (digits) return String(Number(digits[0]));
+  for (const word of clean.split(/[^a-z]+/)) {
+    if (ordinalWords[word]) return String(ordinalWords[word]);
+    const roman = romanNumerals.indexOf(word);
+    if (roman >= 0) return String(roman + 1);
+  }
+  return clean;
+}
+
+// El semestre que mas se repite entre los jugadores del equipo.
+export function suggestTeamTag(semesters: string[]) {
+  const counts = new Map<string, number>();
+  for (const tag of semesters.map(semesterTag).filter(Boolean)) counts.set(tag, (counts.get(tag) ?? 0) + 1);
+  return [...counts].sort((a, b) => b[1] - a[1])[0]?.[0] ?? "";
+}
+
+// Grupo donde cae el equipo: el que tiene menos equipos con su etiqueta y, a igualdad, el mas vacio.
+export function pickGroup(
+  groups: string[][],
+  sizes: number[],
+  teamId: string,
+  tags: DrawTags = {},
+  random: () => number = Math.random
+) {
+  const tag = tags[teamId];
+  const score = (index: number) => [tag ? groups[index].filter((id) => tags[id] === tag).length : 0, groups[index].length];
+  const open = groups.map((_, index) => index).filter((index) => groups[index].length < sizes[index]);
+  if (open.length === 0) throw new Error("Todos los grupos estan llenos.");
+  const best = open.reduce((min, index) => {
+    const [a, b] = [score(index), score(min)];
+    return a[0] < b[0] || (a[0] === b[0] && a[1] < b[1]) ? index : min;
+  });
+  const ties = open.filter((index) => score(index).join() === score(best).join());
+  return ties[Math.floor(random() * ties.length)];
+}
+
+// Equipos del mismo semestre que comparten grupo.
+export function groupConflicts(groups: string[][], tags: DrawTags = {}) {
+  return groups.flatMap((teamIds, groupIndex) => {
+    const byTag = new Map<string, string[]>();
+    for (const id of teamIds) if (tags[id]) byTag.set(tags[id], [...(byTag.get(tags[id]) ?? []), id]);
+    return [...byTag].filter(([, ids]) => ids.length > 1).map(([tag, ids]) => ({ groupIndex, tag, teamIds: ids }));
+  });
+}
+
+export function toDrawnGroups(groups: string[][]): DrawnGroup[] {
+  return groups.map((teamIds, index) => ({ letter: letters[index], name: `Grupo ${letters[index]}`, teamIds }));
+}
+
+export function drawGroups(
+  teamIds: string[],
+  groupCount: number,
+  random: () => number = Math.random,
+  tags: DrawTags = {}
+): DrawnGroup[] {
   if (groupCount < 1 || groupCount > letters.length) {
     throw new Error(`El numero de grupos debe estar entre 1 y ${letters.length}.`);
   }
@@ -39,14 +106,15 @@ export function drawGroups(teamIds: string[], groupCount: number, random: () => 
     const swap = Math.floor(random() * (index + 1));
     [shuffled[index], shuffled[swap]] = [shuffled[swap], shuffled[index]];
   }
+  // Primero las etiquetas mas repetidas: asi el reparto voraz casi siempre separa a todos.
+  // ponytail: voraz, no busca el optimo exacto; si quedara un cruce evitable se corrige con intercambio manual en el panel.
+  const frequency = (id: string) => (tags[id] ? teamIds.filter((other) => tags[other] === tags[id]).length : 0);
+  shuffled.sort((a, b) => frequency(b) - frequency(a));
 
-  let cursor = 0;
-  return groupSizes(teamIds.length, groupCount).map((size, index) => {
-    const letter = letters[index];
-    const group = { letter, name: `Grupo ${letter}`, teamIds: shuffled.slice(cursor, cursor + size) };
-    cursor += size;
-    return group;
-  });
+  const sizes = groupSizes(teamIds.length, groupCount);
+  const groups: string[][] = sizes.map(() => []);
+  for (const id of shuffled) groups[pickGroup(groups, sizes, id, tags, random)].push(id);
+  return toDrawnGroups(groups);
 }
 
 // Partidos todos contra todos; round = fecha. groupId lleva la letra hasta persistir.

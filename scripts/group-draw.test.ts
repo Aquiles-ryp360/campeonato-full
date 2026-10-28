@@ -5,7 +5,10 @@ import {
   buildGroupStageMatches,
   defaultGroupCount,
   drawGroups,
-  groupSizes
+  groupConflicts,
+  groupSizes,
+  semesterTag,
+  suggestTeamTag
 } from "../src/lib/domain/group-draw";
 
 const ids = (count: number) => Array.from({ length: count }, (_, index) => `t${index + 1}`);
@@ -64,4 +67,23 @@ test("four groups build quarters to final without third place", () => {
 test("group count adapts to registered teams using supported brackets", () => {
   const cases: Array<[number, number]> = [[3, 1], [4, 2], [9, 2], [10, 4], [16, 4], [17, 5], [24, 5]];
   for (const [teams, groups] of cases) assert.equal(defaultGroupCount(teams), groups, `${teams} equipos`);
+});
+
+test("semester text from registrations normalizes to one tag", () => {
+  const cases: Array<[string, string]> = [["2", "2"], ["segundo semestre-A", "2"], ["1MER SEMESTRE", "1"], ["Décimo", "10"], ["XI", "11"], ["7", "7"]];
+  for (const [text, tag] of cases) assert.equal(semesterTag(text), tag, text);
+  assert.equal(suggestTeamTag(["Decimo", "Décimo", "10", "3"]), "10");
+});
+
+test("draw keeps same-semester teams apart when possible", () => {
+  // 12 equipos en 4 grupos, 3 semestres repetidos 4 veces: cabe uno de cada semestre por grupo.
+  const teams = ids(12);
+  const tags = Object.fromEntries(teams.map((id, index) => [id, String(index % 3)]));
+  for (let seed = 0; seed < 50; seed += 1) {
+    let state = seed + 1;
+    const random = () => ((state = (state * 16807) % 2147483647) / 2147483647);
+    const groups = drawGroups(teams, 4, random, tags);
+    assert.equal(groupConflicts(groups.map((group) => group.teamIds), tags).length, 0, `seed ${seed}`);
+    assert.equal(new Set(groups.flatMap((group) => group.teamIds)).size, 12);
+  }
 });

@@ -33,12 +33,28 @@ export function AdminDashboard({ data }: { data: CompetitionData }) {
       <Card className="p-5">
         <SectionHeader title="Campeonatos" action={<Button href="/admin/campeonatos" variant="secondary">Gestionar</Button>} />
         <div className="mt-4 grid gap-3 md:grid-cols-3">
-          {data.events.map((event) => (
-            <div key={event.id} className="rounded-md border border-brand-towerMid/25 bg-white p-4 shadow-insetLine">
-              <p className="font-bold text-ink">{event.name}</p>
-              <p className="mt-1 text-sm font-semibold text-brand-muted">{event.category}</p>
-            </div>
-          ))}
+          {data.events.map((event) => {
+            const teams = data.teams.filter((team) => team.eventId === event.id && team.status !== "rejected");
+            return (
+              <div key={event.id} className="rounded-md border border-brand-towerMid/25 bg-white p-4 shadow-insetLine">
+                <p className="font-bold text-ink">{event.name}</p>
+                <p className="mt-1 text-sm font-semibold text-brand-muted">
+                  {event.category} · {teams.length} inscritos
+                  {event.maxTeams ? ` de ${event.maxTeams}` : ""}
+                </p>
+                {teams.length > 0 ? (
+                  <ol className="mt-3 list-decimal space-y-0.5 pl-5 text-sm font-semibold text-ink">
+                    {teams.map((team) => (
+                      <li key={team.id}>
+                        {team.name}
+                        {team.status !== "approved" ? <span className="text-brand-muted"> · por revisar</span> : null}
+                      </li>
+                    ))}
+                  </ol>
+                ) : null}
+              </div>
+            );
+          })}
         </div>
       </Card>
 
