@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { Clipboard, KeyRound, Loader2, Plus } from "lucide-react";
+import { Check, Clipboard, KeyRound, Loader2, Plus } from "lucide-react";
 import { toast } from "sonner";
 import { Badge, Button, Card, Field, SectionHeader, inputClass } from "@/components/ui";
 import { formatMoney } from "@/lib/utils";
@@ -46,6 +46,7 @@ export function RegistrationCodesPanel() {
   const [count, setCount] = useState(10);
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
+  const [copiedId, setCopiedId] = useState<string>();
 
   const eventById = useMemo(() => new Map(events.map((event) => [event.id, event])), [events]);
   const selectedEvent = eventById.get(eventId);
@@ -109,12 +110,27 @@ export function RegistrationCodesPanel() {
     }
   }
 
+  async function copyText(text: string, message: string) {
+    try {
+      await navigator.clipboard.writeText(text);
+      toast.success(message);
+      return true;
+    } catch {
+      toast.error("No se pudo copiar. Selecciona el codigo y copialo a mano.");
+      return false;
+    }
+  }
+
   async function copyAvailableCodes() {
     const text = availableCodes.map((code) => code.code).join("\n");
-    if (!text) return;
+    if (text) await copyText(text, "Codigos disponibles copiados.");
+  }
 
-    await navigator.clipboard.writeText(text);
-    toast.success("Codigos disponibles copiados.");
+  async function copyCode(code: CodeRow) {
+    if (await copyText(code.code, `Codigo ${code.code} copiado.`)) {
+      setCopiedId(code.id);
+      setTimeout(() => setCopiedId((current) => (current === code.id ? undefined : current)), 2000);
+    }
   }
 
   return (
@@ -209,7 +225,26 @@ export function RegistrationCodesPanel() {
 
                 return (
                   <tr key={code.id} className="transition hover:bg-brand-electric/5">
-                    <td className="px-5 py-4 font-bold text-ink">{code.code}</td>
+                    <td className="px-5 py-4">
+                      <div className="flex items-center gap-3">
+                        <span className="select-all font-mono text-base font-bold text-ink">{code.code}</span>
+                        <button
+                          type="button"
+                          onClick={() => void copyCode(code)}
+                          aria-label={`Copiar codigo ${code.code}`}
+                          className={`inline-flex min-h-9 items-center gap-1.5 rounded-md px-3 text-xs font-black transition ${
+                            copiedId === code.id
+                              ? "bg-green-600 text-white"
+                              : code.status === "available"
+                                ? "bg-brand-electric text-white hover:bg-brand-institutional"
+                                : "bg-white text-brand-muted ring-1 ring-brand-towerMid/30 hover:bg-brand-electric/10"
+                          }`}
+                        >
+                          {copiedId === code.id ? <Check className="h-3.5 w-3.5" /> : <Clipboard className="h-3.5 w-3.5" />}
+                          {copiedId === code.id ? "Copiado" : "Copiar"}
+                        </button>
+                      </div>
+                    </td>
                     <td className="px-3 py-4">
                       <p className="font-semibold text-ink">{event?.name ?? "Campeonato"}</p>
                       <p className="text-xs text-brand-muted">{event?.slug}</p>
