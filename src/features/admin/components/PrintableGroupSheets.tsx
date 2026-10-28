@@ -71,31 +71,31 @@ export function PrintableGroupSheets({
 
           return (
             <section key={group.id} className="break-inside-avoid">
-              <h2 className="mb-2 text-lg font-black text-brand-navy">{group.name}</h2>
+              <h2 className="text-lg font-black text-brand-navy">{group.name}</h2>
+              <p className="mb-2 text-xs font-semibold text-brand-muted">
+                Equipos: {groupTeamIds.map((teamId) => teams.find((team) => team.id === teamId)?.name ?? "Equipo").join(" · ")}
+              </p>
               <table className="w-full border-collapse text-sm">
                 <thead>
                   <tr className="bg-ink/5 text-xs font-black uppercase">
-                    <th className="w-8 border border-ink/60 px-1 py-1.5">#</th>
+                    <th className="w-12 border border-ink/60 px-1 py-1.5">Pos.</th>
                     <th className="border border-ink/60 px-2 py-1.5 text-left">Equipo</th>
                     {columns.map((column) => (
                       <th key={column} className="w-11 border border-ink/60 px-1 py-1.5">
                         {column}
                       </th>
                     ))}
-                    <th className="w-12 border border-ink/60 px-1 py-1.5">Pos.</th>
                   </tr>
                 </thead>
                 <tbody>
+                  {/* Se llena a mano al cerrar el grupo, ya ordenado por puntos. */}
                   {groupTeamIds.map((teamId, index) => (
                     <tr key={teamId} className="h-9">
-                      <td className="border border-ink/60 text-center font-bold">{index + 1}</td>
-                      <td className="border border-ink/60 px-2 font-semibold">
-                        {teams.find((team) => team.id === teamId)?.name ?? "Equipo"}
-                      </td>
+                      <td className="border border-ink/60 text-center font-bold">{index + 1}°</td>
+                      <td className="border border-ink/60 px-2" />
                       {columns.map((column) => (
                         <td key={column} className="border border-ink/60" />
                       ))}
-                      <td className="border border-ink/60" />
                     </tr>
                   ))}
                 </tbody>
