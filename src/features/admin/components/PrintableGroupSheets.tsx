@@ -33,6 +33,10 @@ export function PrintableGroupSheets({
       .sort((a, b) => a.scheduledAt.localeCompare(b.scheduledAt) || a.round - b.round)
       .map((match, index) => [match.id, index + 1])
   );
+  const groupNames = new Map(groups.map((group) => [group.id, group.name]));
+  const groupStageMatches = matches
+    .filter((match) => match.stage === "group_stage")
+    .sort((a, b) => (order.get(a.id) ?? 0) - (order.get(b.id) ?? 0));
 
   return (
     <main className="fixture-print mx-auto max-w-4xl px-6 py-8 text-ink">
@@ -131,6 +135,51 @@ export function PrintableGroupSheets({
           );
         })}
       </div>
+
+      {groupStageMatches.length > 0 ? (
+        <section className="mt-10 break-before-page">
+          <h2 className="mb-1 text-lg font-black text-brand-navy">Orden general de partidos</h2>
+          <p className="mb-3 text-xs font-semibold text-brand-muted">
+            Todos los partidos de la fase de grupos en el orden en que se juegan.
+          </p>
+          <table className="w-full border-collapse text-sm">
+            <thead>
+              <tr className="bg-ink/5 text-xs font-black uppercase">
+                <th className="w-10 border border-ink/60 px-1 py-1.5">N.°</th>
+                <th className="w-20 border border-ink/60 px-1 py-1.5">Grupo</th>
+                <th className="w-20 border border-ink/60 px-1 py-1.5">Cancha</th>
+                <th className="border border-ink/60 px-2 py-1.5 text-right">Local</th>
+                <th className="w-28 border border-ink/60 px-1 py-1.5">Resultado</th>
+                <th className="border border-ink/60 px-2 py-1.5 text-left">Visitante</th>
+                {isVoley ? null : <th className="w-20 border border-ink/60 px-1 py-1.5">Penales</th>}
+              </tr>
+            </thead>
+            <tbody>
+              {groupStageMatches.map((match) => (
+                <tr key={match.id} className="h-9 break-inside-avoid">
+                  <td className="border border-ink/60 text-center font-bold">{order.get(match.id)}</td>
+                  <td className="border border-ink/60 text-center font-semibold">
+                    {groupNames.get(match.groupId ?? "")?.replace(/^Grupo\s+/i, "") ?? "-"}
+                  </td>
+                  <td className="border border-ink/60 text-center text-brand-muted">{match.court}</td>
+                  <td className="border border-ink/60 px-2 text-right font-semibold">
+                    {getMatchSideLabel(match, teams, "home")}
+                  </td>
+                  <td className="border border-ink/60 text-center">
+                    <ScoreBoxes />
+                  </td>
+                  <td className="border border-ink/60 px-2 font-semibold">{getMatchSideLabel(match, teams, "away")}</td>
+                  {isVoley ? null : (
+                    <td className="border border-ink/60 text-center">
+                      <ScoreBoxes small />
+                    </td>
+                  )}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </section>
+      ) : null}
 
       {knockout.length > 0 ? <PrintableBracket matches={knockout} isVoley={isVoley} /> : null}
 
