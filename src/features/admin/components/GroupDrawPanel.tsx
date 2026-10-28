@@ -92,6 +92,7 @@ function EventDraw({ data, eventId }: { data: CompetitionData; eventId: string }
   const [selected, setSelected] = useState<string>();
   const [confirming, setConfirming] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [confirmed, setConfirmed] = useState(false);
 
   useEffect(() => {
     if (!wheelOpen) return;
@@ -108,6 +109,7 @@ function EventDraw({ data, eventId }: { data: CompetitionData; eventId: string }
     Boolean(board) && pending.length === 0 && board!.flat().length === drawTeams.length && board!.every((group) => group.length >= 2);
 
   function startBoard() {
+    setConfirmed(false);
     setBoard(sizes.map(() => []));
     setBoardSizes(sizes);
     setLanded(undefined);
@@ -189,6 +191,8 @@ function EventDraw({ data, eventId }: { data: CompetitionData; eventId: string }
         return;
       }
       toast.success(`Grupos guardados: ${payload?.matchCount ?? 0} partidos programados.`);
+      setConfirmed(true);
+      setBoard(null);
       router.refresh();
     } catch {
       toast.error("No se pudieron guardar los grupos.");
@@ -297,7 +301,7 @@ function EventDraw({ data, eventId }: { data: CompetitionData; eventId: string }
         </Button>
         <Button variant="secondary" href={`/imprimir/grupos?evento=${eventId}`}>
           <Printer className="h-4 w-4" />
-          Imprimir tablas por grupo
+          PDF de grupos, tablas y llave
         </Button>
         <Button variant="secondary" href={`/imprimir/fichas?evento=${eventId}`}>
           <Printer className="h-4 w-4" />
@@ -308,6 +312,16 @@ function EventDraw({ data, eventId }: { data: CompetitionData; eventId: string }
           Imprimir actas
         </Button>
       </div>
+
+      {confirmed ? (
+        <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg bg-green-600/10 p-4 ring-1 ring-green-600/20">
+          <p className="text-sm font-black text-green-800">Sorteo guardado. Descarga la hoja para jugarlo en fisico.</p>
+          <Button variant="highlight" href={`/imprimir/grupos?evento=${eventId}&pdf=1`}>
+            <Printer className="h-4 w-4" />
+            Descargar PDF (grupos, tablas y llave)
+          </Button>
+        </div>
+      ) : null}
 
       {board ? (
         <div className="space-y-4 rounded-lg bg-white p-4 ring-1 ring-brand-towerMid/25">

@@ -11,9 +11,9 @@ export const metadata = {
 export default async function PrintableGroupsPage({
   searchParams
 }: {
-  searchParams: Promise<{ evento?: string }>;
+  searchParams: Promise<{ evento?: string; pdf?: string }>;
 }) {
-  const { evento } = await searchParams;
+  const { evento, pdf } = await searchParams;
   // Solo equipos inscritos, arbitros y admin (igual que el fixture imprimible).
   await requireServerRole("member", "/imprimir/grupos");
   const data = await getPublicCompetitionData();
@@ -37,6 +37,7 @@ export default async function PrintableGroupsPage({
       groupTeams={data.groupTeams.filter((item) => groupIds.has(item.groupId))}
       teams={data.teams.filter((team) => team.eventId === event.id)}
       matches={data.matches.filter((match) => match.eventId === event.id)}
+      autoPrint={pdf === "1"}
     />
   );
 }

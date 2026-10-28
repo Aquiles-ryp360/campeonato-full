@@ -1,5 +1,5 @@
 import type { Group, GroupTeam, Match, Team, TournamentEvent } from "@/lib/types";
-import { PrintButton } from "@/features/fixture/components/PrintButton";
+import { AutoPrint, PrintButton } from "@/features/fixture/components/PrintButton";
 import { sportDisplayName } from "@/lib/domain/tournament-format";
 import { formatShortDate, getMatchSideLabel } from "@/lib/utils";
 
@@ -9,8 +9,10 @@ export function PrintableGroupSheets({
   groups,
   groupTeams,
   teams,
-  matches
+  matches,
+  autoPrint = false
 }: {
+  autoPrint?: boolean;
   event: TournamentEvent;
   groups: Group[];
   groupTeams: GroupTeam[];
@@ -45,7 +47,8 @@ export function PrintableGroupSheets({
           </p>
         </div>
         <div className="print:hidden">
-          <PrintButton />
+          <PrintButton label="Imprimir / Guardar PDF" />
+          {autoPrint && groups.length > 0 ? <AutoPrint /> : null}
         </div>
       </header>
 
@@ -129,6 +132,8 @@ export function PrintableGroupSheets({
         })}
       </div>
 
+      {knockout.length > 0 ? <PrintableBracket matches={knockout} isVoley={isVoley} /> : null}
+
       {knockout.length > 0 ? (
         <section className="mt-10 break-before-page">
           <h2 className="mb-3 text-lg font-black text-brand-navy">Fase final</h2>
@@ -176,5 +181,76 @@ function ScoreBoxes({ small = false }: { small?: boolean }) {
       <span className="font-black">-</span>
       <span className={`inline-block rounded-sm border border-ink/60 ${box}`} />
     </span>
+  );
+}
+
+const bracketColumns: Array<{ stage: Match["stage"]; title: string }> = [
+  { stage: "preliminary", title: "Preliminar" },
+  { stage: "quarter_finals", title: "Cuartos" },
+  { stage: "semi_finals", title: "Semifinal" },
+  { stage: "final", title: "Final" }
+];
+
+// Llave dibujada para llenar a mano: una columna por ronda, cada partido con su cruce y casillas.
+function PrintableBracket({ matches, isVoley }: { matches: Match[]; isVoley: boolean }) {
+  const byStage = (stage: Match["stage"]) =>
+    matches.filter((match) => match.stage === stage).sort((a, b) => (a.bracketPosition ?? 0) - (b.bracketPosition ?? 0));
+  const columns = bracketColumns.filter((column) => byStage(column.stage).length > 0);
+  const thirdPlace = byStage("third_place")[0];
+
+  return (
+    <section className="mt-10 break-before-page">
+      <h2 className="mb-1 text-lg font-black text-brand-navy">Llave de la fase final</h2>
+      <p className="mb-4 text-xs font-semibold text-brand-muted">
+        Escribe en cada linea el equipo que clasifico y el resultado{isVoley ? " (sets)" : ""}. El ganador avanza a la columna de la derecha.
+      </p>
+      <div className="grid gap-3" style={{ gridTemplateColumns: `repeat(${columns.length}, minmax(0, 1fr))` }}>
+        {columns.map((column) => (
+          <div key={column.stage} className="flex flex-col">
+            <p className="mb-2 text-center text-xs font-black uppercase text-brand-electric">{column.title}</p>
+            <div className="flex flex-1 flex-col justify-around gap-4">
+              {byStage(column.stage).map((match) => (
+                <BracketBox key={match.id} match={match} />
+              ))}
+            </div>
+          </div>
+        ))}
+      </div>
+      {thirdPlace ? (
+        <div className="mt-6 max-w-xs">
+          <p className="mb-2 text-xs font-black uppercase text-brand-electric">Tercer lugar</p>
+          <BracketBox match={thirdPlace} />
+        </div>
+      ) : null}
+      <div className="mt-6 grid max-w-md grid-cols-[auto_1fr] items-end gap-x-3 gap-y-3 text-sm font-black">
+        <span>Campeon:</span>
+        <span className="border-b border-ink/60" />
+        <span>Subcampeon:</span>
+        <span className="border-b border-ink/60" />
+        {thirdPlace ? (
+          <>
+            <span>Tercer lugar:</span>
+            <span className="border-b border-ink/60" />
+          </>
+        ) : null}
+      </div>
+    </section>
+  );
+}
+
+function BracketBox({ match }: { match: Match }) {
+  return (
+    <div className="break-inside-avoid rounded border border-ink/60 text-xs">
+      <p className="border-b border-ink/40 bg-ink/5 px-1.5 py-0.5 font-black">{match.label}</p>
+      {[match.homePlaceholder, match.awayPlaceholder].map((placeholder, index) => (
+        <div key={index} className={`flex items-end gap-1.5 px-1.5 py-1 ${index === 0 ? "border-b border-ink/30" : ""}`}>
+          <div className="min-w-0 flex-1">
+            <p className="truncate text-[10px] font-bold text-brand-muted">{placeholder ?? "Por definir"}</p>
+            <span className="mt-2 block border-b border-ink/50" />
+          </div>
+          <span className="inline-block h-6 w-7 shrink-0 rounded-sm border border-ink/60" />
+        </div>
+      ))}
+    </div>
   );
 }
