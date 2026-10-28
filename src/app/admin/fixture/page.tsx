@@ -1,3 +1,4 @@
+import { CrossEventClashPanel } from "@/features/admin/components/CrossEventClashPanel";
 import { FixtureGenerationPanel } from "@/features/admin/components/FixtureGenerationPanel";
 import { GroupDrawPanel } from "@/features/admin/components/GroupDrawPanel";
 import { getPublicCompetitionData } from "@/lib/supabase-data";
@@ -9,6 +10,7 @@ export default async function AdminFixturePage() {
   return (
     <div className="space-y-6">
       <GroupDrawPanel data={data} />
+      <CrossEventClashPanel data={data} />
       <FixtureGenerationPanel data={data} />
     </div>
   );
