@@ -129,7 +129,21 @@ const toMove = (match: Match, events: Map<string, TournamentEvent>): MatchMove =
   court: match.court
 });
 
-function applyMoves(matches: Match[], moves: MatchMove[]): Match[] {
+// Orden de juego de un campeonato: por hora y luego por cancha.
+export const byPlayOrder = (a: Match, b: Match) =>
+  a.scheduledAt.localeCompare(b.scheduledAt) || a.court.localeCompare(b.court);
+
+// Reordenar partidos: los horarios/canchas quedan fijos y cada partido toma el casillero
+// de su nueva posicion. Devuelve solo los partidos que cambian.
+export function reorderMoves(matches: Match[], orderedIds: string[], events: TournamentEvent[]) {
+  const byEvent = new Map(events.map((event) => [event.id, event]));
+  const slots = [...matches].sort(byPlayOrder).map((match) => toMove(match, byEvent));
+  return orderedIds.flatMap((id, index) =>
+    slots[index].id === id ? [] : [{ ...slots[index], id }]
+  );
+}
+
+export function applyMoves(matches: Match[], moves: MatchMove[]): Match[] {
   const byId = new Map(moves.map((move) => [move.id, move]));
   return matches.map((match) => {
     const move = byId.get(match.id);

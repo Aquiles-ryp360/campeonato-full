@@ -5,6 +5,8 @@ import {
   findClashes,
   internalViolations,
   linkTeams,
+  applyMoves,
+  reorderMoves,
   resolveAllClashes,
   shiftEventAfter
 } from "../src/lib/domain/cross-event-clashes";
@@ -100,4 +102,24 @@ test("global fixes clear every clash", () => {
   const shift = shiftEventAfter("vol", "fut", matches, events, links);
   assert.equal(shift?.clashesAfter, 0);
   assert.equal(shift?.delayMinutes, 50);
+});
+
+test("reorder keeps the time slots and only moves what changed", () => {
+  const matches = [
+    match("m1", "fut", "f1", "f2", 0),
+    match("m2", "fut", "f3", "f4", 0, "Cancha B"),
+    match("m3", "fut", "f2", "f1", 25)
+  ];
+  const moves = reorderMoves(matches, ["m3", "m2", "m1"], events);
+  assert.deepEqual(
+    moves.map((move) => [move.id, move.scheduledAt, move.court]),
+    [
+      ["m3", at(0), "Cancha A"],
+      ["m1", at(25), "Cancha A"]
+    ]
+  );
+  assert.equal(internalViolations(applyMoves(matches, moves), events), 0);
+  // f1 jugando dos partidos a la vez se detecta.
+  const clash = reorderMoves(matches, ["m1", "m3", "m2"], events);
+  assert.equal(internalViolations(applyMoves(matches, clash), events), 1);
 });
