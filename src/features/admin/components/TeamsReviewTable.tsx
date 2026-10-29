@@ -2,7 +2,7 @@
 
 import { Fragment, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { AlertTriangle, CheckCircle2, Mail, Pencil, Printer, XCircle } from "lucide-react";
+import { AlertTriangle, CheckCircle2, FileText, Mail, Pencil, Printer, XCircle } from "lucide-react";
 import { toast } from "sonner";
 import type { CompetitionData } from "@/lib/data-mappers";
 import type { Team } from "@/lib/types";
@@ -28,6 +28,7 @@ export function TeamsReviewTable({ data }: { data: CompetitionData }) {
   );
   const [pendingKey, setPendingKey] = useState<string | null>(null);
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [filesId, setFilesId] = useState<string | null>(null);
   const playersByTeam = useMemo(() => {
     const map = new Map<string, typeof data.players>();
     data.players.forEach((player) => {
@@ -249,6 +250,13 @@ export function TeamsReviewTable({ data }: { data: CompetitionData }) {
                         </Button>
                         <Button
                           variant="ghost"
+                          onClick={() => setFilesId(filesId === team.id ? null : team.id)}
+                        >
+                          <FileText className="h-4 w-4" />
+                          Matriculas ({players.filter((player) => player.enrollmentFile).length}/{players.length})
+                        </Button>
+                        <Button
+                          variant="ghost"
                           onClick={() => setEditingId(editingId === team.id ? null : team.id)}
                         >
                           <Pencil className="h-4 w-4" />
@@ -258,6 +266,13 @@ export function TeamsReviewTable({ data }: { data: CompetitionData }) {
                     </div>
                   </td>
                 </tr>
+                {filesId === team.id ? (
+                  <tr className="bg-brand-electric/5">
+                    <td colSpan={7} className="px-5 py-4">
+                      <EnrollmentFilesList players={players} />
+                    </td>
+                  </tr>
+                ) : null}
                 {editingId === team.id ? (
                   <tr className="bg-brand-electric/5">
                     <td colSpan={7} className="px-5 py-4">
@@ -376,6 +391,44 @@ function TeamEditForm({
         </Button>
       </div>
     </form>
+  );
+}
+
+function EnrollmentFilesList({ players }: { players: CompetitionData["players"] }) {
+  if (players.length === 0) {
+    return <p className="text-sm font-semibold text-brand-muted">Sin jugadores registrados.</p>;
+  }
+
+  return (
+    <ul className="grid gap-2 md:grid-cols-2 xl:grid-cols-3">
+      {players.map((player) => (
+        <li
+          key={player.id}
+          className="flex items-center justify-between gap-3 rounded-md border border-brand-towerMid/20 bg-white px-3 py-2"
+        >
+          <div className="min-w-0">
+            <p className="truncate text-sm font-semibold text-ink">
+              {player.firstName} {player.lastName}
+            </p>
+            <p className="text-xs text-brand-muted">
+              DNI {player.dni || "-"} · Cod. {player.studentCode || "-"} · {player.semester || "-"}
+            </p>
+          </div>
+          {player.enrollmentFile ? (
+            <a
+              href={`/api/admin/enrollment-file?path=${encodeURIComponent(player.enrollmentFile)}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="shrink-0 text-xs font-bold text-brand-electric underline"
+            >
+              Ver ficha
+            </a>
+          ) : (
+            <Badge tone="neutral">Sin ficha</Badge>
+          )}
+        </li>
+      ))}
+    </ul>
   );
 }
 
