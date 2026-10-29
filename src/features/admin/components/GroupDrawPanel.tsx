@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { AlertTriangle, Dices, Printer, Save, Tag, X } from "lucide-react";
+import { AlertTriangle, Dices, Pencil, Printer, Save, Tag, X } from "lucide-react";
 import { toast } from "sonner";
 import type { CompetitionData } from "@/lib/data-mappers";
 import {
@@ -180,6 +180,43 @@ function EventDraw({ data, eventId }: { data: CompetitionData; eventId: string }
     setBoard(
       board.map((group) =>
         group.map((id) => (id === selected ? teamId : id === teamId ? selected : id))
+      )
+    );
+    setSelected(undefined);
+  }
+
+  // Carga los grupos guardados al tablero para corregirlos sin volver a girar la ruleta.
+  function editSaved() {
+    const ids = new Set(drawTeams.map((team) => team.id));
+    const saved = data.groups
+      .filter((group) => group.eventId === eventId)
+      .sort((a, b) => a.name.localeCompare(b.name))
+      .map((group) =>
+        data.groupTeams
+          .filter((item) => item.groupId === group.id && ids.has(item.teamId))
+          .map((item) => item.teamId)
+      );
+    setConfirmed(false);
+    setBoard(saved);
+    setBoardSizes(saved.map((group) => group.length));
+    setLanded(undefined);
+    setSelected(undefined);
+  }
+
+  // Mueve el equipo seleccionado a otro grupo (cambia el tamano de ambos grupos).
+  function moveTo(index: number) {
+    if (!board || !selected || spinning) return;
+    const from = board.findIndex((group) => group.includes(selected));
+    if (from === index) return;
+    setBoard(
+      board.map((group, i) =>
+        i === index ? [...group, selected] : group.filter((id) => id !== selected)
+      )
+    );
+    setBoardSizes(
+      boardSizes.map(
+        (size, i) =>
+          size + (i === index && board[index].length >= size ? 1 : 0) - (i === from ? 1 : 0)
       )
     );
     setSelected(undefined);
@@ -370,8 +407,8 @@ function EventDraw({ data, eventId }: { data: CompetitionData; eventId: string }
         </p>
       ) : hasSavedGroups && !board ? (
         <p className="text-sm font-semibold text-brand-muted">
-          Este campeonato ya tiene grupos guardados. Haz el sorteo nuevo con la ruleta; los grupos
-          anteriores solo se reemplazan al confirmar.
+          Este campeonato ya tiene grupos guardados. Corrigelos con &quot;Editar grupos guardados&quot; o
+          haz un sorteo nuevo; los grupos anteriores solo se reemplazan al confirmar.
         </p>
       ) : null}
 
@@ -388,6 +425,27 @@ function EventDraw({ data, eventId }: { data: CompetitionData; eventId: string }
           <Dices className="h-6 w-6" />
           {board ? "Empezar de nuevo" : "Empezar sorteo"}
         </Button>
+        {hasSavedGroups && !locked ? (
+          <Button
+            variant="secondary"
+            className="ml-0 mt-2 min-h-16 w-full text-lg sm:ml-2 sm:w-auto sm:px-8"
+            disabled={spinning}
+            onClick={editSaved}
+          >
+            <Pencil className="h-5 w-5" />
+            Editar grupos guardados
+          </Button>
+        ) : null}
+        {hasSavedGroups ? (
+          <Button
+            variant="secondary"
+            className="ml-0 mt-2 min-h-16 w-full text-lg sm:ml-2 sm:w-auto sm:px-8"
+            href={`/imprimir/grupos?evento=${eventId}&pdf=1`}
+          >
+            <Printer className="h-5 w-5" />
+            Imprimir PDF de grupos
+          </Button>
+        ) : null}
       </div>
 
       {confirmed ? (
@@ -419,12 +477,23 @@ function EventDraw({ data, eventId }: { data: CompetitionData; eventId: string }
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
             {board.map((group, index) => (
               <div key={index} className="rounded-md border border-brand-towerMid/25 p-3">
-                <p className="text-sm font-black text-brand-navy">
-                  Grupo {"ABCDEFGH"[index]}{" "}
-                  <span className="text-brand-muted">
-                    ({group.length}/{boardSizes[index]})
-                  </span>
-                </p>
+                <div className="flex items-center justify-between gap-2">
+                  <p className="text-sm font-black text-brand-navy">
+                    Grupo {"ABCDEFGH"[index]}{" "}
+                    <span className="text-brand-muted">
+                      ({group.length}/{boardSizes[index]})
+                    </span>
+                  </p>
+                  {selected && !group.includes(selected) ? (
+                    <button
+                      type="button"
+                      onClick={() => moveTo(index)}
+                      className="rounded bg-brand-electric px-2 py-0.5 text-xs font-black text-white hover:bg-brand-electric/90"
+                    >
+                      Mover aqui
+                    </button>
+                  ) : null}
+                </div>
                 <ol className="mt-2 space-y-1">
                   {group.map((id) => (
                     <li key={id}>
@@ -466,6 +535,25 @@ function EventDraw({ data, eventId }: { data: CompetitionData; eventId: string }
             ))}
           </div>
 
+          {pending.length > 0 ? (
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="text-sm font-black text-brand-navy">Sin grupo:</span>
+              {pending.map((id) => (
+                <button
+                  key={id}
+                  type="button"
+                  onClick={() => selectTeam(id)}
+                  className={cn(
+                    "rounded border border-dashed border-brand-towerMid/60 px-2 py-1 text-sm font-bold",
+                    selected === id ? "ring-2 ring-brand-electric" : "hover:bg-brand-electric/10"
+                  )}
+                >
+                  {teamName.get(id) ?? id}
+                </button>
+              ))}
+            </div>
+          ) : null}
+
           {conflicts.length > 0 ? (
             <p className="flex items-start gap-2 text-sm font-semibold text-red-800">
               <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
@@ -480,7 +568,7 @@ function EventDraw({ data, eventId }: { data: CompetitionData; eventId: string }
           ) : (
             <p className="text-sm font-semibold text-brand-muted">
               Sin cruces del mismo semestre. Para corregir a mano: clic en un equipo y luego en otro
-              de otro grupo.
+              de otro grupo para intercambiarlos, o en &quot;Mover aqui&quot; para pasarlo a ese grupo.
             </p>
           )}
 

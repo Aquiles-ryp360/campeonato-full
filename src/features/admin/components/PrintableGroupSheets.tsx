@@ -34,6 +34,8 @@ export function PrintableGroupSheets({
       .map((match, index) => [match.id, index + 1])
   );
   const groupNames = new Map(groups.map((group) => [group.id, group.name]));
+  const teamIdsOf = (groupId: string) =>
+    groupTeams.filter((item) => item.groupId === groupId).map((item) => item.teamId);
   const groupStageMatches = matches
     .filter((match) => match.stage === "group_stage")
     .sort((a, b) => (order.get(a.id) ?? 0) - (order.get(b.id) ?? 0));
@@ -62,9 +64,33 @@ export function PrintableGroupSheets({
         </p>
       ) : null}
 
+      {sortedGroups.length > 0 ? (
+        // Portada con el mismo look que la ruleta del sorteo (fondo navy, tarjetas blancas).
+        <section
+          className="mb-8 break-after-page rounded-lg bg-brand-navy p-5"
+          style={{ printColorAdjust: "exact", WebkitPrintColorAdjust: "exact" }}
+        >
+          <p className="mb-4 text-2xl font-black text-white">Sorteo · {event.name}</p>
+          <div className="grid grid-cols-2 gap-3">
+            {sortedGroups.map((group) => (
+              <div key={group.id} className="rounded-md bg-white p-3">
+                <p className="text-lg font-black text-brand-navy">{group.name}</p>
+                <ol className="mt-1 space-y-1">
+                  {teamIdsOf(group.id).map((teamId) => (
+                    <li key={teamId} className="rounded bg-brand-electric/10 px-2 py-1 font-bold">
+                      {teams.find((team) => team.id === teamId)?.name ?? "Equipo"}
+                    </li>
+                  ))}
+                </ol>
+              </div>
+            ))}
+          </div>
+        </section>
+      ) : null}
+
       <div className="space-y-8">
         {sortedGroups.map((group) => {
-          const groupTeamIds = groupTeams.filter((item) => item.groupId === group.id).map((item) => item.teamId);
+          const groupTeamIds = teamIdsOf(group.id);
           const groupMatches = matches
             .filter((match) => match.groupId === group.id)
             .sort((a, b) => a.scheduledAt.localeCompare(b.scheduledAt));
