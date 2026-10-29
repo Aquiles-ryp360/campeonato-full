@@ -1,0 +1,326 @@
+% Bases con el formato del documento de la comision (Word): Times, encabezado con logos y "pag. N".
+% Texto de "BASES PARA EL CAMPEONATO INTERSEMESTRES 2026-II" con las correcciones acordadas:
+% arbitraje (futsal S/ 15 = 7.50 por equipo; voley S/ 12 = 6 por equipo), jugadores ajenos a la
+% carrera y composicion de voley (max. 5 varones, min. 1 dama).
+\documentclass[11pt,a4paper]{article}
+% Compilar con xelatex (usa la Times New Roman de Windows, igual que el documento de Word).
+\usepackage{fontspec}
+\setmainfont{Times New Roman}
+\usepackage[spanish]{babel}
+\usepackage[top=3.2cm,bottom=2.4cm,left=2.8cm,right=2.6cm,headheight=1.9cm,headsep=0.5cm]{geometry}
+\usepackage{graphicx}
+\usepackage{xcolor}
+\usepackage{fancyhdr}
+\usepackage{enumitem}
+\usepackage{array}
+\usepackage{amssymb}
+
+\definecolor{pagina}{RGB}{68,114,196}
+\definecolor{fila}{RGB}{236,236,236}
+
+\pagestyle{fancy}
+\fancyhf{}
+\renewcommand{\headrulewidth}{0pt}
+\fancyhead[C]{%
+	\makebox[\textwidth]{%
+		\raisebox{-0.5\height}{\includegraphics[height=1.55cm]{assets/logo-una.png}}\hfill
+		\raisebox{-0.5\height}{\large\textsc{Escuela Profesional de Ingeniería Mecánica Eléctrica}}\hfill
+		\raisebox{-0.5\height}{\includegraphics[height=1.55cm]{assets/logo-carrera.png}}}}
+\fancyfoot[R]{\small\color{pagina}pág. \thepage}
+
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{6pt}
+\setlist[itemize]{label=\textbullet, leftmargin=1.6cm, itemsep=5pt, topsep=4pt}
+\newlist{checks}{itemize}{1}
+\setlist[checks]{label=\checkmark, leftmargin=1.6cm, itemsep=3pt}
+
+\newcommand{\titulo}[1]{\par\medskip\textbf{\textit{#1}}\par}
+\newcommand{\disciplina}[1]{\par\bigskip\begin{center}\textbf{\underline{#1}}\end{center}}
+\newcommand{\capitulo}[1]{\par\medskip #1\par}
+
+\newcommand{\nomina}[1]{%
+	\clearpage
+	\vspace*{0.6cm}
+	\begin{center}{\Large\textbf{NOMINA DE JUGADORES}}\end{center}
+	\vspace{0.6cm}
+	\begin{tabular}{@{}p{4.5cm}l@{}}
+		\textbf{DISCIPLINA:} & \textbf{``#1''}\\[10pt]
+		\textbf{NOMBRE DEL EQUIPO:} & \rule{9.5cm}{0.8pt}\\[14pt]
+		\textbf{DELEGADO:} & \rule{9.5cm}{0.8pt}\\[14pt]
+		\textbf{SUB DELEGADO:} & \rule{9.5cm}{0.8pt}\\
+	\end{tabular}
+	\vspace{0.9cm}
+
+	{\small\renewcommand{\arraystretch}{3.05}
+	\begin{tabular}{|>{\centering\arraybackslash}p{0.6cm}|p{5.6cm}|>{\centering\arraybackslash}p{1.9cm}|>{\centering\arraybackslash}p{2cm}|>{\centering\arraybackslash}p{2.2cm}|}
+		\hline
+		\textbf{N.º} & \centering\textbf{APELLIDOS Y NOMBRES} & \textbf{CÓDIGO} & \textbf{DNI} & \textbf{FIRMA}\\ \hline
+		\textbf{1} & & & & \\ \hline \textbf{2} & & & & \\ \hline \textbf{3} & & & & \\ \hline
+		\textbf{4} & & & & \\ \hline \textbf{5} & & & & \\ \hline \textbf{6} & & & & \\ \hline
+		\textbf{7} & & & & \\ \hline \textbf{8} & & & & \\ \hline \textbf{9} & & & & \\ \hline
+		\textbf{10} & & & & \\ \hline
+	\end{tabular}}
+}
+
+\begin{document}
+
+% =====================================================================
+% PORTADA
+% =====================================================================
+\begin{center}
+	{\fontsize{28}{36}\selectfont\textbf{BASES PARA EL\\CAMPEONATO\\INTERSEMESTRES}\par}
+	\vspace{0.5cm}
+	\includegraphics[height=11.2cm]{assets/afiche-intersemestres-2026-II.jpg}\par
+	\vspace{0.9cm}
+\end{center}
+{\Large
+\hspace*{0.6cm}\begin{tabular}{@{}p{4.6cm}l@{}}
+	ORGANIZADOR & : 9NO SEMESTRE\\[18pt]
+	FECHA & : 29 DE OCTUBRE 2026\\[18pt]
+	LUGAR & : COMPLEJO DEPORTIVO PEREYRA\\
+\end{tabular}\par}
+\vspace{1cm}
+\begin{center}{\fontsize{24}{28}\selectfont 2026 -- II}\end{center}
+
+% =====================================================================
+\clearpage
+\begin{center}{\Large\underline{GRAN CAMPEONATO INTERSEMESTRES 2026-II}}\end{center}
+
+El presente reglamento establece las reglas que regirán el desarrollo del Campeonato de Futsal y Vóley, en el marco de la actividad denominada ``Campeonato Deportivo Electrizante E.P.I.M.E. 2026-II''.
+
+\titulo{OBJETIVOS:}
+\begin{itemize}
+	\item Promover el deporte para la buena salud y estado físico de los estudiantes.
+	\item Promover la buena comunicación con los compañeros de la escuela profesional de Ingeniería Mecánica Eléctrica.
+	\item Buscar talentos que representarán a la escuela profesional en las próximas actividades deportivas Inter facultades de la UNA Puno.
+	\item Formar lazos competitivos entre todos los semestres de la escuela.
+\end{itemize}
+
+\titulo{LA ORGANIZACIÓN:}
+El Campeonato de Futsal y Vóley es organizado y supervisado por los miembros ``estudiantes'' del 9no semestre de la escuela profesional de Ingeniería Mecánica Eléctrica, encargados del presente campeonato, siendo ésta su máxima autoridad como la ``Comisión Organizadora''.
+
+\titulo{LUGAR Y FECHA:}
+\textbf{Lugar:} Complejo deportivo Pereyra
+
+\textbf{Fecha y hora:} jueves 29 de octubre, iniciando 07:00 AM.
+
+\titulo{DISPOSICIONES GENERALES PARA AMBOS DEPORTES}
+\begin{itemize}
+	\item Se restará un punto a los equipos que no cuenten con su respectiva camiseta.
+	\item Se restará puntos al equipo que bote basura o dañe la propiedad del recinto deportivo.
+	\item Cualquier daño al recinto deportivo será asumido por los involucrados.
+	\item \textbf{Cualquier tipo de agresión verbal o física que atente contra la integridad de los miembros de la comisión organizadora, jugador, equipo, árbitros, público, etc. será motivo de la eliminación del equipo e incluso la expulsión del recinto deportivo.}
+\end{itemize}
+
+\titulo{INSCRIPCIÓN}
+\begin{itemize}
+	\item La inscripción se realizará mediante un representante o delegado que será el responsable de cada equipo (estudiantes de la carrera, matriculados 2026-II y EGRESADOS de la Escuela Profesional de Ingeniería Mecánica Eléctrica).
+	\item Cada equipo pagará su inscripción la cantidad de 50 soles por equipo en futsal y de 40 soles en vóley.
+	\item Antes de cada inscripción, el delegado o capitán encargado de la inscripción del equipo estará en la obligación de firmar un documento de compromiso, donde se aceptará que la hora de llegada a los partidos y los WALKOVER posibles que se den dentro de los partidos serán únicamente responsabilidad de los jugadores y no habrá derecho a reclamo posteriormente.
+	\item El arbitraje en futsal tendrá un costo de \textbf{15 soles por partido (S/ 7.50 por equipo)}.
+	\item El arbitraje en vóley tendrá un costo de \textbf{12 soles por partido (S/ 6.00 por equipo)}.
+	\item El dinero del arbitraje deberá regularizarse \textbf{antes del medio tiempo} de cada partido (en vóley, antes del inicio del segundo set).
+	\item La inscripción se apertura al momento de anunciar el campeonato.
+	\item El sorteo para los encuentros se realizará el día miércoles 28 de octubre a las 10:00 AM.
+	\item Los delegados deberán presentar la relación de sus equipos deportivos en la mesa evaluadora antes de realizarse el encuentro con su contrincante o previa inscripción del equipo.
+	\item Cada semestre podrá inscribir hasta 03 equipos de futsal como máximo y 03 equipos de vóley como máximo.
+	\item La inscripción de los jugadores será con ficha de matrícula en físico o PDF adjuntada por sus delegados y/o capitanes correspondientes de cada semestre; no se aceptará estudiantes con suspensión de semestre académico.
+	\item En el caso de compañeros egresados, presentar algún documento que avale que fue estudiante de la carrera.
+	\item Los jugadores solo podrán participar en equipos correspondientes al semestre en el que están matriculados oficialmente, según lo indica su ficha de matrícula. Esto significa que no se permitirá que un estudiante juegue para un equipo de un semestre diferente al que le corresponde.
+	\item Los jugadores podrán jugar para un semestre si llevan como mínimo 02 cursos dentro del semestre correspondiente al que van a jugar; si no cumplen este requisito mínimo de cursos no podrán jugar dentro del equipo de dicho semestre.
+	\item Los jugadores no estarán permitidos rotar entre equipos ni mucho menos inscribirse en más de un equipo.
+	\item En caso de reclamo sobre algún jugador que incumpla con las bases de inscripción, se comprobará con su ficha de matrícula y corroborando conjuntamente con su DNI.
+	\item \textbf{Jugadores que no pertenecen a la carrera:} si se detecta antes del partido, el jugador será retirado y no podrá jugar. Si se detecta durante el partido o al término de este, se le quitarán los puntos de ese partido al equipo infractor (no aplica a las jugadoras invitadas permitidas en vóley mixto).
+\end{itemize}
+
+% =====================================================================
+\disciplina{DISCIPLINA DE FUTSAL}
+\textbf{DE LA PARTICIPACIÓN}
+\begin{itemize}
+	\item El fixture es elaborado por el comité organizador, conjuntamente con los delegados, no pudiendo modificarse hasta el final del campeonato, aplicando las Reglas de Juego en lo que corresponda.
+	\item En la Ficha de Inscripción los delegados deberán inscribir hasta diez (10) jugadores, presentadas antes del inicio del campeonato con sus respectivas fichas de matrícula 2026-II.
+	\item Todo equipo participante debe designar a un delegado ``capitán'' quien podrá ser jugador, de estar considerado dentro de los diez (10) inscritos.
+	\item Los jugadores deberán entrar a la cancha previa presentación de su lista de jugadores presentada por su delegado. En caso de que el jugador no esté en la lista, el equipo será eliminado automáticamente del torneo (suplantación).
+	\item \textbf{Cada equipo debe presentarse un partido antes y/o 10 minutos antes del suyo en caso se presente WALK OVER.}
+	\item El capitán del equipo llevará una cinta distintiva en el brazo y será el único encargado de coordinar con el árbitro cualquier aclaración y coordinación en caso se requiera.
+	\item Los equipos presentarán diez minutos antes de cada partido la lista de jugadores que participarán en el partido, considerando exclusivamente los diez (10) jugadores inscritos.
+	\item Esta lista no podrá ser modificada una vez iniciado el encuentro. Los partidos se iniciarán con un mínimo de cuatro jugadores (04) en cancha, con una tolerancia máxima de 05 minutos de la hora programada.
+	\item Un jugador no podrá jugar para dos (02) equipos y el equipo que incurra en esta falta será eliminado automáticamente del torneo.
+	\item Los reclamos podrán efectuarse al dorso de la planilla firmados por el delegado o capitán y deberán ser ampliados en un informe que sustente dicho reclamo dentro de los 5 minutos de terminar el partido.
+	\item Para efectos del control de tiempo, la única persona autorizada será el árbitro del partido.
+	\item Se podrán realizar cambios ilimitados por equipo (dentro de los inscritos).
+	\item Los delegados acreditados en la ficha de inscripción son los únicos autorizados para presentar los reclamos que consideren pertinentes a la mesa de control.
+	\item No habrá acuerdo de delegados para modificar las fechas y horarios de los partidos y se respetará el fixture elaborado por el comité organizador (esto se podrá obviar en el caso de que coincida con su partido de vóley).
+	\item El delegado está facultado para fungir de entrenador según la disponibilidad de personas allegadas al equipo.
+\end{itemize}
+
+\titulo{DE LOS PARTIDOS}
+\begin{itemize}
+	\item El encuentro se realizará cuando estén como mínimo cuatro (04) jugadores. El tiempo de tolerancia de espera es de 05 minutos; el equipo ausente perderá por W.O. (walkover).
+	\item Si durante el partido se registra alguna expulsión en el equipo que tiene el mínimo de jugadores requeridos, se declarará finalizado el partido y ganador al equipo contrario.
+\end{itemize}
+
+\titulo{DEL SISTEMA DE JUEGO}
+\begin{itemize}
+	\item El desarrollo de los partidos se ajustará al reglamento de la comisión organizadora y a lo expresamente señalado en las presentes bases.
+	\item Los goles serán válidos desde cualquier lugar del campo.
+	\item Los lanzamientos de esquina y de lateral serán ejecutados con la mano.
+	\item Las faltas se sancionan con un tiro libre directo o indirecto, dependiendo de la gravedad de la infracción.
+	\item A partir de la sexta falta acumulada por un equipo en un tiempo, cada falta adicional resulta en un tiro libre sin barrera desde el segundo punto de penalti, ubicado a 10 metros de la portería; estas faltas se reinician una vez termine el primer tiempo y se realice el cambio de cancha.
+	\item Las tarjetas amarillas y rojas se usan para sancionar conductas antideportivas; la tarjeta roja resulta en la expulsión del jugador, quien no podrá ser sustituido durante 2 minutos o hasta que el equipo contrario marque un gol antes de los dos minutos.
+	\item El arquero no podrá recibir con las manos ningún pase franco (directo) de su compañero de equipo si es realizado con el pie. En todos los demás casos será válido (de cabeza, de pecho, si es casual, etc.). De ocurrir la falta será sancionado con un saque lateral con balón al piso.
+	\item El arquero NO podrá hacer pasar el balón lanzando más allá de la media cancha.
+	\item Los porteros tienen un tiempo limitado de 5 segundos para jugar el balón; caso contrario será sancionado por criterio del árbitro.
+	\item Los jugadores disponen de un máximo de 5 segundos para poner el balón en juego durante saques de banda, saques de esquina y tiros libres (en saques de banda, si pasa ese tiempo de 4 segundos, sacará el equipo contrario).
+	\item No se permite marcar un gol directamente desde el saque de banda, saque de meta con manos (el balón tiene que estar en el piso en caso del portero) o tiro libre indirecto.
+	\item Un equipo está apto para jugar cuando, a la hora programada o haciendo uso de su tolerancia, está presente con cinco (5) jugadores en cancha correctamente inscritos y uniformados; incluso podrá aceptarse que se presenten con un mínimo de cuatro (4) jugadores; de lo contrario se le decretará perdedor por W.O., asignándole al equipo ganador el score de 3 -- 0.
+	\item El equipo que no culmine el partido, por no cumplir con el mínimo de jugadores (4) en el campo de juego, perderá automáticamente el encuentro, otorgándole al equipo rival como mínimo un resultado de 3 a 0; si la diferencia fuese mayor se aplicará esta última.
+	\item Se aceptará una tolerancia máxima e improrrogable de cinco minutos después de la hora señalada para el inicio de los partidos; ese tiempo será descontado y no será mayor.
+\end{itemize}
+
+\titulo{DEL TIEMPO DE JUEGO.}
+El o los equipos infractores serán eliminados automáticamente del torneo. Los partidos comenzarán a la hora exacta.
+\begin{itemize}
+	\item Los partidos se jugarán en dos tiempos, uno de 10 minutos y el otro de 10 minutos, respectivamente, sin descanso. El tiempo del encuentro será controlado por el árbitro.
+	\item Los jugadores deberán estar debidamente uniformados con camisetas de un mismo color; en caso contrario, aquellos jugadores que incumplan lo dispuesto (restará 01 punto al resultado final del score al equipo sin uniforme).
+	\item El capitán se identificará con una cinta de color distinto a la camiseta.
+	\item Si se diera el caso de coincidencia de colores en las camisetas distintivas de los equipos en un determinado partido, se optará por identificar a uno de los equipos con chalecos de distinto color, para lo cual previamente, en presencia de los capitanes de los equipos, el árbitro efectuará el sorteo respectivo; se volteará la camiseta si es necesario.
+	\item El comportamiento de los jugadores deberá ser en todo momento caracterizado por la corrección, disciplina y respeto por los adversarios, jueces, reglamento y público en general.
+\end{itemize}
+El incumplimiento del presente artículo conllevará a las sanciones que el caso amerite y comprende el comportamiento tanto dentro como fuera del campo de juego. Dichas sanciones serán acumulativas, y las expulsiones serán evaluadas por la MESA EVALUADORA.
+
+\titulo{DE LOS DELEGADOS.}
+Son funciones, responsabilidades y facultades de los delegados:
+\begin{itemize}
+	\item Acatar los acuerdos de las reuniones de delegados y comunicados que emita el Comité Organizador.
+	\item Inscribir al equipo al que representa. Asimismo, previo a los partidos será el responsable de presentar la relación de jugadores titulares y suplentes por lo menos con diez minutos de anticipación a la hora programada de su partido.
+	\item Es el encargado de velar por la disciplina de su equipo y demás simpatizantes. Cualquier desborde de parte de las barras o simpatizantes será responsabilidad de los delegados y, de acuerdo a la gravedad del comportamiento, se resolverá en caso de resultar necesario.
+\end{itemize}
+
+\titulo{DE LOS RECLAMOS.}
+Los delegados y/o capitanes son los únicos autorizados para presentar los reclamos que consideren pertinentes.
+\begin{itemize}
+	\item Un reclamo válido (justificado y corroborado) podrá ser realizado efectuando un pago de un monto de 5 soles a la mesa.
+	\item No se aceptarán reclamos por las fallas de apreciación de los árbitros.
+	\item El capitán del equipo es el único que planteará sus reclamos al árbitro durante el juego.
+	\item Las consultas referentes a la interpretación de las reglas de juego deben ser resueltas inmediatamente por el árbitro.
+\end{itemize}
+NOTA: La MESA EVALUADORA conjuntamente con el árbitro determinarán en última instancia un problema que no sea resuelto en la inmediatez.
+
+\titulo{DE LAS SANCIONES.}
+\begin{itemize}
+	\item Los jugadores que sean sancionados con tarjeta roja estarán impedidos de jugar en el siguiente partido. La aplicación de este artículo está comprendida por el comportamiento dentro y fuera del campo de juego.
+	\item Jugador que llegue a acumular dos tarjetas amarillas en un mismo partido será expulsado, lo que se traduce a una tarjeta roja (no hay acumulación de tarjetas amarillas de partidos anteriores).
+	\item Los miembros de la Comisión Organizadora están obligados a brindar las condiciones para que el desarrollo del campeonato sea limpio y justo.
+\end{itemize}
+
+\titulo{DE LA MESA EVALUADORA.}
+\begin{itemize}
+	\item Es la Instancia Suprema mediante la cual se resolverán los reclamos presentados por los delegados de los equipos.
+\end{itemize}
+
+\titulo{DE LA PREMIACIÓN Y CEREMONIA DE CLAUSURA.}
+\begin{itemize}
+	\item Se realizará una ceremonia de clausura en la que se entregarán premios a los primeros lugares.
+\end{itemize}
+
+\titulo{DISPOSICIONES FINALES}
+\begin{itemize}
+	\item Todos los equipos que acepten participar en el presente campeonato se comprometen a acatar todas las disposiciones de las presentes bases, las que no serán sujetas a modificación con el objetivo de alcanzar el éxito deseado.
+	\item La Comisión Organizadora no será responsable por accidentes o lesiones de jugadores, quedando exenta de acciones legales o judiciales.
+	\item La Comisión Organizadora no será responsable por incidentes de hurto.
+	\item Cualquier punto no contemplado en las presentes bases será resuelto por la MESA EVALUADORA en lo que les fuera pertinente, no habiendo lugar a reclamos por las decisiones resueltas por estas.
+\end{itemize}
+
+\titulo{NOTA}
+\begin{itemize}
+	\item \textbf{\textit{La conformación de grupos está sujeta al número de equipos inscritos; sujetos a un sorteo que se realizará en la fecha indicada.}}
+	\item En caso que amerite un encuentro por adelanto de tiempo, la MESA EVALUADORA comunicará 15 min antes del encuentro.
+	\item En caso de empate en los partidos de la primera fecha, se definirán por diferencia de goles y acumulación de faltas.
+	\item En caso de empate en los partidos de la fase de grupos y cuartos de final, se definirán con tres penales por equipo y luego se ejecutará un penal hasta que resulte un equipo ganador.
+	\item Para la final se realizará una tanda de cinco (5) penales. Si continuase la paridad, cada equipo ejecutará un penal hasta que resulte un equipo ganador.
+	\item Pueden ejecutar el penalti solo los jugadores que llegaron a culminar el partido.
+\end{itemize}
+
+\titulo{DE LAS SANCIONES}
+Las sanciones se consideran de la siguiente forma:
+\begin{checks}
+	\item La tarjeta amarilla será sancionada según la gravedad.
+	\item La Tarjeta Roja será suspensión inmediata del partido y del siguiente partido.
+	\item La reincidencia en esta falta por parte de un jugador significará su separación automática del campeonato.
+	\item Los árbitros no permitirán el juego fuerte ni la mala intención, teniendo que ser enérgicos para evitar la violencia dentro del encuentro.
+	\item En caso de agresión directa, la separación del jugador será inmediata y el equipo será sacado en definitiva del campeonato.
+	\item Toda conducta antideportiva será evaluada por la MESA EVALUADORA.
+	\item Las decisiones del Comité Organizador son inapelables.
+\end{checks}
+
+% =====================================================================
+\clearpage
+\begin{center}{\large\textbf{\underline{DISCIPLINA VOLEY MIXTO}}}\end{center}
+
+BASES Y REGLAMENTO CAMPEONATO DE VOLEY MIXTO
+
+\capitulo{CAPITULO I: ORGANIZACIÓN}
+\begin{itemize}
+	\item Los partidos se llevarán a cabo en las instalaciones deportivas indicadas por la comisión organizadora.
+	\item El costo de inscripción será del monto de 40 soles.
+	\item Todos los equipos participantes se comprometen a aceptar las disposiciones reglamentarias estipuladas para el presente campeonato.
+\end{itemize}
+
+\capitulo{CAPITULO II: DE LOS PARTICIPANTES}
+\begin{itemize}
+	\item Podrán participar todos los alumnos y alumnas de la Escuela Profesional de Ingeniería Mecánica Eléctrica matriculados 2026-II.
+	\item Para la inscripción los participantes deberán presentar su ficha de matrícula del 2026-II.
+	\item Podrán inscribir como máximo 10 jugadores.
+	\item \textbf{En cancha deberá haber como máximo 5 varones y como mínimo 1 dama.}
+	\item La acreditación de los deportistas se deberá realizar a través de una ficha de inscripción debidamente firmada por el delegado, a la Comisión Organizadora del presente campeonato.
+	\item En caso de no contar con participantes del género femenino en el equipo y/o semestre o que no tengan el apoyo de sus compañeras de semestre, podrán invitar una jugadora o 02 jugadoras como máximo (ojo: solo mujeres) para su equipo que no sean de la E.P.I.M.E.
+	\item En caso de no contar con participantes del género femenino, el equipo puede estar conformado por jugadores masculinos.
+\end{itemize}
+
+\capitulo{CAPITULO III: DE LA COMPETENCIA}
+El sistema a emplearse es de eliminación directa hasta llegar a instancias finales.
+\begin{itemize}
+	\item Cada partido se jugará a ganar dos sets bajo el sistema de saque punto (Rally Point) hasta un máximo de 20 puntos por cada set jugado.
+	\item Se deberá abonar un monto de \textbf{12 soles por arbitraje en cada partido (S/ 6.00 por equipo)}.
+	\item Un set es ganado por aquel equipo que alcanza primero los 20 puntos con un mínimo de 2 puntos de diferencia.
+	\item El partido es ganado por aquel equipo que gana dos sets, pudiendo ser dos sets a cero o dos sets a uno.
+	\item De producirse un empate en sets, se jugará un tercer set de 10 puntos con cambio de cancha a los 5 puntos.
+	\item El tiempo máximo de tolerancia para presentarse al campo de juego es de 05 minutos contados a partir del primer llamado del árbitro; de no presentarse algún equipo después de transcurrido este tiempo, se dará como ganador al equipo que esté presente en la cancha.
+	\item Se podrán hacer los cambios que cada equipo crea conveniente.
+	\item Para el inicio del partido de vóley mixto es necesario tener como mínimo cuatro (04) jugadores en cancha.
+	\item Los equipos deberán presentarse correctamente uniformados con su camiseta.
+	\item Antes de cada partido, la capitana y/o delegado de cada equipo deberá presentar a la mesa de control la relación de jugadores titulares y suplentes con su debido nombre y apellidos, para cada partido a disputarse.
+	\item El entrenador de cada equipo podrá solicitar 1 tiempo normal por set (descanso de indicación).
+	\item No se permitirá ningún tipo de interrupción de juego como para secar la cancha, amarrarse las zapatillas u otra situación similar, a menos que el árbitro lo disponga.
+	\item Al término de cada encuentro se tiene que acercar la capitana de cada uno de los equipos para firmar el acta del partido para dar conformidad al resultado final del encuentro y presentar cualquier queja o reclamo que considere necesario.
+	\item Cualquier duda o controversia que pudiera presentarse a lo largo del campeonato y que no esté contemplada en las presentes bases y reglamento será evaluada y revisada por la MESA EVALUADORA, cuyo fallo es inapelable y al cual se deben someter todos los equipos.
+	\item En caso que un equipo presente una nómina de puros varones, solo se presentarán 5 jugadores varones en cancha.
+	\item Si ambos equipos presentan nóminas de puros varones, jugarán con los 6 jugadores.
+\end{itemize}
+
+\capitulo{CAPITULO IV: DE LOS RECLAMOS Y SANCIONES.}
+DE LOS RECLAMOS
+\begin{itemize}
+	\item Todos los reclamos deberán ser presentados por el capitán del equipo al concluir el partido en la planilla de juego, y con documentos que sustenten lo ocurrido, a la MESA EVALUADORA. Se deberá pagar 5 soles en caso sea válido el reclamo.
+\end{itemize}
+DE LAS SANCIONES.
+\begin{itemize}
+	\item Los deportistas y/o delegados que sean sancionados con tarjeta roja estarán impedidos de jugar y/o representar a su equipo durante el siguiente partido, salvo decisión de la comisión de justicia, de acuerdo a la gravedad o magnitud de la falta. La aplicación de este artículo comprende el comportamiento del deportista dentro y fuera del campo de juego.
+	\item Serán suspendidos del campeonato los jugadores que acumulen tarjeta roja.
+	\item Está prohibido el ingreso de los hinchas al campo de juego; en caso de que ello ocurra se suspenderá el partido y su equipo será sancionado dándole ganador a su contrario; si el hecho se repite, el equipo será separado del campeonato.
+\end{itemize}
+
+DISPOSICIONES FINALES:
+
+PRIMERO: Todos los equipos que participen en el presente campeonato se comprometen a acatar todas las Disposiciones Generales y Bases contenidas en el presente documento.
+
+SEGUNDO: Cualquier punto no contemplado en las presentes disposiciones será resuelto por la Comisión Organizadora o MESA EVALUADORA en lo que fuera pertinente.
+
+TERCERO: En caso de cambio de formato por medida de fuerza debido a la cantidad de equipos inscritos para ambas disciplinas, se comunicará en un plazo no mayor a 2 días de iniciar el campeonato.
+
+% =====================================================================
+\nomina{FUTSAL}
+\nomina{VOLEY MIXTO}
+
+\end{document}

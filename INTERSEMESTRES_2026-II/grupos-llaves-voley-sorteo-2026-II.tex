@@ -1,0 +1,75 @@
+\documentclass[10pt,a4paper,landscape]{article}
+% Compilar con xelatex
+\input{estilo-sorteo}
+\newcommand{\evento}{Campeonato EPIME 2026-2 VOLEY}
+
+% Equipos segun el sorteo
+\newcommand{\Aa}{π-chu-long}\newcommand{\Ab}{Los invencibles}\newcommand{\Ac}{LAS DIVINAS}\newcommand{\Ad}{Quokkas}
+\newcommand{\Ba}{Pupilos de paredes}\newcommand{\Bb}{REYES DE LA POTENCIA}\newcommand{\Bc}{Salsitas al poder de fuego}\newcommand{\Bd}{Antidenuncias FC}
+
+% Tabla de posiciones de voley
+\newcommand{\pos}[1]{\rule{0pt}{0.7cm}\makebox[4.4cm][l]{\bfseries #1} & \hspace{0.62cm} & \hspace{0.62cm} & \hspace{0.62cm} & \hspace{0.62cm} & \hspace{0.62cm} & \hspace{0.62cm} & \hspace{0.62cm}\\ \hline}
+\newcommand{\tablaPos}[2]{\tarjeta{Grupo #1}{· tabla de posiciones}{%
+	\renewcommand{\arraystretch}{1.1}\small
+	\begin{tabular}{@{}l|*{7}{c|}@{}}
+		\rowcolor{chip}\bfseries Equipo & PJ & PG & PP & PF & PC & DP & \bfseries Pts\\ \hline
+		#2
+	\end{tabular}}{pos}}
+
+\begin{document}
+
+% =====================================================================
+% GRUPOS Y LLAVE
+% =====================================================================
+\cabecera{Grupos y llave}{8 equipos · 2 grupos de 4 · clasifican 1.° y 2.° a semifinales · 15 partidos}
+
+\noindent
+\begin{minipage}[t]{0.49\linewidth}\vspace{0pt}\grupo{A}{\eq{\Aa}\eq{\Ab}\eq{\Ac}\eqH{\Ad}}\end{minipage}\hfill
+\begin{minipage}[t]{0.49\linewidth}\vspace{0pt}\grupo{B}{\eq{\Ba}\eq{\Bb}\eq{\Bc}\eq{\Bd}}\end{minipage}
+
+\vspace{0.5cm}
+\begin{center}
+\begin{tikzpicture}[x=1cm,y=1cm]
+	\ronda{(0,5.2)}{Semifinales} \ronda{(6.6,5.2)}{Final}
+
+	\partido{S1}{0}{3.6}{S1}{1.° Grupo A}{2.° Grupo B}
+	\partido{S2}{0}{1.0}{S2}{1.° Grupo B}{2.° Grupo A}
+
+	\partido{F}{6.6}{2.3}{FINAL · mejor de 3 sets}{Ganador S1}{Ganador S2}
+
+	\pasa{S1}{Fh} \pasa{S2}{Fa}
+
+	\campeon{F}{9.2}{2.3}
+\end{tikzpicture}
+\end{center}
+
+\vfill
+\nota{\textbf{Grupos:} todos contra todos; victoria 2 puntos, derrota 0. Desempate: diferencia de puntos, puntos a favor, menos puntos en contra y sorteo. \textbf{Sets:} grupos y semifinales a 1 set de 20 (diferencia de 2, tope 22); final al mejor de 3: 20, 20 y 10 puntos. \textbf{Partidos:} 12 de grupos + 2 semifinales + final = \textbf{15}.}
+
+\newpage
+% =====================================================================
+% TABLAS Y PARTIDOS
+% =====================================================================
+\cabecera{\ifdefined\papel Tablas de posiciones\else Tablas y partidos\fi}{Victoria 2 pts · derrota 0 pts · pasan 1.° y 2.° de cada grupo}
+
+\noindent
+\begin{minipage}[t]{0.49\linewidth}\vspace{0pt}\tablaPos{A}{\pos{\Aa}\pos{\Ab}\pos{\Ac}\pos{\Ad}}\end{minipage}\hfill
+\begin{minipage}[t]{0.49\linewidth}\vspace{0pt}\tablaPos{B}{\pos{\Ba}\pos{\Bb}\pos{\Bc}\pos{\Bd}}\end{minipage}
+
+\ifdefined\papel\else
+\vspace{0.35cm}\noindent
+\begin{minipage}[t]{0.49\linewidth}\vspace{0pt}\fixture{A}{%
+	\vs{1}{\Aa}{\Ab}\vs{1}{\Ac}{\Ad}\vs{2}{\Aa}{\Ac}\vs{2}{\Ab}{\Ad}\vs{3}{\Aa}{\Ad}\vs{3}{\Ab}{\Ac}}\end{minipage}\hfill
+\begin{minipage}[t]{0.49\linewidth}\vspace{0pt}\fixture{B}{%
+	\vs{1}{\Ba}{\Bb}\vs{1}{\Bc}{\Bd}\vs{2}{\Ba}{\Bc}\vs{2}{\Bb}{\Bd}\vs{3}{\Ba}{\Bd}\vs{3}{\Bb}{\Bc}}\end{minipage}
+\fi
+
+\vspace{0.35cm}
+\tarjeta{Clasificados}{}{\small
+	1.° A \rule{3.6cm}{0.4pt}\quad 2.° A \rule{3.6cm}{0.4pt}\quad
+	1.° B \rule{3.6cm}{0.4pt}\quad 2.° B \rule{3.6cm}{0.4pt}}{clas}
+
+\vfill
+\nota{\textbf{PJ} jugados · \textbf{PG} ganados · \textbf{PP} perdidos · \textbf{PF} puntos a favor · \textbf{PC} puntos en contra · \textbf{DP} diferencia de puntos · \textbf{Pts} puntos de tabla.}
+
+\end{document}

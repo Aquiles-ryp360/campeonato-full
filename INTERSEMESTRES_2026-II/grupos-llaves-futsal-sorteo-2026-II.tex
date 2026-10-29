@@ -1,0 +1,110 @@
+\documentclass[10pt,a4paper,landscape]{article}
+% Compilar con xelatex
+\input{estilo-sorteo}
+\newcommand{\evento}{Campeonato EPIME 2026-2 FUTSAL}
+
+% Equipos segun el sorteo
+\newcommand{\Aa}{Cabo verde}\newcommand{\Ab}{Nottingham Miedo}\newcommand{\Ac}{F.C. Real Polquitos}\newcommand{\Ad}{Primer semestre}
+\newcommand{\Ba}{REAL BARZA-VII A}\newcommand{\Bb}{Antidenuncias FC}\newcommand{\Bc}{Terrible Resaca}\newcommand{\Bd}{Los Chankas}
+\newcommand{\Ca}{FC PAPAYITAS}\newcommand{\Cb}{Sport gusto}\newcommand{\Cc}{FC ACHUMI}\newcommand{\Cd}{ETS}
+\newcommand{\Da}{Salsitas al poder de fuego}\newcommand{\Db}{Los Traralelitos FC}\newcommand{\Dc}{MEKACHEROS}
+
+% Tabla de posiciones de futsal
+\newcommand{\pos}[1]{\rule{0pt}{0.66cm}\makebox[4.3cm][l]{\bfseries #1} & \hspace{0.6cm} & \hspace{0.6cm} & \hspace{0.6cm} & \hspace{0.6cm} & \hspace{0.6cm} & \hspace{0.6cm} & \hspace{0.6cm} & \hspace{0.6cm}\\ \hline}
+\newcommand{\tablaPos}[2]{\tarjeta{Grupo #1}{· tabla de posiciones}{%
+	\renewcommand{\arraystretch}{1.1}\small
+	\begin{tabular}{@{}l|*{8}{c|}@{}}
+		\rowcolor{chip}\bfseries Equipo & PJ & PG & PE & PP & GF & GC & DG & \bfseries Pts\\ \hline
+		#2
+	\end{tabular}}{pos}}
+
+\begin{document}
+
+% =====================================================================
+% GRUPOS Y LLAVE
+% =====================================================================
+\cabecera{Grupos y llave}{15 equipos · 4 grupos · clasifican 1.° y 2.° a cuartos · 29 partidos}
+
+\noindent
+\begin{minipage}[t]{0.24\linewidth}\vspace{0pt}\grupo{A}{\eq{\Aa}\eq{\Ab}\eq{\Ac}\eqH{\Ad}}\end{minipage}\hfill
+\begin{minipage}[t]{0.24\linewidth}\vspace{0pt}\grupo{B}{\eq{\Ba}\eq{\Bb}\eq{\Bc}\eq{\Bd}}\end{minipage}\hfill
+\begin{minipage}[t]{0.24\linewidth}\vspace{0pt}\grupo{C}{\eq{\Ca}\eq{\Cb}\eq{\Cc}\eq{\Cd}}\end{minipage}\hfill
+\begin{minipage}[t]{0.24\linewidth}\vspace{0pt}\grupo{D}{\eq{\Da}\eq{\Db}\eq{\Dc}}\end{minipage}
+
+\vspace{0.3cm}
+\begin{center}
+\begin{tikzpicture}[x=1cm,y=0.84cm]
+	\ronda{(0,8.8)}{Cuartos de final} \ronda{(5.6,8.8)}{Semifinales} \ronda{(11.2,8.8)}{Final}
+
+	\partido{C1}{0}{7.3}{C1}{1.° Grupo A}{2.° Grupo B}
+	\partido{C2}{0}{5.0}{C2}{1.° Grupo B}{2.° Grupo A}
+	\partido{C3}{0}{2.7}{C3}{1.° Grupo C}{2.° Grupo D}
+	\partido{C4}{0}{0.4}{C4}{1.° Grupo D}{2.° Grupo C}
+
+	\partido{S1}{5.6}{6.15}{S1}{Ganador C1}{Ganador C2}
+	\partido{S2}{5.6}{1.55}{S2}{Ganador C3}{Ganador C4}
+
+	\partido{F}{11.2}{5.0}{FINAL}{Ganador S1}{Ganador S2}
+	\partido{T}{11.2}{1.55}{3.\textsuperscript{er} LUGAR}{Perdedor S1}{Perdedor S2}
+
+	\pasa{C1}{S1h} \pasa{C2}{S1a} \pasa{C3}{S2h} \pasa{C4}{S2a}
+	\pasa{S1}{Fh} \pasa{S2}{Fa}
+
+	\campeon{F}{13.8}{5.0}
+	\node[fill=white!85!navy, draw=marco, rounded corners=2pt, font=\bfseries, text=navy, anchor=west] (ter) at (13.8,1.55) {3.\textsuperscript{er} puesto};
+	\draw[trazo, line width=1pt] (T) -- (ter.west);
+\end{tikzpicture}
+\end{center}
+
+\vfill
+\nota{\textbf{Partidos:} 21 de grupos (6 por grupo en A, B y C; 3 en D) + 4 cuartos + 2 semifinales + 3.\textsuperscript{er} lugar + final = \textbf{29}. Empates en cuartos, semifinales y 3.\textsuperscript{er} lugar: 3 penales por equipo; en la final, 5 penales.}
+
+\newpage
+% =====================================================================
+% TABLAS DE POSICIONES
+% =====================================================================
+\cabecera{Tablas de posiciones}{Victoria 3 pts · empate 1 pt · derrota 0 pts · pasan 1.° y 2.° de cada grupo}
+
+\noindent
+\begin{minipage}[t]{0.49\linewidth}\vspace{0pt}\tablaPos{A}{\pos{\Aa}\pos{\Ab}\pos{\Ac}\pos{\Ad}}\end{minipage}\hfill
+\begin{minipage}[t]{0.49\linewidth}\vspace{0pt}\tablaPos{B}{\pos{\Ba}\pos{\Bb}\pos{\Bc}\pos{\Bd}}\end{minipage}
+
+\vspace{0.4cm}\noindent
+\begin{minipage}[t]{0.49\linewidth}\vspace{0pt}\tablaPos{C}{\pos{\Ca}\pos{\Cb}\pos{\Cc}\pos{\Cd}}\end{minipage}\hfill
+\begin{minipage}[t]{0.49\linewidth}\vspace{0pt}\tablaPos{D}{\pos{\Da}\pos{\Db}\pos{\Dc}}\end{minipage}
+
+\vspace{0.4cm}
+\tarjeta{Clasificados}{}{\small
+	1.° A \rule{2.8cm}{0.4pt}\quad 2.° A \rule{2.8cm}{0.4pt}\quad
+	1.° B \rule{2.8cm}{0.4pt}\quad 2.° B \rule{2.8cm}{0.4pt}\\[0.3cm]
+	1.° C \rule{2.8cm}{0.4pt}\quad 2.° C \rule{2.8cm}{0.4pt}\quad
+	1.° D \rule{2.8cm}{0.4pt}\quad 2.° D \rule{2.8cm}{0.4pt}}{clas}
+
+\vfill
+\nota{\textbf{PJ} jugados · \textbf{PG} ganados · \textbf{PE} empatados · \textbf{PP} perdidos · \textbf{GF} goles a favor · \textbf{GC} goles en contra · \textbf{DG} diferencia de goles · \textbf{Pts} puntos.}
+
+% En papel el orden de partidos es el del fixture impreso; esta hoja referencial se omite.
+\ifdefined\papel\else
+\newpage
+% =====================================================================
+% PARTIDOS DE GRUPO
+% =====================================================================
+\cabecera{Partidos de grupo}{Todos contra todos · 3 fechas por grupo · en el grupo D descansa un equipo por fecha}
+
+\noindent
+\begin{minipage}[t]{0.49\linewidth}\vspace{0pt}\fixture{A}{%
+	\vs{1}{\Aa}{\Ab}\vs{1}{\Ac}{\Ad}\vs{2}{\Aa}{\Ac}\vs{2}{\Ab}{\Ad}\vs{3}{\Aa}{\Ad}\vs{3}{\Ab}{\Ac}}\end{minipage}\hfill
+\begin{minipage}[t]{0.49\linewidth}\vspace{0pt}\fixture{B}{%
+	\vs{1}{\Ba}{\Bb}\vs{1}{\Bc}{\Bd}\vs{2}{\Ba}{\Bc}\vs{2}{\Bb}{\Bd}\vs{3}{\Ba}{\Bd}\vs{3}{\Bb}{\Bc}}\end{minipage}
+
+\vspace{0.4cm}\noindent
+\begin{minipage}[t]{0.49\linewidth}\vspace{0pt}\fixture{C}{%
+	\vs{1}{\Ca}{\Cb}\vs{1}{\Cc}{\Cd}\vs{2}{\Ca}{\Cc}\vs{2}{\Cb}{\Cd}\vs{3}{\Ca}{\Cd}\vs{3}{\Cb}{\Cc}}\end{minipage}\hfill
+\begin{minipage}[t]{0.49\linewidth}\vspace{0pt}\fixture{D}{%
+	\vs{1}{\Da}{\Db}\vs{2}{\Da}{\Dc}\vs{3}{\Db}{\Dc}}\end{minipage}
+
+\vfill
+\nota{Orden referencial de enfrentamientos dentro de cada grupo; horarios y canchas según el fixture publicado en campeonato-full.vercel.app.}
+\fi
+
+\end{document}

@@ -1,0 +1,386 @@
+\input{preamble.tex}
+
+% Protocolo de la Mesa de Control: que hacer antes, durante y despues de cada partido.
+% Se basa en bases-intersemestres-2026-II.tex; lo que las bases no aclaran va como criterio (C1, C2...)
+% y se aprueba en el Acta de criterios del final.
+
+\fancyhead[L]{\small\textcolor{imegray}{Protocolo de la Mesa de Control}}
+\fancyhead[R]{\small\textcolor{imegray}{Intersemestres 2026-II}}
+
+% Etiqueta de criterio propuesto (se aprueba en el acta final)
+\newcommand{\crit}[1]{\hspace{1pt}\colorbox{imegold}{\scriptsize\bfseries\textcolor{black}{C#1}}}
+\newcommand{\casilla}{\fbox{\rule{0pt}{5pt}\hspace{5pt}}}
+\newcommand{\linea}[1]{\rule{#1}{0.4pt}}
+
+\begin{document}
+
+% =====================================================================
+% PORTADA BREVE
+% =====================================================================
+\thispagestyle{empty}
+\begin{tikzpicture}[remember picture,overlay]
+	\fill[imegreen] (current page.north west) rectangle ([yshift=-0.45cm]current page.north east);
+	\fill[imegold] ([yshift=-0.45cm]current page.north west) rectangle ([yshift=-0.62cm]current page.north east);
+\end{tikzpicture}
+\begin{center}
+	\vspace*{0.3cm}
+	\logoCarrera\par\vspace{0.3cm}
+	{\large\textbf{\textcolor{imedark}{Escuela Profesional de Ingeniería Mecánica Eléctrica}}\par}
+	\vspace{0.4cm}
+	{\Huge\textbf{\textcolor{imedark}{Protocolo de la Mesa de Control}}\par}
+	\vspace{0.15cm}
+	{\Large\textcolor{imegreenDark}{Gran Campeonato Intersemestres 2026-II · Futsal y Vóley Mixto}\par}
+	\vspace{0.15cm}
+	{\large Jueves 29 de octubre de 2026 · Complejo Deportivo Pereyra\par}
+\end{center}
+
+\begin{cajaResumen}{Para qué sirve este documento}
+	Es la guía de trabajo de la mesa: qué revisar \textbf{antes}, qué controlar \textbf{durante} y qué cerrar \textbf{después} de cada partido, y qué decidir en cada situación. Se basa en las Bases oficiales. Donde las bases no dicen nada o se contradicen, se propone un criterio marcado así: \crit{1}. Esos criterios se aprueban y firman en el \textbf{Acta de criterios} (última sección) \textbf{antes del primer partido}; desde ese momento son obligatorios y no se discuten en cancha.
+\end{cajaResumen}
+
+\begin{cajaTarjeta}{Formato real tras el sorteo}
+	\renewcommand{\arraystretch}{1.25}
+	\noindent\begin{tabularx}{\linewidth}{>{\RaggedRight\arraybackslash}p{0.2\linewidth} >{\RaggedRight\arraybackslash}X >{\RaggedRight\arraybackslash}X}
+		& \textbf{Futsal} & \textbf{Vóley Mixto}\\ \hline
+		Equipos & 15 en 4 grupos (A, B, C de 4; D de 3) & 8 en 2 grupos de 4\\
+		Partidos & 29: 21 de grupos, 4 cuartos, 2 semis, 3.\textsuperscript{er} lugar y final & 15: 12 de grupos, 2 semis y final\\
+		Llave & C1: 1A--2B · C2: 1B--2A · C3: 1C--2D · C4: 1D--2C & S1: 1A--2B · S2: 1B--2A\\
+		Duración & 2 tiempos de 10 min, sin descanso & 1 set a 20 (dif. 2, tope 22); final al mejor de 3 (20, 20, 10)\\
+		Canchas & Cancha A y Cancha B & Losa de vóley\\
+		Tabla & Victoria 3, empate 1, derrota 0 & Victoria 2, derrota 0\\
+	\end{tabularx}
+	\smallskip
+	{\small Las bases describen el formato con cupo completo (18 y 12 equipos); según la Disposición final 4 se ajustó al número de inscritos. Horarios y orden: los del \textbf{fixture impreso} de este documento.}
+
+\begin{cajaAdvertencia}{Todo se lleva en papel}
+	La mesa trabaja solo con este documento impreso: fixture y hoja de resultados, planillas por partido, tablas de posiciones, llaves, registros y bases. No se usa celular, internet ni aplicaciones para decidir. Lo que no está escrito en las planillas no existe para la mesa.
+\end{cajaAdvertencia}
+
+\begin{cajaTarjeta}{Contenido de este documento}
+	\begin{enumerate}
+		\item Protocolo de la mesa y Acta de criterios.
+		\item Fixture y hoja de resultados (Futsal y Vóley).
+		\item Anexos: planilla en blanco de reserva (A), registro de sanciones (B), hoja de reclamo (C) y registro de caja (D).
+		\item Grupos, tablas de posiciones y llaves (Futsal y Vóley).
+		\item Planillas de control, una por partido, ya llenadas con número, hora, cancha y equipos.
+		\item Bases oficiales completas (sustento de toda decisión).
+	\end{enumerate}
+\end{cajaTarjeta}
+\end{cajaTarjeta}
+
+% =====================================================================
+\section{Organización de la mesa}
+% =====================================================================
+\begin{itemize}
+	\item \textbf{Una mesa por disciplina} (futsal y vóley), cada una con:
+	\begin{itemize}
+		\item \textbf{Jefe de mesa:} decide en el momento, firma el acta y es el único que habla con delegados y árbitro sobre sanciones.
+		\item \textbf{Planillero:} llena la planilla del partido, lleva el tiempo de llamado y pasa el resultado a la hoja de resultados y a la tabla de posiciones.
+		\item \textbf{Control de identidad:} revisa nóminas firmadas, DNI y fichas de matrícula impresas.
+		\item \textbf{Tesorería:} cobra arbitraje y reclamos, entrega recibo y lleva el registro de caja.
+	\end{itemize}
+	\item La \textbf{Mesa Evaluadora} (jefes de ambas mesas + un miembro de la comisión) resuelve reclamos y todo lo no previsto. Sus decisiones son inapelables.
+	\item Las dos mesas designan un \textbf{mensajero} que lleva avisos escritos entre ellas para los \textbf{equipos que juegan en las dos disciplinas} (sección~\ref{sec:cruces}).
+	\item \textbf{Material:} este documento impreso, nóminas firmadas y fichas de matrícula de cada equipo, lapiceros, reloj, silbato de respaldo, chalecos, cintas de capitán, talonario de recibos y sencillo.
+\end{itemize}
+
+% =====================================================================
+\section{Antes del partido}
+% =====================================================================
+
+\subsection{Línea de tiempo}
+\renewcommand{\arraystretch}{1.3}
+\noindent\begin{tabularx}{\linewidth}{>{\bfseries}p{2.2cm} >{\RaggedRight\arraybackslash}X}
+	Un partido antes & Ambos equipos deben estar presentes (previsión de W.O.). La mesa los llama por altavoz o en persona.\\
+	$-10$ min & El delegado o capitán entrega la \textbf{lista del partido} (titulares y suplentes) elegida solo entre los 10 inscritos. Se revisa identidad y se cobra arbitraje.\\
+	$-5$ min & Revisión de uniforme, cinta de capitán y, en vóley, composición en cancha. Sorteo de chalecos si coinciden colores.\\
+	Hora programada & Empieza el partido. Si falta un equipo corre la \textbf{tolerancia de 5 minutos} (en vóley, desde el primer llamado del árbitro).\\
+	$+5$ min & Si el equipo no completa el mínimo (4 jugadores): \textbf{W.O.}\\
+\end{tabularx}
+
+\subsection{Lista del partido e identidad}
+\begin{enumerate}
+	\item Solo pueden jugar los inscritos en la \textbf{nómina} del equipo (máx. 10). La lista del partido no se modifica una vez iniciado el encuentro.
+	\item Cada jugador se identifica con \textbf{DNI o carné} y se compara con la nómina y su ficha de matrícula 2026-II (egresados: documento que acredite que fueron estudiantes de la carrera).
+	\item Se revisa el \textbf{registro de sanciones} (Anexo B): quien tenga roja en su partido anterior no juega este partido.
+	\item Si hay duda sobre la matrícula, el jugador debe mostrar su \textbf{ficha de matrícula impresa} junto con su DNI. Si no puede comprobarlo en ese momento, \textbf{no juega} hasta comprobarlo \crit{1}.
+\end{enumerate}
+
+\begin{cajaImportante}{Jugadores que no cumplen: qué hacer antes del partido}
+	\renewcommand{\arraystretch}{1.3}
+	\noindent\begin{tabularx}{\linewidth}{>{\RaggedRight\arraybackslash}p{0.45\linewidth} >{\RaggedRight\arraybackslash}X}
+		\textbf{Caso} & \textbf{Decisión}\\ \hline
+		No pertenece a la carrera, sin ficha válida, con suspensión académica, de otro semestre o con menos de 2 cursos del semestre & Se \textbf{retira} al jugador; no juega. El equipo juega si mantiene el mínimo de 4. No hay más sanción.\\
+		No figura en la nómina del equipo & No juega. Si llega a entrar a la cancha es \textbf{suplantación}: el equipo queda \textbf{eliminado} (bases).\\
+		Inscrito también en otro equipo de la \textbf{misma disciplina} & No juega por ninguno hasta que la Mesa Evaluadora resuelva. Si llega a jugar por dos equipos, el equipo infractor queda \textbf{eliminado} (bases).\\
+		Jugador de futsal que también juega vóley (otra disciplina) & \textbf{Permitido}: la restricción es por disciplina \crit{2}.\\
+		Jugadora invitada en vóley (no E.P.I.M.E.) & Permitida: máximo 2, solo mujeres y deben figurar en la nómina.\\
+		Suspendido por roja & No juega este partido.\\
+	\end{tabularx}
+\end{cajaImportante}
+
+\subsection{Uniforme, capitán y colores}
+\begin{itemize}
+	\item Camisetas de un mismo color. Si un equipo no tiene uniforme, \textbf{el partido se juega igual} y se anota en la planilla; la sanción se aplica al final (sección~\ref{sec:despues}).
+	\item El capitán lleva cinta de color distinto a la camiseta y es el único que habla con el árbitro.
+	\item Si coinciden los colores, se sortea en presencia de los capitanes: el que pierde usa chalecos o voltea la camiseta.
+\end{itemize}
+
+\subsection{Composición en vóley mixto}
+\begin{itemize}
+	\item En cancha: \textbf{máximo 5 varones} y \textbf{mínimo 1 dama} (6 jugadores).
+	\item Equipo sin damas (ni invitadas): juega con \textbf{5 varones}. Si \textbf{ambos} equipos son solo de varones, juegan con 6.
+	\item Mínimo para iniciar: 4 jugadores, siempre con un máximo de 5 varones en cancha.
+\end{itemize}
+
+\subsection{Arbitraje}
+\begin{itemize}
+	\item Cada equipo paga en la mesa \textbf{antes de iniciar}, en todas las fases: \textbf{futsal S/ 7.50} y \textbf{vóley S/ 6.00} por equipo (S/ 15 y S/ 12 por partido). Se entrega recibo.
+	\item El equipo que no paga \textbf{juega igual}, pero queda como deuda y no puede jugar su siguiente partido hasta pagarla \crit{3}.
+\end{itemize}
+
+\subsection{Walkover (W.O.)}
+\begin{itemize}
+	\item Pasados los 5 minutos de tolerancia, el equipo que no tiene al menos 4 jugadores inscritos y aptos pierde por W.O.
+	\item Marcador: futsal \textbf{3--0}. Vóley: \textbf{20--0} (un set); en la final \textbf{2--0 en sets} (20--0, 20--0) \crit{4}.
+	\item \textbf{Ambos ausentes:} en grupos, derrota para los dos (0 puntos, 0--3 en contra cada uno en futsal; 0--20 en vóley). En eliminación, avanza el que tenga mejor posición en su tabla de grupo; si es igual, sorteo \crit{5}.
+\end{itemize}
+
+\subsection{Checklist de inicio (se marca en la planilla)}
+\casilla\ Lista del partido entregada por ambos equipos \quad
+\casilla\ Identidad verificada \quad
+\casilla\ Sin suspendidos en cancha\\[3pt]
+\casilla\ Arbitraje cobrado \quad
+\casilla\ Uniformes y capitanes revisados \quad
+\casilla\ Composición vóley correcta \quad
+\casilla\ Capitanes firman la planilla
+
+% =====================================================================
+\section{Durante el partido}
+% =====================================================================
+
+\subsection{Qué anota la mesa}
+\begin{itemize}
+	\item \textbf{Futsal:} goles (número del jugador y minuto), \textbf{faltas acumuladas por tiempo} (avisar al árbitro al llegar a 5: desde la 6.\textsuperscript{a} es tiro libre sin barrera desde 10 m; se reinician en el segundo tiempo), tarjetas y expulsiones (el expulsado no se reemplaza durante 2 minutos o hasta que el rival anote), y cambios (ilimitados, solo entre los de la lista).
+	\item \textbf{Vóley:} puntos de cada set, 1 tiempo por set por equipo, cambios (libres) y que después de cada cambio sigan siendo máximo 5 varones en cancha.
+	\item El \textbf{tiempo lo controla solo el árbitro}; la mesa lleva un cronómetro de respaldo.
+\end{itemize}
+
+\subsection{Situaciones durante el partido}
+\renewcommand{\arraystretch}{1.3}
+\noindent\begin{tabularx}{\linewidth}{>{\RaggedRight\arraybackslash}p{0.38\linewidth} >{\RaggedRight\arraybackslash}X}
+	\textbf{Situación} & \textbf{Decisión de la mesa}\\ \hline
+	Se detecta un jugador que \textbf{no pertenece a la carrera} & Se le saca de inmediato y \textbf{el partido continúa} \crit{6}. Al terminar se aplica la sanción: el equipo infractor \textbf{pierde los puntos} de ese partido (sección~\ref{sec:despues}).\\
+	Entra un jugador que \textbf{no está en la nómina} & Suplantación: el árbitro detiene el partido y el equipo queda \textbf{eliminado} (bases).\\
+	Vóley: quedan 6 varones en cancha o un equipo sin damas juega con 6 & El árbitro detiene el juego hasta corregir; el punto en curso no se repite \crit{7}.\\
+	Futsal: una expulsión deja a un equipo con menos de 4 & Partido terminado; gana el rival con al menos \textbf{3--0} (o la diferencia mayor si ya la tenía).\\
+	Vóley: un equipo queda con menos de 4 & Partido terminado; gana el rival y el set se completa a su favor hasta 20 (en la final, también los sets restantes) \crit{8}.\\
+	Agresión física o verbal directa & Jugador separado de inmediato; con agresión directa el equipo es \textbf{retirado del campeonato}. La mesa redacta el informe.\\
+	Hinchas ingresan al campo & Se suspende el partido y gana el rival; si se repite, el equipo es separado del campeonato. Se aplica en \textbf{ambas disciplinas} \crit{9}.\\
+	Reclamo en pleno juego & Solo el capitán, al árbitro. No se aceptan reclamos de apreciación arbitral. Lo demás se presenta al terminar.\\
+	Lluvia, corte de luz u otra causa de fuerza mayor & Se detiene el reloj. Si se reanuda en menos de 15 min, sigue con el mismo marcador y tiempo. Si no, la Mesa Evaluadora reprograma el tiempo restante en el primer hueco libre \crit{10}.\\
+	Daño al recinto o arrojar basura & Se anota en la planilla; el equipo paga el daño y recibe la sanción al final \crit{11}.\\
+\end{tabularx}
+
+% =====================================================================
+\section{Después del partido}\label{sec:despues}
+% =====================================================================
+
+\subsection{Empates}
+\begin{itemize}
+	\item \textbf{Futsal, fase de grupos:} el empate vale \textbf{1 punto para cada equipo}; no hay penales \crit{12}.
+	\item \textbf{Futsal, cuartos, semifinales y 3.\textsuperscript{er} lugar:} \textbf{3 penales por equipo} y luego uno por equipo hasta que haya ganador.
+	\item \textbf{Futsal, final:} \textbf{5 penales por equipo} y luego uno por equipo.
+	\item Solo patean los jugadores que estaban en cancha al terminar el partido. La mesa anota el orden y el resultado de la tanda.
+	\item \textbf{Vóley:} no hay empates (sets con diferencia de 2, tope 22).
+\end{itemize}
+
+\subsection{Sanciones que se aplican al cerrar el partido}
+\renewcommand{\arraystretch}{1.3}
+\noindent\begin{tabularx}{\linewidth}{>{\RaggedRight\arraybackslash}p{0.33\linewidth} >{\RaggedRight\arraybackslash}X >{\RaggedRight\arraybackslash}X}
+	\textbf{Caso} & \textbf{Fase de grupos} & \textbf{Eliminación directa}\\ \hline
+	Jugó un jugador que \textbf{no pertenece a la carrera} (detectado durante o al término) & El infractor \textbf{pierde los puntos}: 0 puntos y el partido se registra como derrota 0--3 (futsal) / 0--20 (vóley), o el marcador real si el rival ganó por más \crit{13}. & El infractor queda \textbf{eliminado} y avanza el rival \crit{13}.\\
+	Equipo \textbf{sin uniforme} & Se le resta \textbf{1 punto en la tabla} \crit{14}. & Se resta 1 gol (futsal) o 1 punto del set (vóley) al marcador final; si así queda empatado, se define por penales (futsal) \crit{14}.\\
+	Daño al recinto o basura & Se le resta 1 punto en la tabla y paga el daño \crit{11}. & Paga el daño; amonestación en el acta \crit{11}.\\
+\end{tabularx}
+
+\subsection{Acta, reclamos y registro}
+\begin{enumerate}
+	\item El árbitro y ambos capitanes \textbf{firman la planilla} con el resultado (y penales, si hubo). Firmar es dar conformidad.
+	\item \textbf{Reclamos:} el delegado o capitán los escribe al dorso de la planilla (o en el Anexo C) \textbf{dentro de los 5 minutos} después del partido, con el sustento. Se pagan \textbf{S/ 5.00 al presentarlo}; si el reclamo procede, se devuelven \crit{15}. Pasados los 5 minutos no se recibe.
+	\item La Mesa Evaluadora resuelve \textbf{antes del siguiente partido de cualquiera de los dos equipos} y comunica la decisión a ambos delegados. Si no alcanza, el siguiente partido se juega y la decisión se aplica después.
+	\item El planillero pasa el resultado a la \textbf{hoja de resultados} (marcador, penales o W.O., y la sanción si la hubo) y actualiza la \textbf{tabla de posiciones} del grupo. Las planillas firmadas se guardan en orden de partido: son el sustento ante cualquier reclamo.
+	\item Se actualiza el \textbf{registro de sanciones} (Anexo B): roja = no juega el siguiente partido; segunda roja en el campeonato = fuera del campeonato. Dos amarillas en el mismo partido = roja; las amarillas no se arrastran a otros partidos.
+\end{enumerate}
+
+\subsection{Cierre de grupos y paso a la llave}
+\begin{itemize}
+	\item \textbf{Desempate futsal:} 1) puntos, 2) diferencia de goles, 3) goles a favor, 4) menos goles en contra, 5) resultado entre los empatados, 6) sorteo en la mesa con los delegados \crit{16}.
+	\item \textbf{Desempate vóley:} 1) puntos, 2) diferencia de puntos, 3) puntos a favor, 4) menos puntos en contra, 5) sorteo (bases).
+	\item Al terminar cada grupo, el jefe de mesa firma la tabla, escribe el 1.° y 2.° en la llave y avisa a los delegados.
+	\item Los cruces de la llave son los del cuadro de la portada y no se cambian.
+\end{itemize}
+
+% =====================================================================
+\section{Equipos que juegan futsal y vóley}\label{sec:cruces}
+% =====================================================================
+Las bases permiten mover un partido solo si coincide con el de vóley del mismo equipo. Procedimiento \crit{17}:
+\begin{enumerate}
+	\item Antes de empezar el día, ambas mesas marcan en su fixture los partidos de los equipos que juegan las dos disciplinas (con sus horas).
+	\item Si coinciden, \textbf{termina primero el partido que ya empezó}; el otro espera al equipo hasta \textbf{10 minutos} después de que termine, sin W.O.
+	\item El mensajero lleva el aviso escrito a la otra mesa y ambas anotan la espera en la planilla.
+\end{enumerate}
+
+% =====================================================================
+\section{Acta de criterios}
+% =====================================================================
+Criterios que completan lo que las bases no aclaran. Se aprueban o modifican \textbf{antes del primer partido} y desde entonces son obligatorios.
+
+\renewcommand{\arraystretch}{1.35}
+{\small
+\noindent\begin{tabularx}{\linewidth}{c >{\RaggedRight\arraybackslash}X c c}
+	& \textbf{Criterio propuesto} & \textbf{Aprob.} & \textbf{Modif.}\\ \hline
+	C1 & Si no se puede comprobar la matrícula en el momento, el jugador no juega hasta comprobarla. & \casilla & \casilla\\
+	C2 & Un jugador puede estar en un equipo de futsal y en uno de vóley; la prohibición de dos equipos es dentro de la misma disciplina. & \casilla & \casilla\\
+	C3 & Quien no paga arbitraje juega, pero no puede jugar su siguiente partido hasta pagar. & \casilla & \casilla\\
+	C4 & W.O. en vóley: 20--0; en la final 2--0 en sets (20--0, 20--0). & \casilla & \casilla\\
+	C5 & Ambos ausentes: en grupos derrota para los dos; en eliminación avanza el de mejor posición de grupo o por sorteo. & \casilla & \casilla\\
+	C6 & Jugador que no pertenece a la carrera detectado durante el partido: se le saca y el partido sigue; la sanción se aplica al final. & \casilla & \casilla\\
+	C7 & Vóley con exceso de varones: se detiene hasta corregir; el punto en curso no se repite. & \casilla & \casilla\\
+	C8 & Vóley con menos de 4: gana el rival, completando a 20 el set (y los sets restantes en la final). & \casilla & \casilla\\
+	C9 & Ingreso de hinchas al campo: misma sanción en futsal que en vóley. & \casilla & \casilla\\
+	C10 & Fuerza mayor: hasta 15 min de espera; luego la Mesa Evaluadora reprograma el tiempo restante. & \casilla & \casilla\\
+	C11 & Daño o basura: paga el daño y $-1$ punto en tabla (grupos) o amonestación (eliminación). & \casilla & \casilla\\
+	C12 & Empate en grupos de futsal: 1 punto cada uno, sin penales (las bases dicen penales también en grupos; se propone no usarlos para que la tabla sea simple). & \casilla & \casilla\\
+	C13 & Jugador que no pertenece a la carrera (durante o al término): en grupos, 0 puntos al infractor y derrota 0--3 / 0--20; en eliminación, el infractor queda fuera. & \casilla & \casilla\\
+	C14 & Sin uniforme: $-1$ punto en tabla (grupos); $-1$ gol o punto del marcador en eliminación. & \casilla & \casilla\\
+	C15 & Reclamo: S/ 5.00 al presentarlo, se devuelven si procede. & \casilla & \casilla\\
+	C16 & Desempate futsal: puntos, DG, GF, menos GC, resultado entre ellos, sorteo. & \casilla & \casilla\\
+	C17 & Cruce futsal/vóley: termina el que empezó; el otro espera hasta 10 min sin W.O. & \casilla & \casilla\\
+\end{tabularx}
+}
+
+\vspace{0.4cm}
+Modificaciones: \linea{0.8\linewidth}\\[8pt]
+\linea{\linewidth}\\[8pt]
+\linea{\linewidth}
+
+\vspace{1.4cm}
+\noindent
+\noindent\begin{tabularx}{\linewidth}{XXX}
+	\centering\linea{4.5cm}\\ Presidente de la Comisión &
+	\centering\linea{4.5cm}\\ Jefe de mesa Futsal &
+	\centering\linea{4.5cm}\\ Jefe de mesa Vóley\\
+\end{tabularx}
+
+% =====================================================================
+\clearpage
+% Generado con: node --env-file=.env.local scripts/mesa-fixture-tex.mjs
+\input{mesa-fixture.tex}
+
+\section*{Anexo A: Planilla de control (en blanco, de reserva)}
+\addcontentsline{toc}{section}{Anexo A: Planilla de control (en blanco, de reserva)}
+\renewcommand{\arraystretch}{1.6}
+\noindent Disciplina: \casilla\ Futsal \casilla\ Vóley \quad Fase: \linea{2.6cm} \quad Partido N.°: \linea{1.2cm}\\
+Cancha: \linea{2.4cm} \quad Hora programada: \linea{1.6cm} \quad Hora de inicio: \linea{1.6cm}\\
+Árbitro: \linea{6cm}
+
+\vspace{0.3cm}
+\noindent\begin{tabularx}{\linewidth}{|>{\RaggedRight\arraybackslash}p{4.2cm}|X|X|}
+	\hline
+	& \textbf{Equipo local} & \textbf{Equipo visitante}\\ \hline
+	Nombre & & \\ \hline
+	Lista entregada / identidad OK & \casilla\ / \casilla & \casilla\ / \casilla\\ \hline
+	Arbitraje pagado (S/) & & \\ \hline
+	Uniforme / cinta capitán & \casilla\ / \casilla & \casilla\ / \casilla\\ \hline
+	Vóley: varones en cancha (máx. 5) & & \\ \hline
+	Goles o puntos (por set) & & \\ \hline
+	Faltas 1.\textsuperscript{er} T / 2.\textsuperscript{o} T (futsal) & & \\ \hline
+	Amarillas (N.° jugador) & & \\ \hline
+	Rojas (N.° jugador) & & \\ \hline
+	Penales & & \\ \hline
+	Jugadores retirados (motivo) & & \\ \hline
+	Sanciones aplicadas (C\ldots) & & \\ \hline
+	\textbf{Resultado final} & & \\ \hline
+	Firma capitán & & \\ \hline
+\end{tabularx}
+
+\vspace{0.3cm}
+\noindent Incidencias: \linea{0.83\linewidth}\\[6pt]
+\linea{\linewidth}\\[6pt]
+\linea{\linewidth}
+
+\vspace{0.9cm}
+\noindent
+\noindent\begin{tabularx}{\linewidth}{XX}
+	\centering\linea{5cm}\\ Árbitro &
+	\centering\linea{5cm}\\ Jefe de mesa\\
+\end{tabularx}
+
+% =====================================================================
+\clearpage
+\section*{Anexo B: Registro de sanciones}
+\addcontentsline{toc}{section}{Anexo B: Registro de sanciones}
+Se revisa antes de cada partido. Roja = no juega el siguiente partido de su equipo. Segunda roja = fuera del campeonato.
+
+\vspace{0.2cm}
+\renewcommand{\arraystretch}{1.9}
+\noindent\begin{tabularx}{\linewidth}{|p{2.2cm}|X|X|p{1.6cm}|p{2.6cm}|p{2.2cm}|}
+	\hline
+	\textbf{Disciplina} & \textbf{Jugador} & \textbf{Equipo} & \textbf{Partido} & \textbf{Sanción} & \textbf{No juega en}\\ \hline
+	& & & & & \\ \hline & & & & & \\ \hline & & & & & \\ \hline & & & & & \\ \hline
+	& & & & & \\ \hline & & & & & \\ \hline & & & & & \\ \hline & & & & & \\ \hline
+	& & & & & \\ \hline & & & & & \\ \hline & & & & & \\ \hline & & & & & \\ \hline
+	& & & & & \\ \hline & & & & & \\ \hline & & & & & \\ \hline
+\end{tabularx}
+
+% =====================================================================
+\clearpage
+\section*{Anexo C: Hoja de reclamo}
+\addcontentsline{toc}{section}{Anexo C: Hoja de reclamo}
+\renewcommand{\arraystretch}{1.6}
+\noindent Partido N.°: \linea{1.5cm} \quad Disciplina: \linea{2.5cm} \quad Hora de presentación: \linea{2cm} (máx. 5 min después del partido)\\
+Equipo que reclama: \linea{6cm} \quad Contra: \linea{5cm}\\
+Presentado por (delegado o capitán): \linea{8.5cm}\\
+Pago S/ 5.00: \casilla\ Recibo N.° \linea{2cm}
+
+\vspace{0.3cm}
+\noindent\textbf{Motivo del reclamo y sustento:}\\[6pt]
+\linea{\linewidth}\\[10pt]\linea{\linewidth}\\[10pt]\linea{\linewidth}\\[10pt]\linea{\linewidth}\\[10pt]\linea{\linewidth}
+
+\vspace{0.5cm}
+\noindent\textbf{Resolución de la Mesa Evaluadora:} \casilla\ Procede (se devuelven S/ 5.00) \quad \casilla\ No procede\\[6pt]
+\linea{\linewidth}\\[10pt]\linea{\linewidth}\\[10pt]\linea{\linewidth}
+
+\vspace{1.2cm}
+\noindent
+\noindent\begin{tabularx}{\linewidth}{XXX}
+	\centering\linea{4.5cm}\\ Reclamante &
+	\centering\linea{4.5cm}\\ Delegado rival &
+	\centering\linea{4.5cm}\\ Mesa Evaluadora\\
+\end{tabularx}
+
+% =====================================================================
+\clearpage
+\section*{Anexo D: Registro de caja}
+\addcontentsline{toc}{section}{Anexo D: Registro de caja}
+Cada cobro (arbitraje o reclamo) se anota con su recibo. Al cerrar el día, el total debe coincidir con el efectivo.
+
+\vspace{0.2cm}
+\renewcommand{\arraystretch}{1.75}
+\noindent\begin{tabularx}{\linewidth}{|p{1.4cm}|p{1.2cm}|X|p{2.4cm}|p{1.5cm}|p{1.6cm}|}
+	\hline
+	\textbf{Recibo} & \textbf{Partido} & \textbf{Equipo} & \textbf{Concepto} & \textbf{Monto} & \textbf{Firma}\\ \hline
+	& & & & & \\ \hline & & & & & \\ \hline & & & & & \\ \hline & & & & & \\ \hline
+	& & & & & \\ \hline & & & & & \\ \hline & & & & & \\ \hline & & & & & \\ \hline
+	& & & & & \\ \hline & & & & & \\ \hline & & & & & \\ \hline & & & & & \\ \hline
+	& & & & & \\ \hline & & & & & \\ \hline & & & & & \\ \hline & & & & & \\ \hline
+	& & & & & \\ \hline & & & & & \\ \hline & & & & & \\ \hline & & & & & \\ \hline
+	\multicolumn{4}{|r|}{\textbf{Total del día}} & & \\ \hline
+\end{tabularx}
+
+\vspace{1.2cm}
+\noindent\begin{minipage}{0.45\linewidth}\centering\linea{5cm}\\ Tesorería\end{minipage}\hfill
+\begin{minipage}{0.45\linewidth}\centering\linea{5cm}\\ Jefe de mesa\end{minipage}
+
+\end{document}

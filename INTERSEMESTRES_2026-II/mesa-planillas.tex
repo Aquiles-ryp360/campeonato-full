@@ -1,0 +1,76 @@
+\input{preamble.tex}
+% Planillas de control por partido, una por pagina. Los datos salen de mesa-planillas-datos.tex,
+% generado con: node --env-file=.env.local scripts/mesa-fixture-tex.mjs
+
+\fancyhead[L]{\small\textcolor{imegray}{Planilla de control del partido}}
+\fancyhead[R]{\small\textcolor{imegray}{Intersemestres 2026-II}}
+
+\setlength{\parindent}{0pt}
+\newcommand{\casilla}{\fbox{\rule{0pt}{5pt}\hspace{5pt}}}
+\newcommand{\linea}[1]{\rule{#1}{0.4pt}}
+
+% Fila de marcador segun disciplina
+\newcommand{\filasJuego}[1]{%
+	\ifnum\pdfstrcmp{#1}{futsal}=0
+		Goles (N.° de camiseta) & & \\ \hline
+		Faltas acumuladas 1.\textsuperscript{er} T (marcar) & 1 2 3 4 5 6 7 8 & 1 2 3 4 5 6 7 8\\ \hline
+		Faltas acumuladas 2.\textsuperscript{o} T (marcar) & 1 2 3 4 5 6 7 8 & 1 2 3 4 5 6 7 8\\ \hline
+		Penales (solo eliminación) & & \\ \hline
+	\else
+		Varones en cancha (máx. 5) / damas & \hspace{1cm} / & \hspace{1cm} /\\ \hline
+		Tiempo pedido (1 por set) & \casilla & \casilla\\ \hline
+		\ifnum\pdfstrcmp{#1}{voleyfinal}=0
+			Set 1 (a 20) & & \\ \hline
+			Set 2 (a 20) & & \\ \hline
+			Set 3 (a 10, cambio a los 5) & & \\ \hline
+		\else
+			Puntos del set (a 20, dif. 2, tope 22) & & \\ \hline
+		\fi
+	\fi
+}
+
+% #1 disciplina, #2 N.°, #3 hora, #4 cancha, #5 fase, #6 local, #7 visita, #8 cruce de llave, #9 tipo
+\newcommand{\planilla}[9]{%
+	\noindent{\Large\bfseries\color{imedark} Partido N.° #2}\hfill{\Large\bfseries\color{imegreenDark} #1 · #5}\par
+	\vspace{0.1cm}{\color{imegreen}\rule{\linewidth}{0.8pt}}\par\vspace{0.15cm}
+	\noindent Hora programada: \textbf{#3} \quad Cancha: \textbf{#4} \quad Hora real de inicio: \linea{1.8cm}\par
+	\vspace{0.15cm}\noindent Árbitro: \linea{6cm}\par
+	\if\relax\detokenize{#8}\relax\else
+		\vspace{0.15cm}\noindent Cruce: \textbf{#8} (escribir los equipos clasificados)\par
+	\fi
+	\vspace{0.25cm}
+	\renewcommand{\arraystretch}{1.45}\small
+	\noindent\begin{tabularx}{\linewidth}{|>{\RaggedRight\arraybackslash}p{5.3cm}|X|X|}
+		\hline
+		& \textbf{Local} & \textbf{Visitante}\\ \hline
+		Equipo & \textbf{#6} & \textbf{#7}\\ \hline
+		Lista del partido entregada & \casilla & \casilla\\ \hline
+		Identidad y fichas verificadas & \casilla & \casilla\\ \hline
+		Suspendidos revisados (Anexo B) & \casilla & \casilla\\ \hline
+		Arbitraje pagado (S/ y recibo) & & \\ \hline
+		Uniforme / cinta de capitán & \casilla\ / \casilla & \casilla\ / \casilla\\ \hline
+		\filasJuego{#9}
+		Amarillas (N.° de camiseta) & & \\ \hline
+		Rojas (N.° de camiseta) & & \\ \hline
+		Jugadores retirados y motivo & & \\ \hline
+		Sanciones aplicadas (C\ldots) & & \\ \hline
+		W.O. (marcar el ausente) & \casilla & \casilla\\ \hline
+		\textbf{Resultado final} & & \\ \hline
+		Reclamo al dorso & \casilla\ Sí \casilla\ No & \casilla\ Sí \casilla\ No\\ \hline
+		Firma del capitán & & \\ \hline
+	\end{tabularx}
+
+	\normalsize\vspace{0.3cm}
+	\noindent Incidencias: \linea{0.83\linewidth}\\[8pt]
+	\linea{\linewidth}\\[8pt]
+	\linea{\linewidth}
+
+	\vfill
+	\noindent\begin{minipage}{0.45\linewidth}\centering\linea{5cm}\\ Árbitro\end{minipage}\hfill
+	\begin{minipage}{0.45\linewidth}\centering\linea{5cm}\\ Jefe de mesa\end{minipage}
+	\clearpage
+}
+
+\begin{document}
+\input{mesa-planillas-datos.tex}
+\end{document}
